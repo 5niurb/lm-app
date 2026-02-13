@@ -50,16 +50,43 @@ router.post('/token', (req, res) => {
  * Twilio hits this URL when the softphone makes a call.
  *
  * The softphone sends the target number as a `To` parameter.
+ * Also logs the outbound call to call_logs.
  */
-router.post('/voice', (req, res) => {
+router.post('/voice', async (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
   const to = req.body.To;
+  const callSid = req.body.CallSid;
+  const from = req.body.From || req.body.Caller || process.env.TWILIO_PHONE_NUMBER;
 
   if (to) {
+    // Log outbound call to DB
+    if (callSid) {
+      try {
+        const { supabaseAdmin } = await import('../services/supabase.js');
+        await supabaseAdmin
+          .from('call_logs')
+          .insert({
+            twilio_sid: callSid,
+            direction: 'outbound',
+            from_number: process.env.TWILIO_PHONE_NUMBER || from,
+            to_number: to,
+            status: 'initiated',
+            metadata: {
+              source: 'softphone',
+              caller_identity: req.body.From || 'unknown'
+            }
+          });
+      } catch (e) {
+        console.error('Failed to log outbound call:', e.message);
+      }
+    }
+
     // Outbound call from browser — dial the number
     const dial = twiml.dial({
       callerId: process.env.TWILIO_PHONE_NUMBER || '+12134442242',
-      timeout: 30
+      timeout: 20,
+      action: '/api/twilio/outbound-status',
+      method: 'POST'
     });
 
     if (to.startsWith('client:')) {
@@ -78,6 +105,51 @@ router.post('/voice', (req, res) => {
 });
 
 /**
+ * POST /api/twilio/outbound-status
+ * Called when outbound dial completes. Updates the call log with final status/duration.
+ */
+router.post('/outbound-status', async (req, res) => {
+  const twiml = new twilio.twiml.VoiceResponse();
+  const callSid = req.body.CallSid;
+  const dialStatus = req.body.DialCallStatus;
+  const duration = parseInt(req.body.DialCallDuration || '0', 10);
+
+  if (callSid) {
+    try {
+      const { supabaseAdmin } = await import('../services/supabase.js');
+      const update = {
+        status: dialStatus === 'completed' ? 'completed' : dialStatus || 'completed',
+        ended_at: new Date().toISOString()
+      };
+
+      if (duration > 0) {
+        update.duration = duration;
+        update.disposition = 'answered';
+      } else if (dialStatus === 'no-answer') {
+        update.disposition = 'missed';
+      } else if (dialStatus === 'busy') {
+        update.disposition = 'missed';
+      } else if (dialStatus === 'failed' || dialStatus === 'canceled') {
+        update.disposition = 'abandoned';
+      } else {
+        update.disposition = 'answered';
+      }
+
+      await supabaseAdmin
+        .from('call_logs')
+        .update(update)
+        .eq('twilio_sid', callSid);
+    } catch (e) {
+      console.error('Failed to update outbound call status:', e.message);
+    }
+  }
+
+  // End call gracefully
+  res.type('text/xml');
+  res.send(twiml.toString());
+});
+
+/**
  * POST /api/twilio/connect-operator
  * TwiML endpoint used by Studio flow when caller presses 0 (operator).
  * Rings: SIP endpoint + browser softphone + fallback phone simultaneously.
@@ -88,13 +160,12 @@ router.post('/voice', (req, res) => {
 router.post('/connect-operator', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
   const callerNumber = req.body.From || req.body.Caller || 'Unknown';
-  const fallbackNumber = process.env.TWILIO_OPERATOR_FALLBACK || '+12797327364';
   const sipUser = process.env.TWILIO_SIP1_USERNAME;
   const sipPass = process.env.TWILIO_SIP1_PASSWORD;
 
   const dial = twiml.dial({
     callerId: callerNumber,
-    timeout: 25,
+    timeout: 20,
     action: '/api/twilio/connect-operator-status',
     method: 'POST'
   });
@@ -110,8 +181,7 @@ router.post('/connect-operator', (req, res) => {
   // 2. Ring the browser softphone client
   dial.client('lea');
 
-  // 3. Simultaneously ring the fallback phone number
-  dial.number(fallbackNumber);
+  // No fallback phone number — SIP + softphone only
 
   res.type('text/xml');
   res.send(twiml.toString());

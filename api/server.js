@@ -22,7 +22,9 @@ app.use(cors({
 
 // Webhook routes FIRST (before json parsing — Twilio sends URL-encoded)
 import webhookVoice from './routes/webhooks/voice.js';
+import webhookSms from './routes/webhooks/sms.js';
 app.use('/api/webhooks/voice', webhookVoice);
+app.use('/api/webhooks/sms', webhookSms);
 
 // Twilio softphone routes (token + TwiML — needs URL-encoded for TwiML callbacks)
 import twilioRoutes from './routes/twilio.js';
@@ -41,11 +43,13 @@ import authRoutes from './routes/auth.js';
 import callRoutes from './routes/calls.js';
 import voicemailRoutes from './routes/voicemails.js';
 import contactRoutes from './routes/contacts.js';
+import messageRoutes from './routes/messages.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/calls', callRoutes);
 app.use('/api/voicemails', voicemailRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.listen(PORT, () => {
   console.log(`LM App API running on port ${PORT}`);

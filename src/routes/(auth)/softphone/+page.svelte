@@ -353,53 +353,65 @@
 			<div class="p-5 space-y-4">
 				<!-- Active Call Display -->
 				{#if callState !== 'idle'}
-					<div class="rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.15)] p-5 text-center space-y-3">
-						{#if callState === 'incoming'}
-							<div class="flex items-center justify-center gap-2 text-blue-400">
-								<PhoneIncoming class="h-6 w-6 animate-bounce" />
-								<span class="text-base font-medium animate-pulse">Incoming Call</span>
+					{#if callState === 'incoming'}
+						<!-- INCOMING CALL — Big, obvious, impossible to miss -->
+						<div class="rounded-xl border-2 border-blue-400/50 bg-gradient-to-b from-blue-500/15 to-blue-500/5 p-6 text-center space-y-4 animate-pulse-slow">
+							<div class="flex items-center justify-center gap-3 text-blue-400">
+								<PhoneIncoming class="h-8 w-8 animate-bounce" />
+								<span class="text-xl font-semibold tracking-wide">INCOMING CALL</span>
+								<PhoneIncoming class="h-8 w-8 animate-bounce" />
 							</div>
-						{:else if callState === 'connecting'}
-							<div class="flex items-center justify-center gap-2 text-yellow-400">
-								<PhoneOutgoing class="h-5 w-5 animate-pulse" />
-								<span class="text-sm font-medium">Connecting...</span>
-							</div>
-						{:else if callState === 'connected'}
-							<div class="flex items-center justify-center gap-2 text-emerald-400">
-								<Phone class="h-5 w-5" />
-								<span class="text-sm font-medium">Connected</span>
-							</div>
-						{/if}
 
-						<p class="text-xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
+							<p class="text-3xl font-light text-[rgba(255,255,255,0.95)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
 
-						{#if callState === 'connected'}
-							<div class="flex items-center justify-center gap-1 text-[rgba(255,255,255,0.4)]">
-								<Clock class="h-3.5 w-3.5" />
-								<span class="text-sm font-mono">{formatCallDuration(callDuration)}</span>
+							<!-- Answer / Decline buttons — large and clear -->
+							<div class="flex items-center justify-center gap-6 pt-4">
+								<div class="flex flex-col items-center gap-2">
+									<button
+										class="flex items-center justify-center h-20 w-20 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/30 transition-all duration-200 hover:scale-105 active:scale-95 ring-4 ring-emerald-500/20"
+										onclick={answerCall}
+									>
+										<Phone class="h-9 w-9" />
+									</button>
+									<span class="text-sm font-medium text-emerald-400 uppercase tracking-wider">Answer</span>
+								</div>
+								<div class="flex flex-col items-center gap-2">
+									<button
+										class="flex items-center justify-center h-20 w-20 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-600/30 transition-all duration-200 hover:scale-105 active:scale-95 ring-4 ring-red-500/20"
+										onclick={rejectCall}
+									>
+										<PhoneOff class="h-9 w-9" />
+									</button>
+									<span class="text-sm font-medium text-red-400 uppercase tracking-wider">Decline</span>
+								</div>
 							</div>
-						{/if}
+						</div>
+					{:else}
+						<!-- Connecting / Connected state -->
+						<div class="rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.15)] p-5 text-center space-y-3">
+							{#if callState === 'connecting'}
+								<div class="flex items-center justify-center gap-2 text-yellow-400">
+									<PhoneOutgoing class="h-5 w-5 animate-pulse" />
+									<span class="text-sm font-medium">Connecting...</span>
+								</div>
+							{:else if callState === 'connected'}
+								<div class="flex items-center justify-center gap-2 text-emerald-400">
+									<Phone class="h-5 w-5" />
+									<span class="text-sm font-medium">Connected</span>
+								</div>
+							{/if}
 
-						<!-- Call Controls -->
-						<div class="flex items-center justify-center gap-4 pt-3">
-							{#if callState === 'incoming'}
-								<Button
-									variant="default"
-									size="lg"
-									class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full h-16 w-16 shadow-lg shadow-emerald-600/20"
-									onclick={answerCall}
-								>
-									<Phone class="h-7 w-7" />
-								</Button>
-								<Button
-									variant="destructive"
-									size="lg"
-									class="rounded-full h-16 w-16 shadow-lg shadow-red-600/20"
-									onclick={rejectCall}
-								>
-									<PhoneOff class="h-7 w-7" />
-								</Button>
-							{:else}
+							<p class="text-xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
+
+							{#if callState === 'connected'}
+								<div class="flex items-center justify-center gap-1 text-[rgba(255,255,255,0.4)]">
+									<Clock class="h-3.5 w-3.5" />
+									<span class="text-sm font-mono">{formatCallDuration(callDuration)}</span>
+								</div>
+							{/if}
+
+							<!-- Call Controls -->
+							<div class="flex items-center justify-center gap-4 pt-3">
 								<Button
 									variant={isMuted ? 'destructive' : 'outline'}
 									size="icon"
@@ -421,9 +433,9 @@
 								>
 									<PhoneOff class="h-6 w-6" />
 								</Button>
-							{/if}
+							</div>
 						</div>
-					</div>
+					{/if}
 				{/if}
 
 				<!-- Dial Pad -->

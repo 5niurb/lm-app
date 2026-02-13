@@ -130,7 +130,7 @@ CREATE TABLE public.contacts (
   phone_normalized  TEXT,               -- digits only for fast matching
   email             TEXT,
   source            TEXT
-                    CHECK (source IN ('aesthetic_record', 'gohighlevel', 'textmagic', 'manual', 'google_sheet')),
+                    CHECK (source IN ('aesthetic_record', 'gohighlevel', 'textmagic', 'manual', 'google_sheet', 'inbound_call')),
   source_id         TEXT,               -- ID from the original system
   patient_status    TEXT,               -- active, inactive, prospect, etc.
   tags              TEXT[] DEFAULT '{}',
@@ -212,6 +212,96 @@ CREATE TABLE public.call_events (
 );
 
 COMMENT ON TABLE public.call_events IS 'IVR menu navigation and call flow events';
+
+-- =============================================================================
+-- TABLE: conversations
+-- SMS/RCS message threads grouped by phone number
+-- =============================================================================
+
+CREATE TABLE public.conversations (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  contact_id    UUID REFERENCES public.contacts(id) ON DELETE SET NULL,
+  phone_number  TEXT NOT NULL UNIQUE,      -- remote party phone (E.164)
+  display_name  TEXT,                       -- cached contact name or CNAM
+  last_message  TEXT,                       -- preview text
+  last_at       TIMESTAMPTZ DEFAULT now(),  -- timestamp of last message
+  unread_count  INTEGER DEFAULT 0,
+  status        TEXT DEFAULT 'active'
+                CHECK (status IN ('active', 'archived')),
+  metadata      JSONB DEFAULT '{}',
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  updated_at    TIMESTAMPTZ DEFAULT now()
+);
+
+COMMENT ON TABLE public.conversations IS 'SMS/RCS conversation threads grouped by phone number';
+
+CREATE TRIGGER conversations_updated_at
+  BEFORE UPDATE ON public.conversations
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at();
+
+-- =============================================================================
+-- TABLE: messages
+-- Individual SMS/RCS messages within a conversation
+-- =============================================================================
+
+CREATE TABLE public.messages (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+  direction       TEXT NOT NULL
+                  CHECK (direction IN ('inbound', 'outbound')),
+  body            TEXT NOT NULL DEFAULT '',
+  from_number     TEXT NOT NULL,
+  to_number       TEXT NOT NULL,
+  twilio_sid      TEXT,
+  status          TEXT DEFAULT 'sent'
+                  CHECK (status IN ('queued', 'sent', 'delivered', 'failed', 'received', 'read')),
+  media_urls      TEXT[],
+  sent_by         UUID REFERENCES public.profiles(id),  -- null for inbound/auto
+  metadata        JSONB DEFAULT '{}',
+  created_at      TIMESTAMPTZ DEFAULT now()
+);
+
+COMMENT ON TABLE public.messages IS 'Individual SMS/RCS messages within a conversation';
+
+-- conversations indexes
+CREATE INDEX idx_conversations_phone      ON public.conversations (phone_number);
+CREATE INDEX idx_conversations_contact    ON public.conversations (contact_id);
+CREATE INDEX idx_conversations_last_at    ON public.conversations (last_at DESC);
+CREATE INDEX idx_conversations_status     ON public.conversations (status);
+
+-- messages indexes
+CREATE INDEX idx_messages_conversation    ON public.messages (conversation_id);
+CREATE INDEX idx_messages_twilio_sid      ON public.messages (twilio_sid);
+CREATE INDEX idx_messages_created_at      ON public.messages (created_at);
+CREATE INDEX idx_messages_direction       ON public.messages (direction);
+
+-- RLS for conversations
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read conversations"
+  ON public.conversations FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Authenticated users can update conversations"
+  ON public.conversations FOR UPDATE
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- RLS for messages
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read messages"
+  ON public.messages FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Authenticated users can insert messages"
+  ON public.messages FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
 
 -- =============================================================================
 -- TABLE: audit_log

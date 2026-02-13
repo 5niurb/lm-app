@@ -1,13 +1,14 @@
 <script>
 	import { page } from '$app/state';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.ts';
-	import { LayoutDashboard, Phone, Headset, Voicemail, Users, Settings } from '@lucide/svelte';
+	import { LayoutDashboard, Phone, Headset, Voicemail, MessageSquare, Users, Settings } from '@lucide/svelte';
 
 	const navItems = [
 		{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 		{ href: '/softphone', label: 'Softphone', icon: Headset },
 		{ href: '/calls', label: 'Calls', icon: Phone },
 		{ href: '/voicemails', label: 'Voicemails', icon: Voicemail },
+		{ href: '/messages', label: 'Messages', icon: MessageSquare },
 		{ href: '/contacts', label: 'Contacts', icon: Users },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];

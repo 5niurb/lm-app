@@ -165,3 +165,12 @@ input:focus, textarea:focus, select:focus {
 button {
 	transition: all 0.2s ease-in-out;
 }
+
+/* Softphone incoming call slow pulse */
+.animate-pulse-slow {
+	animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-slow {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.85; }
+}
