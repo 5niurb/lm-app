@@ -166,6 +166,7 @@ async function main() {
       email: email,
       source: 'textmagic',
       source_id: tm.id ? tm.id.toString() : null,
+      tags: ['lead'], // TextMagic-only contacts default to 'lead'
       metadata,
       last_synced_at: new Date().toISOString()
     };
@@ -182,7 +183,7 @@ async function main() {
     if (phoneNormalized) {
       const { data } = await supabase
         .from('contacts')
-        .select('id, source, metadata')
+        .select('id, source, metadata, tags, first_name, last_name, email')
         .eq('phone_normalized', phoneNormalized)
         .limit(1)
         .maybeSingle();
@@ -192,7 +193,7 @@ async function main() {
     if (!existing && email) {
       const { data } = await supabase
         .from('contacts')
-        .select('id, source, metadata')
+        .select('id, source, metadata, tags, first_name, last_name, email')
         .eq('email', email)
         .limit(1)
         .maybeSingle();
@@ -203,9 +204,17 @@ async function main() {
       // Merge TextMagic metadata into existing metadata
       const mergedMeta = { ...(existing.metadata || {}), ...metadata };
 
+      // Merge tags — don't overwrite existing tags, just ensure 'lead' is there if no richer tags
+      const existingTags = existing.tags || [];
+      const hasRicherTag = existingTags.some(t => ['patient', 'partner', 'employee'].includes(t));
+      const mergedTags = hasRicherTag
+        ? [...new Set([...existingTags])]  // Keep existing tags, don't add 'lead'
+        : [...new Set([...existingTags, 'lead'])];  // Add 'lead' if no richer tag
+
       // Only update TextMagic-specific fields, don't overwrite source if it's already from a richer source
       const update = {
         metadata: mergedMeta,
+        tags: mergedTags,
         last_synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

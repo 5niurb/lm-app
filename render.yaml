@@ -21,7 +21,19 @@ services:
         sync: false
       - key: TWILIO_PHONE_NUMBER
         sync: false
+      - key: TWILIO_MAIN_PHONE_NUMBER
+        sync: false
+      - key: TWILIO_TEST1_PHONE_NUMBER
+        sync: false
+      - key: TWILIO_PROD_FLOW_SID
+        sync: false
+      - key: TWILIO_TEST_FLOW_SID
+        sync: false
       - key: RESEND_API_KEY
+        sync: false
+      - key: TEXTMAGIC_API_KEY
+        sync: false
+      - key: TEXTMAGIC_USERNAME
         sync: false
       - key: FRONTEND_URL
         sync: false

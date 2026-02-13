@@ -191,6 +191,39 @@ function mapRecord(raw) {
     normalizedSource = 'google_sheet';
   }
 
+  // Auto-assign tags based on data
+  const tags = [];
+  const patientStatus = status ? status.toLowerCase() : null;
+
+  // Patient tag: has AR ID, or patient_status = 'patient', or source is AR
+  if (sourceId || patientStatus === 'patient' || normalizedSource === 'aesthetic_record') {
+    tags.push('patient');
+  }
+
+  // Lead tag: TextMagic-only contacts without patient indicators
+  if (normalizedSource === 'textmagic' && !sourceId && patientStatus !== 'patient') {
+    tags.push('lead');
+  }
+
+  // Partner/employee/VIP/FriendFam/Vendor from metadata tags and lists
+  const metaTags = (metadata.tags || '').toLowerCase();
+  const metaLists = (metadata.lists || '').toLowerCase();
+
+  if (metaLists.includes('partner')) tags.push('partner');
+  if (metaLists.includes('lm team')) tags.push('employee');
+  if (metaTags.includes('vip')) tags.push('vip');
+  if (metaTags.includes('friendfam')) tags.push('friendfam');
+  if (metaTags.includes('vendor')) tags.push('vendor');
+
+  // Auto-assign lists
+  const lists = [];
+  if (metaLists.includes('patient')) lists.push('patients');
+  if (metaLists.includes('diamond')) lists.push('diamond');
+  if (metaLists.includes('partner')) lists.push('partners');
+  if (metaLists.includes('lm team')) lists.push('lm-team');
+  if (metaLists.includes('to book')) lists.push('to-book');
+  if (metaLists.includes('lead')) lists.push('leads');
+
   return {
     first_name: firstName || null,
     last_name: lastName || null,
@@ -200,7 +233,9 @@ function mapRecord(raw) {
     email: email || null,
     source: normalizedSource,
     source_id: sourceId || null,
-    patient_status: status ? status.toLowerCase() : null,
+    patient_status: patientStatus,
+    tags: tags.length > 0 ? tags : [],
+    lists: lists.length > 0 ? lists : [],
     metadata: Object.keys(metadata).length > 0 ? metadata : {},
     last_synced_at: new Date().toISOString()
   };
@@ -259,11 +294,23 @@ async function syncFromCsv(filePath) {
       }
 
       if (existing) {
-        // Update existing
+        // Fetch existing to merge tags/lists
+        const { data: existingContact } = await supabase
+          .from('contacts')
+          .select('tags, lists')
+          .eq('id', existing.id)
+          .single();
+
+        // Merge tags (no duplicates)
+        const mergedTags = [...new Set([...(existingContact?.tags || []), ...contact.tags])];
+        const mergedLists = [...new Set([...(existingContact?.lists || []), ...contact.lists])];
+
         const { error } = await supabase
           .from('contacts')
           .update({
             ...contact,
+            tags: mergedTags,
+            lists: mergedLists,
             updated_at: new Date().toISOString()
           })
           .eq('id', existing.id);
@@ -366,10 +413,22 @@ async function syncFromGoogleSheet() {
       }
 
       if (existing) {
+        // Fetch existing to merge tags/lists
+        const { data: existingContact } = await supabase
+          .from('contacts')
+          .select('tags, lists')
+          .eq('id', existing.id)
+          .single();
+
+        const mergedTags = [...new Set([...(existingContact?.tags || []), ...contact.tags])];
+        const mergedLists = [...new Set([...(existingContact?.lists || []), ...contact.lists])];
+
         const { error } = await supabase
           .from('contacts')
           .update({
             ...contact,
+            tags: mergedTags,
+            lists: mergedLists,
             updated_at: new Date().toISOString()
           })
           .eq('id', existing.id);

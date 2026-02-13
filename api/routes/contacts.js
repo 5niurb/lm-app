@@ -14,6 +14,9 @@ router.use(verifyToken);
  *
  * Query params:
  *   page (default 1), pageSize (default 50), source, search, sort, order
+ *   tag — filter by tag (e.g. 'patient', 'lead', 'partner')
+ *   tags — filter by multiple tags, comma-separated (e.g. 'patient,vip')
+ *   list — filter by list membership (e.g. 'diamond', 'to-book')
  */
 router.get('/', logAction('contacts.list'), async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -29,9 +32,22 @@ router.get('/', logAction('contacts.list'), async (req, res) => {
     query = query.eq('source', req.query.source);
   }
 
-  // Filter by status
-  if (req.query.status) {
-    query = query.eq('patient_status', req.query.status);
+  // Filter by tag (single tag — uses array containment)
+  if (req.query.tag) {
+    query = query.contains('tags', [req.query.tag]);
+  }
+
+  // Filter by multiple tags (comma-separated — contact must have ALL specified tags)
+  if (req.query.tags) {
+    const tagList = req.query.tags.split(',').map(t => t.trim()).filter(Boolean);
+    if (tagList.length > 0) {
+      query = query.contains('tags', tagList);
+    }
+  }
+
+  // Filter by list membership
+  if (req.query.list) {
+    query = query.contains('lists', [req.query.list]);
   }
 
   // Search by name, phone, or email
@@ -67,28 +83,45 @@ router.get('/', logAction('contacts.list'), async (req, res) => {
 
 /**
  * GET /api/contacts/stats
- * Get contact statistics.
+ * Get contact statistics including tag and list counts.
  */
 router.get('/stats', logAction('contacts.stats'), async (req, res) => {
-  const { count: total } = await supabaseAdmin
+  // Fetch all contacts' tags, lists, and source (lightweight)
+  const { data: contacts } = await supabaseAdmin
     .from('contacts')
-    .select('id', { count: 'exact', head: true });
+    .select('source, tags, lists');
 
-  // Count by source
-  const { data: bySource } = await supabaseAdmin
-    .from('contacts')
-    .select('source');
-
+  const total = contacts?.length || 0;
   const sources = {};
-  if (bySource) {
-    for (const c of bySource) {
+  const tags = {};
+  const lists = {};
+
+  if (contacts) {
+    for (const c of contacts) {
+      // Count by source
       sources[c.source] = (sources[c.source] || 0) + 1;
+
+      // Count by tag
+      if (c.tags && Array.isArray(c.tags)) {
+        for (const t of c.tags) {
+          tags[t] = (tags[t] || 0) + 1;
+        }
+      }
+
+      // Count by list
+      if (c.lists && Array.isArray(c.lists)) {
+        for (const l of c.lists) {
+          lists[l] = (lists[l] || 0) + 1;
+        }
+      }
     }
   }
 
   return res.json({
-    total: total || 0,
-    bySource: sources
+    total,
+    bySource: sources,
+    byTag: tags,
+    byList: lists
   });
 });
 
@@ -122,6 +155,91 @@ router.get('/search', logAction('contacts.search'), async (req, res) => {
   }
 
   return res.json({ data: data || [] });
+});
+
+/**
+ * POST /api/contacts/:id/tags
+ * Add one or more tags to a contact.
+ * Body: { tags: ['vip', 'partner'] }
+ */
+router.post('/:id/tags', logAction('contacts.addTags'), async (req, res) => {
+  const { id } = req.params;
+  const { tags: newTags } = req.body;
+
+  if (!Array.isArray(newTags) || newTags.length === 0) {
+    return res.status(400).json({ error: 'tags must be a non-empty array' });
+  }
+
+  // Fetch current tags
+  const { data: contact, error: fetchErr } = await supabaseAdmin
+    .from('contacts')
+    .select('tags')
+    .eq('id', id)
+    .single();
+
+  if (fetchErr || !contact) {
+    return res.status(404).json({ error: 'Contact not found' });
+  }
+
+  // Merge (no duplicates)
+  const currentTags = contact.tags || [];
+  const mergedTags = [...new Set([...currentTags, ...newTags.map(t => t.toLowerCase().trim())])];
+
+  const { data, error } = await supabaseAdmin
+    .from('contacts')
+    .update({ tags: mergedTags, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to add tags:', error.message);
+    return res.status(500).json({ error: 'Failed to add tags' });
+  }
+
+  return res.json({ data });
+});
+
+/**
+ * DELETE /api/contacts/:id/tags
+ * Remove one or more tags from a contact.
+ * Body: { tags: ['vip'] }
+ */
+router.delete('/:id/tags', logAction('contacts.removeTags'), async (req, res) => {
+  const { id } = req.params;
+  const { tags: removeTags } = req.body;
+
+  if (!Array.isArray(removeTags) || removeTags.length === 0) {
+    return res.status(400).json({ error: 'tags must be a non-empty array' });
+  }
+
+  // Fetch current tags
+  const { data: contact, error: fetchErr } = await supabaseAdmin
+    .from('contacts')
+    .select('tags')
+    .eq('id', id)
+    .single();
+
+  if (fetchErr || !contact) {
+    return res.status(404).json({ error: 'Contact not found' });
+  }
+
+  const removeSet = new Set(removeTags.map(t => t.toLowerCase().trim()));
+  const updatedTags = (contact.tags || []).filter(t => !removeSet.has(t));
+
+  const { data, error } = await supabaseAdmin
+    .from('contacts')
+    .update({ tags: updatedTags, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to remove tags:', error.message);
+    return res.status(500).json({ error: 'Failed to remove tags' });
+  }
+
+  return res.json({ data });
 });
 
 /**

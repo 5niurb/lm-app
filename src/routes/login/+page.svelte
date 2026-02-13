@@ -33,12 +33,9 @@
 			// TODO: Implement trusted device check via API
 			const trusted = false;
 
-			if (trusted) {
-				goto('/dashboard');
-			} else {
-				step = 'otp';
-				// TODO: Trigger OTP send via API
-			}
+			// MVP: Skip OTP, go straight to dashboard
+			// TODO: Implement trusted device check + OTP flow
+			goto('/dashboard');
 		} finally {
 			submitting = false;
 		}

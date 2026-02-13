@@ -34,7 +34,7 @@ router.post('/incoming', async (req, res) => {
 
     const { data: contact } = await supabaseAdmin
       .from('contacts')
-      .select('id, full_name')
+      .select('id, full_name, tags')
       .or(`phone_normalized.eq.${phoneDigits},phone.eq.${From}`)
       .limit(1)
       .maybeSingle();
@@ -42,6 +42,36 @@ router.post('/incoming', async (req, res) => {
     if (contact) {
       contactId = contact.id;
       contactName = contact.full_name;
+    } else if (phoneDigits) {
+      // Unknown caller — auto-create contact record tagged as 'unknown'
+      // Will be promoted to lead/patient when a triggering action occurs
+      // (added to AR, appointment booked, or meaningful communication)
+      const newContact = {
+        phone: From,
+        phone_normalized: phoneDigits,
+        full_name: callerName || null,
+        first_name: callerName || null,
+        source: 'inbound_call',
+        tags: ['unknown'],
+        metadata: {
+          first_seen: new Date().toISOString(),
+          caller_city: req.body.CallerCity || null,
+          caller_state: req.body.CallerState || null
+        }
+      };
+
+      const { data: created, error: createErr } = await supabaseAdmin
+        .from('contacts')
+        .insert(newContact)
+        .select('id, full_name')
+        .single();
+
+      if (created) {
+        contactId = created.id;
+        contactName = created.full_name;
+      } else if (createErr) {
+        console.error('Failed to auto-create contact:', createErr.message);
+      }
     }
   }
 

@@ -210,6 +210,7 @@ async function main() {
           source: 'aesthetic_record',
           source_id: arId || null,
           patient_status: 'patient',
+          tags: ['patient'],
           metadata,
           last_synced_at: new Date().toISOString()
         });
@@ -290,6 +291,13 @@ async function main() {
     update.metadata = metaUpdate;
     update.updated_at = new Date().toISOString();
     update.last_synced_at = new Date().toISOString();
+
+    // Ensure 'patient' tag is present for AR contacts, remove 'unknown'/'lead' if present
+    const currentTags = contact.tags || [];
+    let newTags = [...currentTags];
+    if (!newTags.includes('patient')) newTags.push('patient');
+    newTags = newTags.filter(t => t !== 'unknown'); // Promote from unknown
+    update.tags = newTags;
 
     const { error: updateErr } = await supabase
       .from('contacts')
