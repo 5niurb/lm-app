@@ -140,9 +140,16 @@
 								{/if}
 								<div>
 									<p class="text-sm font-medium">
-										{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}
+										{#if call.caller_name}
+											{call.caller_name}
+										{:else}
+											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}
+										{/if}
 									</p>
 									<p class="text-xs text-muted-foreground">
+										{#if call.caller_name}
+											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)} &middot;
+										{/if}
 										{formatRelativeDate(call.started_at)}
 										{#if call.duration > 0}
 											&middot; {formatDuration(call.duration)}

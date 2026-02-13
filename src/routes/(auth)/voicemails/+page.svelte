@@ -215,9 +215,16 @@
 									{/if}
 									<div class="min-w-0">
 										<p class="text-sm font-medium truncate">
-											{formatPhone(vm.from_number)}
+											{#if vm.call_logs?.caller_name}
+												{vm.call_logs.caller_name}
+											{:else}
+												{formatPhone(vm.from_number)}
+											{/if}
 										</p>
 										<p class="text-xs text-muted-foreground">
+											{#if vm.call_logs?.caller_name}
+												{formatPhone(vm.from_number)} &middot;
+											{/if}
 											{formatRelativeDate(vm.created_at)} &middot; {formatDuration(vm.duration)}
 											{#if vm.mailbox}
 												&middot; {mailboxLabels[vm.mailbox] || vm.mailbox}

@@ -101,7 +101,7 @@
 				<form class="relative flex-1" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
 					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 					<Input
-						placeholder="Search by phone number..."
+						placeholder="Search by name or phone number..."
 						class="pl-8"
 						bind:value={search}
 					/>
@@ -161,9 +161,16 @@
 								{/if}
 								<div class="min-w-0">
 									<p class="text-sm font-medium truncate">
-										{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}
+										{#if call.caller_name}
+											{call.caller_name}
+										{:else}
+											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}
+										{/if}
 									</p>
 									<p class="text-xs text-muted-foreground">
+										{#if call.caller_name}
+											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)} &middot;
+										{/if}
 										{formatDate(call.started_at)}
 									</p>
 								</div>

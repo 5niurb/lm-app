@@ -23,7 +23,7 @@ router.get('/', logAction('voicemails.list'), async (req, res) => {
 
   let query = supabaseAdmin
     .from('voicemails')
-    .select('*, call_logs(from_number, to_number, started_at)', { count: 'exact' });
+    .select('*, call_logs(from_number, to_number, started_at, caller_name)', { count: 'exact' });
 
   // Filter by new/read status
   if (req.query.is_new === 'true') {
@@ -107,7 +107,7 @@ router.get('/:id', logAction('voicemails.read'), async (req, res) => {
 
   const { data, error } = await supabaseAdmin
     .from('voicemails')
-    .select('*, call_logs(from_number, to_number, started_at, direction)')
+    .select('*, call_logs(from_number, to_number, started_at, direction, caller_name)')
     .eq('id', id)
     .single();
 
