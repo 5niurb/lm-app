@@ -35,7 +35,7 @@ router.get('/', logAction('calls.list'), async (req, res) => {
     query = query.eq('status', req.query.status);
   }
   if (req.query.search) {
-    query = query.or(`from_number.ilike.%${req.query.search}%,to_number.ilike.%${req.query.search}%,notes.ilike.%${req.query.search}%`);
+    query = query.or(`from_number.ilike.%${req.query.search}%,to_number.ilike.%${req.query.search}%,notes.ilike.%${req.query.search}%,caller_name.ilike.%${req.query.search}%`);
   }
 
   // Date range

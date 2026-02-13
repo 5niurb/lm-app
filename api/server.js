@@ -34,10 +34,12 @@ app.get('/api/health', (req, res) => {
 import authRoutes from './routes/auth.js';
 import callRoutes from './routes/calls.js';
 import voicemailRoutes from './routes/voicemails.js';
+import contactRoutes from './routes/contacts.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/calls', callRoutes);
 app.use('/api/voicemails', voicemailRoutes);
+app.use('/api/contacts', contactRoutes);
 
 app.listen(PORT, () => {
   console.log(`LM App API running on port ${PORT}`);
