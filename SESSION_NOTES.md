@@ -1,3 +1,40 @@
+## Session — 2026-02-13 (Session 11)
+**Focus:** Softphone call connection fix, ringtone, notifications, sidebar badges, SMS delivery tracking
+
+**Accomplished:**
+- **Fixed softphone incoming call connection**: Root cause was missing `accept` event handler — callState was set to 'connected' prematurely before audio was established. Now uses proper event flow: answer → connecting state → accept event → connected state.
+- **Added audible ringtone**: Web Audio API dual-tone (440Hz + 480Hz) with ring pattern (0.8s on, 2.2s off). No external audio files needed.
+- **Added browser notifications**: Incoming calls trigger OS-level notification even when tab is in background. Auto-closes after 20 seconds.
+- **Added microphone permission request on connect**: Asks for mic access when clicking "Connect" (not during a call), preventing silent failures.
+- **Added error handling to answerCall()**: Try/catch around accept() with specific error messages for mic permission denied.
+- **Added "connecting" UI state**: Yellow transition state between pressing Answer and audio being established.
+- **Added unread message badge to sidebar**: Messages nav item shows gold badge with unread conversation count, polls every 15 seconds.
+- **Added SMS delivery status tracking**: Outbound messages include statusCallback URL so Twilio sends delivery status updates.
+- **Fixed voicemail fallback**: connect-operator-status now includes transcribeCallback + recordingStatusCallback for proper voicemail handling.
+- **Verified SMS webhook working**: Tested end-to-end — Render receives SMS, creates conversation + message in Supabase.
+
+**Current State:**
+- API running locally on :3001, SvelteKit on :5173
+- Render deployed with latest code (commit d1bb3a0)
+- SMS webhook verified: `https://lm-app-api.onrender.com/api/webhooks/sms/incoming` → creates conversations + messages
+- All 7 pages themed and functional with dark+gold aesthetic
+- Softphone now has: ringtone, notifications, proper accept flow, mic permission handling
+
+**Issues:**
+- **Softphone audio connection untested end-to-end**: Code fixes are solid but need real call test to confirm audio works
+- **SIP credentials blank in local .env** — production has them on Render
+- **Frontend not deployed to Cloudflare Pages** — only accessible locally
+- **Production Studio flow not updated** — still using old flow
+
+**Next Steps:**
+1. Test softphone incoming call end-to-end (call the Twilio number, press 0, verify answer works)
+2. Test 2-way messaging end-to-end (send SMS to Twilio number, verify in Messages page, reply)
+3. Deploy frontend to Cloudflare Pages for remote access
+4. Test SIP routing with real credentials
+5. Update production Studio flow once everything is verified
+
+---
+
 ## Session — 2026-02-13 (Session 10)
 **Focus:** Dark+gold theme, softphone UX, 2-way messaging, operator routing, outbound call logging
 
