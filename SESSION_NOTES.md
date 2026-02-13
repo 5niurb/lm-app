@@ -1,3 +1,73 @@
+## Session — 2026-02-13 (Session 7)
+**Focus:** TextMe script — finish parseReply() update for smart menus
+
+**Accomplished:**
+- Updated `parseReply()` in `~/.claude/scripts/textme.mjs` to match the new menu structure:
+  - Option 1: now uses dynamic `option1Prompt` from `inferNextStep()` (e.g. "Commit & keep going" when there are uncommitted edits, "Continue pending tasks" when todos remain)
+  - Option 2 (complete menu): changed from "Start new task" → "I'll check the terminal" (Claude stops)
+  - Option 3 (complete menu): changed from "Commit & push" → "Commit, push & next task" (commits + continues)
+- Added `option1Prompt` field to `analyzeTranscript()` return value for all 4 menu types
+- Threaded `option1Prompt` through the full chain: `analyzeTranscript` → `main` → `waitForReply` → `parseReply`
+- Verified script passes syntax check (`node --check`)
+- Sent test SMS confirming rich context format renders correctly on phone
+
+**Current State:**
+- TextMe system fully operational: two-way SMS, smart recommendations, rich context
+- All menu types consistent: Option 1 = recommended, Option 2 = terminal/deny, Option 3 = commit+push or terminal
+- Script: `C:/Users/LMOperations/.claude/scripts/textme.mjs` (global)
+- Hook: `~/.claude/settings.local.json` (global Stop hook, 5 min timeout)
+
+**Issues:**
+- None for textme — feature complete
+
+**Next Steps:**
+1. Resume lm-app development (Phase 1A deployment or CRM enhancements)
+2. RCS setup for patient communications (separate from textme, future)
+
+---
+
+## Session — 2026-02-13 (Session 6)
+**Focus:** CRM tags/lists system, contacts frontend overhaul
+
+**Accomplished:**
+- Added `tags TEXT[]` and `lists TEXT[]` columns to contacts table (migration 003) with GIN indexes
+- Auto-populated tags from existing metadata (migration 004): patient(398), lead(140), partner(9), employee(8), vip(7), friendfam(11), vendor(3)
+- Fixed tagging bug: TextMagic-only contacts had source_id set (from TM sync), incorrectly got 'patient' tag. Fixed with targeted SQL.
+- Updated `/incoming` webhook to auto-create unknown callers with `unknown` tag + source `inbound_call`
+- Enhanced contacts API with tag filtering (`?tag=patient`, `?tags=patient,vip`), list filtering (`?list=diamond`), tag-based stats, tag management (POST/DELETE /:id/tags)
+- Rewrote contacts frontend: tag-based filter tabs (color-coded), inline tag badges on cards, inline add/remove tags, collapsible metadata, lists display
+- Updated all 3 sync scripts for tag awareness:
+  - sync-contacts.js: auto-tags from metadata, merges tags on update
+  - sync-textmagic.js: defaults 'lead', smart merge (won't downgrade patient→lead)
+  - enrich-from-ar.js: promotes to 'patient', removes 'unknown'
+- Simplified login (skip OTP for MVP — go straight to dashboard)
+- Updated render.yaml with TextMagic + Twilio env vars
+- Added .env-vars to .gitignore (was about to be committed with secrets!)
+- Committed and pushed all CRM work
+
+**Current State:**
+- Database: 538 contacts (398 patient, 140 lead, 9 partner, 8 employee, 7 vip, 11 friendfam, 3 vendor)
+- API: Full CRM-like tag system working locally (port 3001)
+- Frontend: Contacts page with tag filtering, badges, inline editing (port 5173)
+- Auth: No users created yet — need to create via Supabase dashboard
+- Render: Not yet deployed (env vars needed)
+- Studio Flow: Test SID ready, production unchanged
+
+**Issues:**
+- No Supabase auth users exist — need to create via dashboard
+- Render service not yet deployed
+- gh CLI not installed on this machine
+- SIP endpoint for operator forwarding not configured
+
+**Next Steps:**
+1. Create auth user in Supabase dashboard (lea@lemedspa.com)
+2. Deploy API to Render with all env vars
+3. Update Studio Flow webhook URLs to Render
+4. End-to-end test with test number
+5. Deploy Studio Flow to production
+
+---
+
 ## Session — 2026-02-13 (Session 5)
 **Focus:** Contacts system — CallerName capture, contact sync, contacts UI
 

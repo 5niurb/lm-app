@@ -110,6 +110,12 @@ npm run dev          # localhost:3001 (uses --watch)
 - Seed: `supabase/seed.sql` — run after schema
 - All tables have RLS enabled. Middleware uses `supabaseAdmin` to bypass when needed.
 
+## TextMe Notifications
+
+SMS notifications are configured **globally** — see workspace `lmdev/CLAUDE.md` for full details.
+The Stop hook fires for ALL projects, not just lm-app.
+Script: `C:/Users/LMOperations/.claude/scripts/textme.mjs`
+
 ## Important Notes
 
 - Webhook routes (`/api/webhooks/*`) are mounted BEFORE `express.json()` because Twilio sends URL-encoded data.
