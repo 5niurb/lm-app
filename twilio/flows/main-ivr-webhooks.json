@@ -645,7 +645,7 @@
       "name": "log_call_incoming",
       "type": "make-http-request",
       "properties": {
-        "body": "CallSid={{trigger.call.CallSid}}&From={{trigger.call.From}}&To={{trigger.call.To}}&CallStatus={{trigger.call.CallStatus}}",
+        "body": "CallSid={{trigger.call.CallSid}}&From={{trigger.call.From}}&To={{trigger.call.To}}&CallStatus={{trigger.call.CallStatus}}&CallerName={{trigger.call.CallerName}}&CallerCity={{trigger.call.CallerCity}}&CallerState={{trigger.call.CallerState}}&CallerCountry={{trigger.call.CallerCountry}}&CallerZip={{trigger.call.CallerZip}}",
         "content_type": "application/x-www-form-urlencoded;charset=utf-8",
         "method": "POST",
         "offset": {

@@ -11,6 +11,9 @@ router.use(express.urlencoded({ extended: false }));
  * POST /api/webhooks/voice/incoming
  * Twilio Studio sends this at flow start via HTTP Request widget.
  * Just log the call — Studio handles the IVR.
+ *
+ * Captures CallerName from Twilio CNAM lookup and matches against
+ * the contacts table by phone number.
  */
 router.post('/incoming', async (req, res) => {
   const { CallSid, From, To, CallStatus } = req.body;
@@ -18,6 +21,32 @@ router.post('/incoming', async (req, res) => {
   if (!CallSid) {
     return res.sendStatus(200);
   }
+
+  // Twilio CNAM lookup — CallerName comes automatically on inbound calls
+  const callerName = req.body.CallerName || null;
+
+  // Try to match caller against known contacts by phone number
+  let contactId = null;
+  let contactName = null;
+  if (From) {
+    // Normalize the phone number to digits only for matching
+    const phoneDigits = From.replace(/\D/g, '');
+
+    const { data: contact } = await supabaseAdmin
+      .from('contacts')
+      .select('id, full_name')
+      .or(`phone_normalized.eq.${phoneDigits},phone.eq.${From}`)
+      .limit(1)
+      .maybeSingle();
+
+    if (contact) {
+      contactId = contact.id;
+      contactName = contact.full_name;
+    }
+  }
+
+  // Use contact name if found, otherwise fall back to Twilio CNAM
+  const displayName = contactName || callerName;
 
   const { error } = await supabaseAdmin
     .from('call_logs')
@@ -27,10 +56,14 @@ router.post('/incoming', async (req, res) => {
       from_number: From || 'unknown',
       to_number: To || '',
       status: CallStatus || 'initiated',
+      caller_name: displayName,
+      contact_id: contactId,
       metadata: {
+        caller_name_cnam: callerName,
         caller_city: req.body.CallerCity || null,
         caller_state: req.body.CallerState || null,
-        caller_country: req.body.CallerCountry || null
+        caller_country: req.body.CallerCountry || null,
+        caller_zip: req.body.CallerZip || null
       }
     });
 

@@ -117,6 +117,33 @@ CREATE TRIGGER call_routing_rules_updated_at
 -- TABLE: call_logs
 -- Record of all inbound and outbound calls
 -- =============================================================================
+-- TABLE: contacts
+-- Unified contact list synced from Google Sheet + other sources
+-- =============================================================================
+
+CREATE TABLE public.contacts (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  first_name        TEXT,
+  last_name         TEXT,
+  full_name         TEXT,
+  phone             TEXT,
+  phone_normalized  TEXT,               -- digits only for fast matching
+  email             TEXT,
+  source            TEXT
+                    CHECK (source IN ('aesthetic_record', 'gohighlevel', 'textmagic', 'manual', 'google_sheet')),
+  source_id         TEXT,               -- ID from the original system
+  patient_status    TEXT,               -- active, inactive, prospect, etc.
+  tags              TEXT[] DEFAULT '{}',
+  notes             TEXT,
+  metadata          JSONB DEFAULT '{}',
+  last_synced_at    TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT now(),
+  updated_at        TIMESTAMPTZ DEFAULT now()
+);
+
+COMMENT ON TABLE public.contacts IS 'Unified contact list synced from Google Sheet + other sources';
+
+-- =============================================================================
 
 CREATE TABLE public.call_logs (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -130,6 +157,8 @@ CREATE TABLE public.call_logs (
   duration            INTEGER DEFAULT 0,
   disposition         TEXT
                       CHECK (disposition IN ('answered', 'missed', 'voicemail', 'abandoned')),
+  caller_name         TEXT,               -- from Twilio CNAM or contact match
+  contact_id          UUID REFERENCES public.contacts(id) ON DELETE SET NULL,
   handled_by          UUID REFERENCES public.profiles(id),
   recording_url       TEXT,
   recording_duration  INTEGER,
@@ -141,6 +170,7 @@ CREATE TABLE public.call_logs (
 );
 
 COMMENT ON TABLE public.call_logs IS 'Complete call records from Twilio';
+COMMENT ON COLUMN public.call_logs.caller_name IS 'Caller name from Twilio CNAM lookup or contact match';
 
 -- =============================================================================
 -- TABLE: voicemails
@@ -279,10 +309,14 @@ SELECT
   cl.direction AS call_direction,
   cl.to_number AS called_number,
   cl.started_at AS call_started_at,
-  pe.extension AS to_extension_number
+  cl.caller_name,
+  pe.extension AS to_extension_number,
+  c.full_name AS contact_name,
+  c.email AS contact_email
 FROM public.voicemails v
 LEFT JOIN public.call_logs cl ON cl.id = v.call_log_id
 LEFT JOIN public.phone_extensions pe ON pe.id = v.to_extension
+LEFT JOIN public.contacts c ON c.id = cl.contact_id
 WHERE v.is_new = true
 ORDER BY v.created_at DESC;
 
@@ -293,12 +327,22 @@ COMMENT ON VIEW public.unheard_voicemails IS 'All unheard voicemails with associ
 -- =============================================================================
 
 -- call_logs indexes
+-- contacts indexes
+CREATE INDEX idx_contacts_phone_normalized ON public.contacts (phone_normalized);
+CREATE INDEX idx_contacts_phone            ON public.contacts (phone);
+CREATE INDEX idx_contacts_email            ON public.contacts (email);
+CREATE INDEX idx_contacts_full_name        ON public.contacts (full_name);
+CREATE INDEX idx_contacts_source           ON public.contacts (source);
+
+-- call_logs indexes
 CREATE INDEX idx_call_logs_twilio_sid    ON public.call_logs (twilio_sid);
 CREATE INDEX idx_call_logs_direction     ON public.call_logs (direction);
 CREATE INDEX idx_call_logs_status        ON public.call_logs (status);
 CREATE INDEX idx_call_logs_started_at    ON public.call_logs (started_at);
 CREATE INDEX idx_call_logs_from_number   ON public.call_logs (from_number);
 CREATE INDEX idx_call_logs_handled_by    ON public.call_logs (handled_by);
+CREATE INDEX idx_call_logs_contact_id    ON public.call_logs (contact_id);
+CREATE INDEX idx_call_logs_caller_name   ON public.call_logs (caller_name);
 
 -- voicemails indexes
 CREATE INDEX idx_voicemails_is_new       ON public.voicemails (is_new);
@@ -480,6 +524,18 @@ CREATE POLICY "Authenticated users can read call events"
   USING (true);
 
 -- Inserts handled by service role (webhook handler) — no INSERT policy needed
+
+-- -------------------------
+-- contacts
+-- -------------------------
+ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read contacts"
+  ON public.contacts FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Inserts/updates handled by service role (sync job) — no INSERT/UPDATE policy needed
 
 -- -------------------------
 -- audit_log
