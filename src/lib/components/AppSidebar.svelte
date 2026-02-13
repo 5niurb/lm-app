@@ -15,11 +15,14 @@
 
 <Sidebar.Root>
 	<Sidebar.Header>
-		<div class="flex items-center gap-2 px-2 py-3">
-			<div class="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm font-bold">
+		<div class="flex items-center gap-3 px-3 py-4">
+			<div class="flex h-9 w-9 items-center justify-center rounded bg-[#C5A55A] text-[#1A1A1A] text-sm font-semibold tracking-wider" style="font-family: 'Playfair Display', serif;">
 				LM
 			</div>
-			<span class="text-lg font-semibold">Le Med Spa</span>
+			<div class="flex flex-col">
+				<span class="text-sm font-medium tracking-wide text-[rgba(255,255,255,0.85)]" style="font-family: 'Playfair Display', serif;">Le Med Spa</span>
+				<span class="text-[10px] uppercase tracking-[0.2em] text-[rgba(197,165,90,0.5)]">Operations</span>
+			</div>
 		</div>
 	</Sidebar.Header>
 
@@ -47,8 +50,8 @@
 	</Sidebar.Content>
 
 	<Sidebar.Footer>
-		<div class="px-2 py-2 text-xs text-muted-foreground">
-			LM App v1.0
+		<div class="px-3 py-3 border-t border-[rgba(197,165,90,0.1)]">
+			<span class="text-[10px] uppercase tracking-[0.15em] text-[rgba(255,255,255,0.25)]">LM App v1.0</span>
 		</div>
 	</Sidebar.Footer>
 

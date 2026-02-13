@@ -80,7 +80,7 @@ router.post('/voice', (req, res) => {
 /**
  * POST /api/twilio/connect-operator
  * TwiML endpoint used by Studio flow when caller presses 0 (operator).
- * Rings the browser softphone AND the fallback phone number simultaneously.
+ * Rings: SIP endpoint + browser softphone + fallback phone simultaneously.
  * First one to answer wins.
  *
  * Studio calls this as a TwiML Redirect widget.
@@ -89,6 +89,8 @@ router.post('/connect-operator', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
   const callerNumber = req.body.From || req.body.Caller || 'Unknown';
   const fallbackNumber = process.env.TWILIO_OPERATOR_FALLBACK || '+12797327364';
+  const sipUser = process.env.TWILIO_SIP1_USERNAME;
+  const sipPass = process.env.TWILIO_SIP1_PASSWORD;
 
   const dial = twiml.dial({
     callerId: callerNumber,
@@ -97,10 +99,18 @@ router.post('/connect-operator', (req, res) => {
     method: 'POST'
   });
 
-  // Ring the browser softphone client(s) — identity matches what the token was generated with
+  // 1. Ring SIP endpoint (LeMed Flex SIP domain)
+  if (sipUser && sipPass) {
+    dial.sip({
+      username: sipUser,
+      password: sipPass
+    }, `sip:${sipUser}@lemedflex.sip.twilio.com`);
+  }
+
+  // 2. Ring the browser softphone client
   dial.client('lea');
 
-  // Simultaneously ring the fallback phone number
+  // 3. Simultaneously ring the fallback phone number
   dial.number(fallbackNumber);
 
   res.type('text/xml');

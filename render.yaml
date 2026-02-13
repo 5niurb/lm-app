@@ -43,5 +43,9 @@ services:
         sync: false
       - key: TWILIO_OPERATOR_FALLBACK
         sync: false
+      - key: TWILIO_SIP1_USERNAME
+        sync: false
+      - key: TWILIO_SIP1_PASSWORD
+        sync: false
       - key: FRONTEND_URL
         sync: false

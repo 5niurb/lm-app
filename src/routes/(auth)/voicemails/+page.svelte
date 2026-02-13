@@ -23,12 +23,15 @@
 	/** @type {HTMLAudioElement | null} */
 	let audioEl = $state(null);
 
-	const mailboxLabels = {
-		lea: 'Lea',
-		clinical_md: 'Clinical MD',
-		accounts: 'Accounts',
-		care_team: 'Care Team'
-	};
+	/** @type {Array<{key: string, label: string}>} Ordered: Main/Care, Lea, Operations, Clinical */
+	const mailboxes = [
+		{ key: 'care_team', label: 'Main / Care' },
+		{ key: 'lea', label: 'Lea' },
+		{ key: 'accounts', label: 'Operations' },
+		{ key: 'clinical_md', label: 'Clinical' }
+	];
+
+	const mailboxLabels = Object.fromEntries(mailboxes.map(m => [m.key, m.label]));
 
 	$effect(() => {
 		loadVoicemails();
@@ -124,41 +127,37 @@
 	const totalPages = $derived(Math.ceil(totalCount / pageSize) || 1);
 </script>
 
-<div class="space-y-6">
-	<div class="flex items-center justify-between">
-		<div>
-			<h1 class="text-2xl font-bold tracking-tight">Voicemails</h1>
-			<p class="text-muted-foreground">Listen to and manage voicemail messages.</p>
-		</div>
+<div class="space-y-8">
+	<div>
+		<h1 class="text-2xl tracking-wide">Voicemails</h1>
+		<p class="text-sm text-muted-foreground mt-1">Listen to and manage voicemail messages.</p>
 	</div>
 
 	{#if error}
-		<Card.Root>
-			<Card.Content class="py-4">
-				<p class="text-sm text-destructive">{error}</p>
-			</Card.Content>
-		</Card.Root>
+		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
+			<p class="text-sm text-red-400">{error}</p>
+		</div>
 	{/if}
 
 	<!-- Mailbox tabs -->
 	{#if stats}
 		<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 			<button
-				class="rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 {mailboxFilter === 'all' ? 'border-primary bg-muted/30' : ''}"
+				class="group rounded border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 {mailboxFilter === 'all' ? 'border-[rgba(197,165,90,0.4)] bg-[rgba(197,165,90,0.08)]' : 'border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] hover:border-[rgba(197,165,90,0.25)] hover:bg-[rgba(197,165,90,0.06)]'}"
 				onclick={() => setMailbox('all')}
 			>
-				<p class="text-sm font-medium">All</p>
-				<p class="text-2xl font-bold">{stats.total_unheard}</p>
-				<p class="text-xs text-muted-foreground">unheard</p>
+				<p class="text-xs uppercase tracking-[0.15em] {mailboxFilter === 'all' ? 'text-[#C5A55A]' : 'text-[rgba(255,255,255,0.4)]'}">All</p>
+				<p class="text-2xl font-light mt-1 text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{stats.total_unheard}</p>
+				<p class="text-[10px] uppercase tracking-[0.12em] text-[rgba(197,165,90,0.35)] mt-1">unheard</p>
 			</button>
-			{#each Object.entries(mailboxLabels) as [key, label]}
+			{#each mailboxes as { key, label }}
 				<button
-					class="rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 {mailboxFilter === key ? 'border-primary bg-muted/30' : ''}"
+					class="group rounded border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 {mailboxFilter === key ? 'border-[rgba(197,165,90,0.4)] bg-[rgba(197,165,90,0.08)]' : 'border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] hover:border-[rgba(197,165,90,0.25)] hover:bg-[rgba(197,165,90,0.06)]'}"
 					onclick={() => setMailbox(key)}
 				>
-					<p class="text-sm font-medium">{label}</p>
-					<p class="text-2xl font-bold">{stats[key] || 0}</p>
-					<p class="text-xs text-muted-foreground">unheard</p>
+					<p class="text-xs uppercase tracking-[0.15em] {mailboxFilter === key ? 'text-[#C5A55A]' : 'text-[rgba(255,255,255,0.4)]'}">{label}</p>
+					<p class="text-2xl font-light mt-1 text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{stats[key] || 0}</p>
+					<p class="text-[10px] uppercase tracking-[0.12em] text-[rgba(197,165,90,0.35)] mt-1">unheard</p>
 				</button>
 			{/each}
 		</div>

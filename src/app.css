@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -30,71 +31,50 @@
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-ring: var(--sidebar-ring);
+	--color-gold: var(--gold);
+	--color-gold-dim: var(--gold-dim);
+	--color-gold-glow: var(--gold-glow);
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
+	--font-display: 'Playfair Display', serif;
+	--font-body: 'Inter', sans-serif;
 }
 
+/* Dark + Gold — Le Med Spa brand aesthetic */
 :root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.141 0.005 285.823);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.141 0.005 285.823);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.141 0.005 285.823);
-	--primary: oklch(0.141 0.005 285.823);
-	--primary-foreground: oklch(0.985 0.002 247.839);
-	--secondary: oklch(0.967 0.001 286.375);
-	--secondary-foreground: oklch(0.141 0.005 285.823);
-	--muted: oklch(0.967 0.001 286.375);
-	--muted-foreground: oklch(0.552 0.016 285.938);
-	--accent: oklch(0.967 0.001 286.375);
-	--accent-foreground: oklch(0.141 0.005 285.823);
-	--destructive: oklch(0.577 0.245 27.325);
-	--destructive-foreground: oklch(0.577 0.245 27.325);
-	--border: oklch(0.92 0.004 286.32);
-	--input: oklch(0.92 0.004 286.32);
-	--ring: oklch(0.141 0.005 285.823);
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0.002 247.839);
-	--sidebar-foreground: oklch(0.141 0.005 285.823);
-	--sidebar-primary: oklch(0.141 0.005 285.823);
-	--sidebar-primary-foreground: oklch(0.985 0.002 247.839);
-	--sidebar-accent: oklch(0.967 0.001 286.375);
-	--sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-	--sidebar-border: oklch(0.92 0.004 286.32);
-	--sidebar-ring: oklch(0.141 0.005 285.823);
-}
-
-.dark {
-	--background: oklch(0.141 0.005 285.823);
-	--foreground: oklch(0.985 0.002 247.839);
-	--card: oklch(0.141 0.005 285.823);
-	--card-foreground: oklch(0.985 0.002 247.839);
-	--popover: oklch(0.141 0.005 285.823);
-	--popover-foreground: oklch(0.985 0.002 247.839);
-	--primary: oklch(0.985 0.002 247.839);
-	--primary-foreground: oklch(0.141 0.005 285.823);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0.002 247.839);
-	--muted: oklch(0.274 0.006 286.033);
-	--muted-foreground: oklch(0.705 0.015 286.067);
-	--accent: oklch(0.274 0.006 286.033);
-	--accent-foreground: oklch(0.985 0.002 247.839);
-	--destructive: oklch(0.577 0.245 27.325);
-	--destructive-foreground: oklch(0.577 0.245 27.325);
-	--border: oklch(0.274 0.006 286.033);
-	--input: oklch(0.274 0.006 286.033);
-	--ring: oklch(0.442 0.017 285.786);
-	--sidebar: oklch(0.141 0.005 285.823);
-	--sidebar-foreground: oklch(0.985 0.002 247.839);
-	--sidebar-primary: oklch(0.985 0.002 247.839);
-	--sidebar-primary-foreground: oklch(0.141 0.005 285.823);
-	--sidebar-accent: oklch(0.274 0.006 286.033);
-	--sidebar-accent-foreground: oklch(0.985 0.002 247.839);
-	--sidebar-border: oklch(0.274 0.006 286.033);
-	--sidebar-ring: oklch(0.442 0.017 285.786);
+	--background: #1b1f22;
+	--foreground: rgba(255, 255, 255, 0.85);
+	--card: rgba(15, 15, 18, 0.92);
+	--card-foreground: rgba(255, 255, 255, 0.85);
+	--popover: #151518;
+	--popover-foreground: rgba(255, 255, 255, 0.85);
+	--primary: #C5A55A;
+	--primary-foreground: #1A1A1A;
+	--secondary: rgba(197, 165, 90, 0.08);
+	--secondary-foreground: rgba(255, 255, 255, 0.85);
+	--muted: rgba(255, 255, 255, 0.04);
+	--muted-foreground: rgba(255, 255, 255, 0.5);
+	--accent: rgba(197, 165, 90, 0.12);
+	--accent-foreground: #C5A55A;
+	--destructive: #ef4444;
+	--destructive-foreground: #ffffff;
+	--border: rgba(197, 165, 90, 0.15);
+	--input: rgba(197, 165, 90, 0.15);
+	--ring: #C5A55A;
+	--radius: 0.375rem;
+	--gold: #C5A55A;
+	--gold-dim: rgba(197, 165, 90, 0.35);
+	--gold-glow: rgba(197, 165, 90, 0.12);
+	--sidebar: #0f0f12;
+	--sidebar-foreground: rgba(255, 255, 255, 0.75);
+	--sidebar-primary: #C5A55A;
+	--sidebar-primary-foreground: #1A1A1A;
+	--sidebar-accent: rgba(197, 165, 90, 0.1);
+	--sidebar-accent-foreground: #C5A55A;
+	--sidebar-border: rgba(197, 165, 90, 0.12);
+	--sidebar-ring: #C5A55A;
 }
 
 @layer base {
@@ -103,5 +83,85 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		font-family: var(--font-body);
+		font-weight: 400;
+		line-height: 1.65;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
 	}
+	h1, h2, h3 {
+		font-family: var(--font-display);
+		font-weight: 400;
+		letter-spacing: 0.02em;
+	}
+}
+
+/* Gold accent utilities */
+@layer utilities {
+	.text-gold {
+		color: var(--gold);
+	}
+	.border-gold {
+		border-color: var(--gold-dim);
+	}
+	.border-gold-subtle {
+		border-color: rgba(197, 165, 90, 0.12);
+	}
+	.bg-gold-glow {
+		background: var(--gold-glow);
+	}
+	.bg-gold-hover:hover {
+		background: rgba(197, 165, 90, 0.08);
+	}
+	.glow-gold {
+		box-shadow: 0 0 20px rgba(197, 165, 90, 0.06);
+	}
+	.ring-gold-focus:focus {
+		box-shadow: 0 0 0 1px var(--gold);
+	}
+}
+
+/* Card hover effects matching lemedspa-website */
+[data-slot="card"] {
+	border-color: rgba(197, 165, 90, 0.12);
+	transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+[data-slot="card"]:hover {
+	border-color: rgba(197, 165, 90, 0.3);
+	box-shadow: 0 0 30px rgba(197, 165, 90, 0.04);
+}
+
+/* Sidebar active state with gold accent */
+[data-sidebar="menu-button"][data-active="true"] {
+	background: rgba(197, 165, 90, 0.12) !important;
+	color: #C5A55A !important;
+	border-left: 2px solid #C5A55A;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: rgba(197, 165, 90, 0.2);
+	border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(197, 165, 90, 0.35);
+}
+
+/* Input focus with gold ring */
+input:focus, textarea:focus, select:focus {
+	border-color: #C5A55A !important;
+	box-shadow: 0 0 0 1px rgba(197, 165, 90, 0.3) !important;
+	outline: none;
+}
+
+/* Button transitions */
+button {
+	transition: all 0.2s ease-in-out;
 }

@@ -38,86 +38,76 @@
 	}
 </script>
 
-<div class="space-y-6">
+<div class="space-y-8">
 	<div>
-		<h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
-		<p class="text-muted-foreground">Overview of your call activity — last 7 days.</p>
+		<h1 class="text-2xl tracking-wide">Dashboard</h1>
+		<p class="text-sm text-muted-foreground mt-1">Overview of your call activity — last 7 days.</p>
 	</div>
 
 	{#if error}
-		<Card.Root>
-			<Card.Content class="py-4">
-				<p class="text-sm text-destructive">{error}</p>
-				<p class="text-xs text-muted-foreground mt-1">Make sure the API server is running on port 3001.</p>
-			</Card.Content>
-		</Card.Root>
+		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
+			<p class="text-sm text-red-400">{error}</p>
+			<p class="text-xs text-red-400/60 mt-1">Make sure the API server is running on port 3001.</p>
+		</div>
 	{/if}
 
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-		<Card.Root>
-			<Card.Header class="flex flex-row items-center justify-between pb-2">
-				<Card.Title class="text-sm font-medium">Total Calls</Card.Title>
-				<Phone class="h-4 w-4 text-muted-foreground" />
-			</Card.Header>
-			<Card.Content>
-				{#if stats}
-					<div class="text-2xl font-bold">{stats.totalCalls}</div>
-				{:else}
-					<Skeleton class="h-8 w-16" />
-				{/if}
-			</Card.Content>
-		</Card.Root>
+		<div class="group rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-5 transition-all duration-200 hover:border-[rgba(197,165,90,0.3)] hover:bg-[rgba(197,165,90,0.06)] hover:-translate-y-0.5">
+			<div class="flex items-center justify-between mb-3">
+				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]">Total Calls</span>
+				<Phone class="h-4 w-4 text-[#C5A55A] opacity-50 group-hover:opacity-100 transition-opacity" />
+			</div>
+			{#if stats}
+				<div class="text-3xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{stats.totalCalls}</div>
+			{:else}
+				<Skeleton class="h-9 w-16" />
+			{/if}
+		</div>
 
-		<Card.Root>
-			<Card.Header class="flex flex-row items-center justify-between pb-2">
-				<Card.Title class="text-sm font-medium">Missed Calls</Card.Title>
-				<PhoneMissed class="h-4 w-4 text-muted-foreground" />
-			</Card.Header>
-			<Card.Content>
-				{#if stats}
-					<div class="text-2xl font-bold">{stats.missed}</div>
-				{:else}
-					<Skeleton class="h-8 w-16" />
-				{/if}
-			</Card.Content>
-		</Card.Root>
+		<div class="group rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-5 transition-all duration-200 hover:border-[rgba(197,165,90,0.3)] hover:bg-[rgba(197,165,90,0.06)] hover:-translate-y-0.5">
+			<div class="flex items-center justify-between mb-3">
+				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]">Missed Calls</span>
+				<PhoneMissed class="h-4 w-4 text-red-400 opacity-50 group-hover:opacity-100 transition-opacity" />
+			</div>
+			{#if stats}
+				<div class="text-3xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{stats.missed}</div>
+			{:else}
+				<Skeleton class="h-9 w-16" />
+			{/if}
+		</div>
 
-		<Card.Root>
-			<Card.Header class="flex flex-row items-center justify-between pb-2">
-				<Card.Title class="text-sm font-medium">Voicemails</Card.Title>
-				<Voicemail class="h-4 w-4 text-muted-foreground" />
-			</Card.Header>
-			<Card.Content>
-				{#if stats}
-					<div class="text-2xl font-bold">{stats.unheardVoicemails}</div>
-					<p class="text-xs text-muted-foreground">unheard</p>
-				{:else}
-					<Skeleton class="h-8 w-16" />
-				{/if}
-			</Card.Content>
-		</Card.Root>
+		<div class="group rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-5 transition-all duration-200 hover:border-[rgba(197,165,90,0.3)] hover:bg-[rgba(197,165,90,0.06)] hover:-translate-y-0.5">
+			<div class="flex items-center justify-between mb-3">
+				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]">Voicemails</span>
+				<Voicemail class="h-4 w-4 text-[#C5A55A] opacity-50 group-hover:opacity-100 transition-opacity" />
+			</div>
+			{#if stats}
+				<div class="text-3xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{stats.unheardVoicemails}</div>
+				<p class="text-[10px] uppercase tracking-[0.12em] text-[rgba(197,165,90,0.4)] mt-1">unheard</p>
+			{:else}
+				<Skeleton class="h-9 w-16" />
+			{/if}
+		</div>
 
-		<Card.Root>
-			<Card.Header class="flex flex-row items-center justify-between pb-2">
-				<Card.Title class="text-sm font-medium">Avg Duration</Card.Title>
-				<Clock class="h-4 w-4 text-muted-foreground" />
-			</Card.Header>
-			<Card.Content>
-				{#if stats}
-					<div class="text-2xl font-bold">{formatDuration(stats.avgDuration)}</div>
-				{:else}
-					<Skeleton class="h-8 w-16" />
-				{/if}
-			</Card.Content>
-		</Card.Root>
+		<div class="group rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-5 transition-all duration-200 hover:border-[rgba(197,165,90,0.3)] hover:bg-[rgba(197,165,90,0.06)] hover:-translate-y-0.5">
+			<div class="flex items-center justify-between mb-3">
+				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]">Avg Duration</span>
+				<Clock class="h-4 w-4 text-[#C5A55A] opacity-50 group-hover:opacity-100 transition-opacity" />
+			</div>
+			{#if stats}
+				<div class="text-3xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{formatDuration(stats.avgDuration)}</div>
+			{:else}
+				<Skeleton class="h-9 w-16" />
+			{/if}
+		</div>
 	</div>
 
-	<Card.Root>
-		<Card.Header>
-			<Card.Title>Recent Calls</Card.Title>
-			<Card.Description>Latest call activity.</Card.Description>
-		</Card.Header>
-		<Card.Content>
+	<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+		<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+			<h2 class="text-base tracking-wide">Recent Calls</h2>
+			<p class="text-xs text-muted-foreground mt-0.5">Latest call activity.</p>
+		</div>
+		<div class="p-5">
 			{#if recentCalls === null}
 				<div class="space-y-3">
 					{#each Array(5) as _}
@@ -126,27 +116,31 @@
 				</div>
 			{:else if recentCalls.length === 0}
 				<div class="flex h-32 items-center justify-center text-muted-foreground">
-					No calls yet. Call data will appear once Twilio is connected.
+					<div class="text-center">
+						<Phone class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
+						<p class="text-sm text-[rgba(255,255,255,0.35)]">No calls yet.</p>
+						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Call data will appear once Twilio is connected.</p>
+					</div>
 				</div>
 			{:else}
-				<div class="space-y-2">
+				<div class="space-y-1">
 					{#each recentCalls as call}
-						<div class="flex items-center justify-between rounded-md border p-3">
+						<div class="group flex items-center justify-between rounded p-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]">
 							<div class="flex items-center gap-3">
 								{#if call.direction === 'inbound'}
-									<PhoneIncoming class="h-4 w-4 text-blue-500" />
+									<PhoneIncoming class="h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors" />
 								{:else}
-									<PhoneOutgoing class="h-4 w-4 text-green-500" />
+									<PhoneOutgoing class="h-4 w-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors" />
 								{/if}
 								<div>
-									<p class="text-sm font-medium">
+									<p class="text-sm font-medium text-[rgba(255,255,255,0.85)]">
 										{#if call.caller_name}
 											{call.caller_name}
 										{:else}
 											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}
 										{/if}
 									</p>
-									<p class="text-xs text-muted-foreground">
+									<p class="text-xs text-[rgba(255,255,255,0.35)]">
 										{#if call.caller_name}
 											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)} &middot;
 										{/if}
@@ -164,6 +158,6 @@
 					{/each}
 				</div>
 			{/if}
-		</Card.Content>
-	</Card.Root>
+		</div>
+	</div>
 </div>
