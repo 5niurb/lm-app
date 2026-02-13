@@ -1,3 +1,60 @@
+## Session — 2026-02-13 (Session 9, continued)
+**Focus:** Render keep-alive, Studio flow update, browser softphone, Ops voicemail menu, global 0-to-operator
+
+**Accomplished:**
+- **Render keep-alive via pg_cron**: Enabled `pg_cron` + `pg_net` in Supabase. Cron job pings Render health endpoint every 5 minutes — server will never spin down again.
+- **Studio test flow updated (now revision 52)**:
+  - Option 0 → rings browser softphone (client:lea) + fallback phone (+12797327364) simultaneously
+  - Option 1 → hours & location
+  - Option 2 → more options (company directory)
+  - Timeout → also forwards to operator
+  - Uses TwiML Redirect to `/api/twilio/connect-operator` for simultaneous ring
+- **Browser softphone built**:
+  - Backend: `/api/twilio/token` (Access Token with Voice grant), `/api/twilio/voice` (outbound TwiML), `/api/twilio/connect-operator` (simultaneous ring browser + phone)
+  - Frontend: `/softphone` page with dial pad, answer/reject/hangup, mute, call duration timer, session activity log
+  - Twilio Voice SDK 2.x installed via npm (`@twilio/voice-sdk`), dynamic import to avoid SSR issues
+  - Twilio resources created: TwiML App (AP13a23960d285d4bc6bf2a8ad20309534), API Key (SK7dab372468dd0e8d88591eecc156d48f)
+  - Added to sidebar navigation with Headset icon
+- **Auth user updated**: ops@lemedspa.com profile set to admin role, name "Lea"
+- **Diagnosed webhook issue**: Test call webhooks returned 200 but didn't save — Render was asleep during cold start. Fixed by pg_cron keep-alive.
+- **Ops vmail Barry uploaded to Twilio Assets**:
+  - File: `Ops vmail Barry wav.wav` → `https://lm-ivr-assets-2112.twil.io/assets/Ops-vmail-Barry.wav`
+  - Asset SID: ZH2c9a637c7790468a967abb15fd0bb629
+  - Build ZB67ffd2a92cd479b2cc8d5bd3727ad8e7 deployed to production environment
+- **Accounts/Ops menu updated (revision 52)**:
+  - Plays new Barry Ops greeting instead of old Elabs Will recording
+  - Digit 1 → sends 2-way text to caller (Ops team)
+  - No press / timeout → records voicemail (leave a message)
+  - Digit 0 → routes to operator
+- **Global digit-0 operator routing**: Pressing 0 from ANY menu (main, hours, directory, accounts) now routes to operator/care team
+  - Fixed hours menu (digit 0 was dead-end, now routes to operator)
+  - Fixed company directory (digit 0 was dead-end, now routes to operator)
+- Added `TWILIO_ASSET_SERVICE_SID` to api/.env
+- Committed and pushed to main
+
+**Current State:**
+- API running locally on :3001, SvelteKit on :5173
+- Render deploy triggered (pushed to main)
+- Softphone page loads at localhost:5173/softphone
+- Studio flow revision 52 published (all changes above)
+- pg_cron pinging Render every 5 min
+- Twilio Assets: 7 audio files hosted on lm-ivr-assets-2112.twil.io
+
+**Issues:**
+- **Render env vars needed**: Must set these 4 new vars in Render dashboard:
+  - `TWILIO_API_KEY_SID` = SK7dab372468dd0e8d88591eecc156d48f
+  - `TWILIO_API_KEY_SECRET` = v2WjF5RS9VxKRK8sWXPQSlHkm0bxtISa
+  - `TWILIO_TWIML_APP_SID` = AP13a23960d285d4bc6bf2a8ad20309534
+  - `TWILIO_OPERATOR_FALLBACK` = +12797327364
+
+**Next Steps:**
+1. Set the 4 Render env vars (see above)
+2. End-to-end test: call +12134442242, navigate all menus, press 0 from different points
+3. Deploy frontend to Cloudflare Pages for remote access
+4. Update production Studio flow once test passes
+
+---
+
 ## Session — 2026-02-13 (Session 7)
 **Focus:** TextMe script — finish parseReply() update for smart menus
 
