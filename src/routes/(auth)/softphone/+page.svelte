@@ -15,6 +15,8 @@
 
 	/** @type {any} Twilio Device class — dynamically imported to avoid SSR issues */
 	let TwilioDevice = null;
+	/** @type {any} Twilio Call class — needed for Codec enum */
+	let TwilioCall = null;
 	/** @type {any} Twilio Device instance */
 	let device = $state(null);
 	/** @type {any} Active Twilio Call */
@@ -77,6 +79,7 @@
 				statusMessage = 'Loading Twilio SDK...';
 				const mod = await import('@twilio/voice-sdk');
 				TwilioDevice = mod.Device;
+				TwilioCall = mod.Call;
 			}
 
 			statusMessage = 'Getting token...';
@@ -99,7 +102,7 @@
 			// Create Device with the 2.x SDK
 			device = new TwilioDevice(token, {
 				logLevel: 1,
-				codecPreferences: [TwilioDevice.Codec.Opus, TwilioDevice.Codec.PCMU],
+				codecPreferences: [TwilioCall.Codec.Opus, TwilioCall.Codec.PCMU],
 				allowIncomingWhileBusy: false
 			});
 

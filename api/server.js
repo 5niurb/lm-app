@@ -14,21 +14,22 @@ for (const key of required) {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// CORS — must be BEFORE all routes so every response gets headers
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+
 // Webhook routes FIRST (before json parsing — Twilio sends URL-encoded)
 import webhookVoice from './routes/webhooks/voice.js';
 app.use('/api/webhooks/voice', webhookVoice);
 
 // Twilio softphone routes (token + TwiML — needs URL-encoded for TwiML callbacks)
 import twilioRoutes from './routes/twilio.js';
-import expressUrlEncoded from 'express';
-app.use('/api/twilio', expressUrlEncoded.urlencoded({ extended: false }), expressUrlEncoded.json(), twilioRoutes);
+app.use('/api/twilio', express.urlencoded({ extended: false }), express.json(), twilioRoutes);
 
 // JSON parsing for all other routes
 app.use(express.json());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
-}));
 
 // Health check
 app.get('/api/health', (req, res) => {
