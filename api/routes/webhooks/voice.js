@@ -9,13 +9,16 @@ router.use(express.urlencoded({ extended: false }));
 
 /**
  * POST /api/webhooks/voice/incoming
- * Twilio incoming call webhook.
- * Creates a call_log entry and returns TwiML for call handling.
+ * Twilio Studio sends this at flow start via HTTP Request widget.
+ * Just log the call — Studio handles the IVR.
  */
 router.post('/incoming', async (req, res) => {
   const { CallSid, From, To, CallStatus } = req.body;
 
-  // Create the call log entry immediately
+  if (!CallSid) {
+    return res.sendStatus(200);
+  }
+
   const { error } = await supabaseAdmin
     .from('call_logs')
     .insert({
@@ -35,23 +38,68 @@ router.post('/incoming', async (req, res) => {
     console.error('Failed to create call log:', error.message);
   }
 
-  // For now: straight to voicemail greeting + record
-  // Future: check call_routing_rules, ring extensions, IVR menu
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="Polly.Joanna" language="en-US">Thank you for calling Le Med Spa. We are currently unable to take your call. Please leave a message after the beep, and we will return your call as soon as possible.</Say>
-  <Record
-    maxLength="120"
-    action="/api/webhooks/voice/recording"
-    transcribe="true"
-    transcribeCallback="/api/webhooks/voice/transcription"
-    playBeep="true"
-  />
-  <Say voice="Polly.Joanna">We did not receive a recording. Goodbye.</Say>
-</Response>`;
+  // No TwiML — Studio handles the IVR
+  res.sendStatus(200);
+});
 
-  res.type('text/xml');
-  res.send(twiml);
+/**
+ * POST /api/webhooks/voice/event
+ * Twilio Studio sends this at key IVR decision points.
+ * Logs menu selections, transfers, voicemail starts, etc.
+ *
+ * Expected body params (sent by Studio HTTP Request widget):
+ *   CallSid       — always present
+ *   event_type    — e.g. 'menu_selection', 'transfer', 'voicemail_start'
+ *   digit/Digits  — key pressed
+ *   menu          — which menu (e.g. 'main', 'directory', 'accounts')
+ *   mailbox       — for voicemail_start events
+ *   action        — descriptive label (e.g. 'forward_to_sip', 'play_hours')
+ */
+router.post('/event', async (req, res) => {
+  const { CallSid } = req.body;
+
+  if (!CallSid) {
+    return res.sendStatus(200);
+  }
+
+  // Look up the call log to link the event
+  const { data: callLog } = await supabaseAdmin
+    .from('call_logs')
+    .select('id')
+    .eq('twilio_sid', CallSid)
+    .maybeSingle();
+
+  const eventType = req.body.event_type || req.body.EventType || 'unknown';
+  const eventData = {};
+
+  // Capture whatever Studio sends
+  if (req.body.digit || req.body.Digits) {
+    eventData.digit = req.body.digit || req.body.Digits;
+  }
+  if (req.body.menu) {
+    eventData.menu = req.body.menu;
+  }
+  if (req.body.mailbox) {
+    eventData.mailbox = req.body.mailbox;
+  }
+  if (req.body.action) {
+    eventData.action = req.body.action;
+  }
+
+  const { error } = await supabaseAdmin
+    .from('call_events')
+    .insert({
+      call_log_id: callLog?.id || null,
+      twilio_sid: CallSid,
+      event_type: eventType,
+      event_data: eventData
+    });
+
+  if (error) {
+    console.error('Failed to log call event:', error.message);
+  }
+
+  res.sendStatus(200);
 });
 
 /**
@@ -125,18 +173,20 @@ router.post('/status', async (req, res) => {
 
 /**
  * POST /api/webhooks/voice/recording
- * Twilio recording callback.
+ * Twilio recording callback (from Studio Record widget action URL).
  * Creates a voicemail entry linked to the call log.
+ * Studio sends `mailbox` param to identify which voicemail box.
  */
 router.post('/recording', async (req, res) => {
   const { CallSid, RecordingSid, RecordingUrl, RecordingDuration, From } = req.body;
+  const mailbox = req.body.mailbox || req.body.Mailbox || null;
 
   // Look up the call log to link the voicemail
   const { data: callLog } = await supabaseAdmin
     .from('call_logs')
     .select('id')
     .eq('twilio_sid', CallSid)
-    .single();
+    .maybeSingle();
 
   // Create the voicemail entry
   const { error } = await supabaseAdmin
@@ -147,7 +197,8 @@ router.post('/recording', async (req, res) => {
       recording_url: RecordingUrl || '',
       recording_sid: RecordingSid || null,
       duration: parseInt(RecordingDuration, 10) || 0,
-      transcription_status: 'pending'
+      transcription_status: 'pending',
+      mailbox: mailbox
     });
 
   if (error) {
@@ -166,7 +217,8 @@ router.post('/recording', async (req, res) => {
       .eq('id', callLog.id);
   }
 
-  // Respond with TwiML to end the call
+  // Respond with TwiML to end the call gracefully
+  // (Studio Record widget expects TwiML back from the action URL)
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="Polly.Joanna">Thank you. Goodbye.</Say>

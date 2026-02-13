@@ -158,12 +158,30 @@ CREATE TABLE public.voicemails (
   transcription         TEXT,
   transcription_status  TEXT DEFAULT 'pending'
                         CHECK (transcription_status IN ('pending', 'completed', 'failed')),
+  mailbox               TEXT
+                        CHECK (mailbox IN ('lea', 'clinical_md', 'accounts', 'care_team')),
   is_new                BOOLEAN DEFAULT true,
   assigned_to           UUID REFERENCES public.profiles(id),
   created_at            TIMESTAMPTZ DEFAULT now()
 );
 
 COMMENT ON TABLE public.voicemails IS 'Voicemail recordings with transcription status';
+
+-- =============================================================================
+-- TABLE: call_events
+-- IVR menu navigation and call flow events (logged by Twilio Studio webhooks)
+-- =============================================================================
+
+CREATE TABLE public.call_events (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  call_log_id UUID REFERENCES public.call_logs(id) ON DELETE SET NULL,
+  twilio_sid  TEXT NOT NULL,
+  event_type  TEXT NOT NULL,
+  event_data  JSONB DEFAULT '{}',
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+COMMENT ON TABLE public.call_events IS 'IVR menu navigation and call flow events';
 
 -- =============================================================================
 -- TABLE: audit_log
@@ -255,6 +273,7 @@ SELECT
   v.duration,
   v.transcription,
   v.transcription_status,
+  v.mailbox,
   v.assigned_to,
   v.created_at,
   cl.direction AS call_direction,
@@ -286,6 +305,12 @@ CREATE INDEX idx_voicemails_is_new       ON public.voicemails (is_new);
 CREATE INDEX idx_voicemails_from_number  ON public.voicemails (from_number);
 CREATE INDEX idx_voicemails_created_at   ON public.voicemails (created_at);
 CREATE INDEX idx_voicemails_assigned_to  ON public.voicemails (assigned_to);
+CREATE INDEX idx_voicemails_mailbox      ON public.voicemails (mailbox);
+
+-- call_events indexes
+CREATE INDEX idx_call_events_twilio_sid  ON public.call_events (twilio_sid);
+CREATE INDEX idx_call_events_call_log_id ON public.call_events (call_log_id);
+CREATE INDEX idx_call_events_created_at  ON public.call_events (created_at);
 
 -- audit_log indexes
 CREATE INDEX idx_audit_log_user_id       ON public.audit_log (user_id);
@@ -443,6 +468,18 @@ CREATE POLICY "Admins can delete voicemails"
   ON public.voicemails FOR DELETE
   TO authenticated
   USING (public.is_admin());
+
+-- -------------------------
+-- call_events
+-- -------------------------
+ALTER TABLE public.call_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read call events"
+  ON public.call_events FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Inserts handled by service role (webhook handler) — no INSERT policy needed
 
 -- -------------------------
 -- audit_log

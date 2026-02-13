@@ -13,7 +13,8 @@ router.use(verifyToken);
  * List voicemails with pagination and filtering.
  *
  * Query params:
- *   page (default 1), pageSize (default 25), is_new (true/false), search
+ *   page (default 1), pageSize (default 25), is_new (true/false),
+ *   mailbox (lea/clinical_md/accounts/care_team), search
  */
 router.get('/', logAction('voicemails.list'), async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -29,6 +30,11 @@ router.get('/', logAction('voicemails.list'), async (req, res) => {
     query = query.eq('is_new', true);
   } else if (req.query.is_new === 'false') {
     query = query.eq('is_new', false);
+  }
+
+  // Filter by mailbox
+  if (req.query.mailbox) {
+    query = query.eq('mailbox', req.query.mailbox);
   }
 
   // Search by phone number or transcription
@@ -55,6 +61,41 @@ router.get('/', logAction('voicemails.list'), async (req, res) => {
     page,
     pageSize
   });
+});
+
+/**
+ * GET /api/voicemails/stats
+ * Voicemail mailbox counts (unheard per mailbox).
+ */
+router.get('/stats', logAction('voicemails.stats'), async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('voicemails')
+    .select('mailbox, is_new')
+    .eq('is_new', true);
+
+  if (error) {
+    console.error('Failed to fetch voicemail stats:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch voicemail stats' });
+  }
+
+  const counts = {
+    total_unheard: data?.length || 0,
+    lea: 0,
+    clinical_md: 0,
+    accounts: 0,
+    care_team: 0,
+    unassigned: 0
+  };
+
+  for (const vm of data || []) {
+    if (vm.mailbox && counts[vm.mailbox] !== undefined) {
+      counts[vm.mailbox]++;
+    } else {
+      counts.unassigned++;
+    }
+  }
+
+  return res.json(counts);
 });
 
 /**
