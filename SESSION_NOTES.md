@@ -1,3 +1,66 @@
+## Session — 2026-02-13 (Session 5)
+**Focus:** Contacts system — CallerName capture, contact sync, contacts UI
+
+**Accomplished:**
+- Applied Supabase migration `002-add-contacts-and-caller-name`:
+  - Created `contacts` table (full_name, phone, phone_normalized, email, source, metadata, etc.)
+  - Added `caller_name` TEXT column to `call_logs`
+  - Added `contact_id` FK from `call_logs` → `contacts`
+  - Created indexes, RLS policies, updated views
+- Updated `/incoming` webhook to capture Twilio CNAM CallerName + geo data
+  - Matches incoming phone against contacts by phone_normalized
+  - Stores contact_id + display name (contact name > CNAM > phone)
+- Updated Studio Flow `log_call_incoming` widget to pass CallerName + CallerCity/State/Zip
+  - Re-deployed flow to test SID (revision 40)
+- Built `api/scripts/sync-contacts.js`:
+  - Syncs contacts from Google Sheets (patients3 tab) or CSV import
+  - Flexible column mapping for Aesthetic Record, GoHighLevel, TextMagic formats
+  - Phone normalization, upsert logic (match by phone/email)
+  - Tested: 3 inserted, re-run: 0 inserted 3 updated ✅
+- Built full contacts API (`api/routes/contacts.js`):
+  - GET /api/contacts (paginated, filterable, searchable)
+  - GET /api/contacts/stats (total + breakdown by source)
+  - GET /api/contacts/search (quick autocomplete)
+  - GET /api/contacts/:id (detail + recent call history)
+  - POST /api/contacts + PATCH /api/contacts/:id
+- Built contacts frontend page (`src/routes/(auth)/contacts/+page.svelte`):
+  - Source filter tabs with counts (AR, GHL, TextMagic, etc.)
+  - Search by name/phone/email
+  - Expandable contact cards with details, metadata, call history
+  - Pagination
+- Added Contacts to sidebar navigation (Users icon)
+- Updated all 3 existing pages to show caller names:
+  - Dashboard recent calls: caller_name as primary, phone as secondary
+  - Call log: same pattern + search includes caller_name
+  - Voicemails: caller_name from joined call_logs relation
+- Added `scripts/textme.mjs` — Claude Code stop-hook (SMS notification via Twilio)
+- All commits pushed to GitHub
+
+**Current State:**
+- Database: contacts table live, migration 002 applied, CallerName column on call_logs
+- API: All routes working locally (port 3001) — calls, voicemails, contacts, webhooks
+- Frontend: Build passes, 5 pages (Dashboard, Calls, Voicemails, Contacts, Settings)
+- Twilio Studio Flow: Test SID published with CallerName + geo params (revision 40)
+- Contact sync: Script tested, ready for real data (needs CSV export or published sheet)
+- Google Sheet: `17QsXyjLGB5b2hUPesyInsVfJ2ME2H_JJi0sDTDxFayo` (patients3 tab, private)
+
+**Issues:**
+- Render service not yet deployed (needs env vars configured in dashboard)
+- Google Sheet is private — sync requires either CSV export or publishing the tab
+- SIP endpoint for operator forwarding not configured (still dials HighLevel number)
+- OTP login still accepts hardcoded '000000'
+- `0b-Apologize-missed-Elise.wav` not yet wired into any flow state
+
+**Next Steps:**
+1. Deploy API to Render (configure env vars in dashboard)
+2. Update Studio Flow webhook URLs to use Render URL
+3. Import real contacts (CSV export from Google Sheet or publish patients3 tab)
+4. End-to-end test: call test number → IVR → verify logs + contact matching in dashboard
+5. Deploy modified flow to production
+6. Wire up "apologize missed" recording if needed
+
+---
+
 ## Session — 2026-02-13 (Session 4)
 **Focus:** Studio Flow deployment, new recordings upload, API verification
 
