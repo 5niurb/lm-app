@@ -27,6 +27,7 @@
 		"@lucide/svelte": "^0.563.1",
 		"@supabase/supabase-js": "^2.95.3",
 		"@sveltejs/adapter-cloudflare": "^7.2.6",
+		"@twilio/voice-sdk": "^2.18.0",
 		"bits-ui": "^2.15.5",
 		"clsx": "^2.1.1",
 		"mode-watcher": "^1.1.0",

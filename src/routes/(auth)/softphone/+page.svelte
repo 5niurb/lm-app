@@ -6,12 +6,15 @@
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import {
 		Phone, PhoneOff, PhoneIncoming, PhoneOutgoing,
-		Mic, MicOff, Pause, Play, Volume2, VolumeX,
-		Headset, Wifi, WifiOff, Clock
+		Mic, MicOff, Headset, Clock
 	} from '@lucide/svelte';
-	import { api } from '$lib/api/client.js';
+	import { PUBLIC_API_URL } from '$env/static/public';
 	import { formatPhone } from '$lib/utils/formatters.js';
 
+	const API_URL = PUBLIC_API_URL || 'http://localhost:3001';
+
+	/** @type {any} Twilio Device class — dynamically imported to avoid SSR issues */
+	let TwilioDevice = null;
 	/** @type {any} Twilio Device instance */
 	let device = $state(null);
 	/** @type {any} Active Twilio Call */
@@ -19,7 +22,7 @@
 	/** @type {'offline'|'registering'|'registered'|'error'} */
 	let deviceStatus = $state('offline');
 	/** @type {string} */
-	let statusMessage = $state('Initializing...');
+	let statusMessage = $state('Click "Connect" to start');
 	/** @type {string} Error message */
 	let errorMessage = $state('');
 	/** @type {string} */
@@ -28,9 +31,7 @@
 	let dialNumber = $state('');
 	/** @type {boolean} */
 	let isMuted = $state(false);
-	/** @type {boolean} */
-	let isOnHold = $state(false);
-	/** @type {'idle'|'incoming'|'connecting'|'connected'|'disconnected'} */
+	/** @type {'idle'|'incoming'|'connecting'|'connected'} */
 	let callState = $state('idle');
 	/** @type {string} */
 	let callerInfo = $state('');
@@ -38,8 +39,8 @@
 	let callDuration = $state(0);
 	/** @type {any} Duration timer interval */
 	let durationTimer = null;
-	/** @type {boolean} SDK loaded */
-	let sdkLoaded = $state(false);
+	/** @type {boolean} */
+	let isConnecting = $state(false);
 	/** @type {Array<{time: string, type: string, info: string}>} */
 	let callHistory = $state([]);
 
@@ -50,100 +51,103 @@
 		['*', '0', '#']
 	];
 
-	onMount(async () => {
-		// Load Twilio Voice SDK from CDN
-		await loadTwilioSDK();
-		if (sdkLoaded) {
-			await initDevice();
-		}
-
+	onMount(() => {
 		return () => {
-			// Cleanup
+			// Cleanup on unmount
 			if (durationTimer) clearInterval(durationTimer);
 			if (device) {
 				device.destroy();
+				device = null;
 			}
 		};
 	});
 
-	async function loadTwilioSDK() {
-		if (window.Twilio && window.Twilio.Device) {
-			sdkLoaded = true;
-			return;
-		}
+	/**
+	 * Connect to Twilio — must be triggered by user click (browser autoplay policy).
+	 */
+	async function connectDevice() {
+		if (isConnecting || deviceStatus === 'registered') return;
 
-		return new Promise((resolve, reject) => {
-			const script = document.createElement('script');
-			script.src = 'https://sdk.twilio.com/js/client/releases/1.14.3/twilio.min.js';
-			script.onload = () => {
-				sdkLoaded = true;
-				resolve();
-			};
-			script.onerror = () => {
-				errorMessage = 'Failed to load Twilio Voice SDK';
-				reject(new Error('SDK load failed'));
-			};
-			document.head.appendChild(script);
-		});
-	}
+		isConnecting = true;
+		errorMessage = '';
 
-	async function initDevice() {
 		try {
+			// Dynamically import Twilio Voice SDK (browser-only, can't SSR)
+			if (!TwilioDevice) {
+				statusMessage = 'Loading Twilio SDK...';
+				const mod = await import('@twilio/voice-sdk');
+				TwilioDevice = mod.Device;
+			}
+
 			statusMessage = 'Getting token...';
-			const { token } = await api('/api/twilio/token', {
+
+			const res = await fetch(`${API_URL}/api/twilio/token`, {
 				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ identity })
 			});
 
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({ error: res.statusText }));
+				throw new Error(body.error || `Token request failed: ${res.status}`);
+			}
+
+			const { token } = await res.json();
 			statusMessage = 'Connecting to Twilio...';
 			deviceStatus = 'registering';
 
-			// Use the older Twilio.Device API (1.x SDK loaded from CDN)
-			const Twilio = window.Twilio;
-			Twilio.Device.setup(token, {
-				closeProtection: true,
-				debug: false
+			// Create Device with the 2.x SDK
+			device = new TwilioDevice(token, {
+				logLevel: 1,
+				codecPreferences: [TwilioDevice.Codec.Opus, TwilioDevice.Codec.PCMU],
+				allowIncomingWhileBusy: false
 			});
 
-			Twilio.Device.ready(() => {
+			// Register event handlers
+			device.on('registered', () => {
 				deviceStatus = 'registered';
-				statusMessage = 'Ready to receive calls';
-				device = Twilio.Device;
+				statusMessage = 'Ready — listening for calls';
+				isConnecting = false;
+				addToHistory('system', 'Connected to Twilio');
 			});
 
-			Twilio.Device.error((error) => {
+			device.on('error', (error) => {
 				console.error('Twilio Device error:', error);
 				errorMessage = error.message || 'Device error';
 				deviceStatus = 'error';
-				statusMessage = 'Error — check console';
+				statusMessage = 'Error — see details above';
+				isConnecting = false;
 			});
 
-			Twilio.Device.incoming((conn) => {
-				callState = 'incoming';
-				activeCall = conn;
-				callerInfo = conn.parameters.From || 'Unknown';
-				statusMessage = `Incoming call from ${formatPhone(callerInfo)}`;
+			device.on('unregistered', () => {
+				deviceStatus = 'offline';
+				statusMessage = 'Disconnected';
+			});
 
+			device.on('incoming', (call) => {
+				callState = 'incoming';
+				activeCall = call;
+				callerInfo = call.parameters.From || 'Unknown';
+				statusMessage = `Incoming call from ${formatPhone(callerInfo)}`;
 				addToHistory('incoming', `From: ${formatPhone(callerInfo)}`);
 
-				conn.on('disconnect', handleDisconnect);
-				conn.on('cancel', handleDisconnect);
+				// Play ringtone audio indicator
+				call.on('disconnect', handleDisconnect);
+				call.on('cancel', () => {
+					addToHistory('system', 'Call canceled by caller');
+					handleDisconnect();
+				});
 			});
 
-			Twilio.Device.disconnect(() => {
-				handleDisconnect();
-			});
-
-			Twilio.Device.offline(() => {
-				deviceStatus = 'offline';
-				statusMessage = 'Disconnected from Twilio';
-			});
+			// Register the device with Twilio to start receiving calls
+			device.register();
 
 		} catch (err) {
-			console.error('Failed to init Twilio Device:', err);
+			console.error('Failed to connect:', err);
 			errorMessage = err.message;
 			deviceStatus = 'error';
 			statusMessage = 'Failed to connect';
+			isConnecting = false;
 		}
 	}
 
@@ -152,33 +156,40 @@
 			clearInterval(durationTimer);
 			durationTimer = null;
 		}
-		addToHistory('ended', `Duration: ${formatCallDuration(callDuration)}`);
+		if (callDuration > 0) {
+			addToHistory('ended', `Duration: ${formatCallDuration(callDuration)}`);
+		}
 		callState = 'idle';
 		activeCall = null;
 		callerInfo = '';
 		callDuration = 0;
 		isMuted = false;
-		isOnHold = false;
-		statusMessage = 'Ready to receive calls';
+		statusMessage = device ? 'Ready — listening for calls' : 'Disconnected';
 	}
 
 	function answerCall() {
 		if (activeCall) {
-			activeCall.accept();
+			activeCall.accept({
+				rtcConstraints: {
+					audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+				}
+			});
 			callState = 'connected';
 			statusMessage = `Connected — ${formatPhone(callerInfo)}`;
 			startDurationTimer();
+			addToHistory('system', 'Call answered');
 		}
 	}
 
 	function rejectCall() {
 		if (activeCall) {
 			activeCall.reject();
+			addToHistory('system', 'Call rejected');
 			handleDisconnect();
 		}
 	}
 
-	function makeCall() {
+	async function makeCall() {
 		if (!device || !dialNumber) return;
 
 		// Clean up the number
@@ -188,22 +199,24 @@
 		}
 
 		try {
-			const conn = device.connect({ To: number });
-			activeCall = conn;
+			const call = await device.connect({
+				params: { To: number }
+			});
+			activeCall = call;
 			callState = 'connecting';
 			callerInfo = number;
 			statusMessage = `Calling ${formatPhone(number)}...`;
 			addToHistory('outgoing', `To: ${formatPhone(number)}`);
 
-			conn.on('accept', () => {
+			call.on('accept', () => {
 				callState = 'connected';
 				statusMessage = `Connected — ${formatPhone(number)}`;
 				startDurationTimer();
 			});
 
-			conn.on('disconnect', handleDisconnect);
-			conn.on('cancel', handleDisconnect);
-			conn.on('error', (err) => {
+			call.on('disconnect', handleDisconnect);
+			call.on('cancel', handleDisconnect);
+			call.on('error', (err) => {
 				errorMessage = err.message;
 				handleDisconnect();
 			});
@@ -215,7 +228,8 @@
 	function hangUp() {
 		if (activeCall) {
 			activeCall.disconnect();
-		} else if (device) {
+		}
+		if (device) {
 			device.disconnectAll();
 		}
 	}
@@ -251,9 +265,10 @@
 	function addToHistory(type, info) {
 		const time = new Date().toLocaleTimeString('en-US', {
 			hour: '2-digit',
-			minute: '2-digit'
+			minute: '2-digit',
+			second: '2-digit'
 		});
-		callHistory = [{ time, type, info }, ...callHistory.slice(0, 19)];
+		callHistory = [{ time, type, info }, ...callHistory.slice(0, 29)];
 	}
 
 	function statusColor(status) {
@@ -265,9 +280,15 @@
 		}
 	}
 
-	async function reconnect() {
-		errorMessage = '';
-		await initDevice();
+	function disconnectDevice() {
+		if (device) {
+			device.unregister();
+			device.destroy();
+			device = null;
+		}
+		deviceStatus = 'offline';
+		statusMessage = 'Click "Connect" to start';
+		addToHistory('system', 'Disconnected');
 	}
 </script>
 
@@ -282,7 +303,7 @@
 			<h1 class="text-2xl font-bold tracking-tight">Softphone</h1>
 			<p class="text-muted-foreground">Answer and make calls from your browser.</p>
 		</div>
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-3">
 			<span class="flex items-center gap-2 text-sm">
 				<span class="relative flex h-2.5 w-2.5">
 					<span class="absolute inline-flex h-full w-full rounded-full {statusColor(deviceStatus)} opacity-75 {deviceStatus === 'registering' ? 'animate-ping' : ''}"></span>
@@ -290,6 +311,23 @@
 				</span>
 				<span class="text-muted-foreground">{statusMessage}</span>
 			</span>
+			{#if deviceStatus === 'offline' || deviceStatus === 'error'}
+				<Button
+					size="sm"
+					onclick={connectDevice}
+					disabled={isConnecting}
+				>
+					{isConnecting ? 'Connecting...' : 'Connect'}
+				</Button>
+			{:else if deviceStatus === 'registered'}
+				<Button
+					variant="outline"
+					size="sm"
+					onclick={disconnectDevice}
+				>
+					Disconnect
+				</Button>
+			{/if}
 		</div>
 	</div>
 
@@ -297,7 +335,7 @@
 		<Card.Root class="border-destructive/50 bg-destructive/5">
 			<Card.Content class="py-4 flex items-center justify-between">
 				<p class="text-sm text-destructive">{errorMessage}</p>
-				<Button variant="outline" size="sm" onclick={reconnect}>Retry</Button>
+				<Button variant="outline" size="sm" onclick={() => { errorMessage = ''; connectDevice(); }}>Retry</Button>
 			</Card.Content>
 		</Card.Root>
 	{/if}
@@ -317,8 +355,8 @@
 					<div class="rounded-lg bg-muted/50 p-4 text-center space-y-2">
 						{#if callState === 'incoming'}
 							<div class="flex items-center justify-center gap-2 text-blue-400">
-								<PhoneIncoming class="h-5 w-5 animate-pulse" />
-								<span class="text-sm font-medium">Incoming Call</span>
+								<PhoneIncoming class="h-5 w-5 animate-bounce" />
+								<span class="text-sm font-medium animate-pulse">Incoming Call</span>
 							</div>
 						{:else if callState === 'connecting'}
 							<div class="flex items-center justify-center gap-2 text-yellow-400">
@@ -452,19 +490,21 @@
 						<div class="text-center">
 							<Headset class="mx-auto mb-3 h-10 w-10 opacity-50" />
 							<p class="text-sm">No calls yet this session.</p>
-							<p class="text-xs mt-1">Incoming calls will ring here automatically.</p>
+							<p class="text-xs mt-1">Click "Connect" then incoming calls will ring here.</p>
 						</div>
 					</div>
 				{:else}
-					<div class="space-y-2">
+					<div class="space-y-2 max-h-[400px] overflow-y-auto">
 						{#each callHistory as entry}
 							<div class="flex items-center gap-3 rounded-md border border-border/50 p-3">
 								{#if entry.type === 'incoming'}
 									<PhoneIncoming class="h-4 w-4 shrink-0 text-blue-400" />
 								{:else if entry.type === 'outgoing'}
 									<PhoneOutgoing class="h-4 w-4 shrink-0 text-emerald-400" />
-								{:else}
+								{:else if entry.type === 'ended'}
 									<PhoneOff class="h-4 w-4 shrink-0 text-zinc-400" />
+								{:else}
+									<Headset class="h-4 w-4 shrink-0 text-zinc-500" />
 								{/if}
 								<div class="min-w-0 flex-1">
 									<p class="text-sm">{entry.info}</p>
