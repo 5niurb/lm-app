@@ -38,3 +38,7 @@ npm-debug.log*
 
 # Audio assets (hosted on Twilio, not in git)
 twilio/assets/
+
+# Screenshots (temp working files, not deliverables)
+*.png
+!docs/rcs-assets/*.png

@@ -1,3 +1,32 @@
+## Session — 2026-02-13 (Session 12)
+**Focus:** RCS prerequisites completion, TOS creation, textme hook fix, session continuation
+
+**Accomplished:**
+- **Terms of Service drafted** → `docs/lemedspa-terms-of-service.md` with all 7 carrier-required messaging program terms (Section 4)
+- **TOS loaded on Squarespace** at lemedspa.com/terms-of-service, footer link added
+- **RCS image assets generated** (via sharp):
+  - `docs/rcs-assets/rcs-logo-224x224.png` (5.4KB)
+  - `docs/rcs-assets/rcs-banner-1140x448.jpg` (30KB, Lea portrait)
+  - `docs/rcs-assets/rcs-banner-alt-1140x448.jpg` (26KB, branded uniform — recommended)
+- **Opt-in flow screenshot captured** — contact form with SMS consent checkboxes, STOP disclosure, Privacy Policy + TOS links
+- **All RCS prerequisites complete** — ready to create RCS Sender in Twilio Console
+- **textme.mjs parseReply() updated** — Option 1 = dynamic action, Option 2 = terminal/deny, Option 3 = commit+push+next
+- **textme hook timeout fixed** — 300000 (83 hours) → 300 (5 min) in global settings.local.json
+- **Debug logging added** to textme.mjs (writes to textme.log)
+- **PR #1 merged** — textme-smart-menus branch
+
+**Current State:**
+- All RCS prerequisites gathered and ready for Twilio Console submission
+- textme hook fix deployed but unverified (need next natural session stop to test)
+
+**Next Steps:**
+1. Create RCS Sender in Twilio Console (walkthrough below)
+2. Submit for Aegis vetting ($200) + T-Mobile activation ($500)
+3. Verify textme hook fires on next session end
+4. Continue lm-app development (softphone testing, Cloudflare Pages deploy)
+
+---
+
 ## Session — 2026-02-13 (Session 11)
 **Focus:** Softphone call connection fix, ringtone, notifications, sidebar badges, SMS delivery tracking
 
