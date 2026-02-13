@@ -31,3 +31,9 @@ npm-debug.log*
 
 # Local database
 *.db
+
+# Claude Code
+.claude/
+
+# Audio assets (hosted on Twilio, not in git)
+twilio/assets/

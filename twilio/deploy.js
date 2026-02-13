@@ -10,8 +10,28 @@
  * Without --publish: updates the draft (safe for testing)
  * With --publish: publishes the flow live
  */
-import 'dotenv/config';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Load .env from api/ directory (dotenv is installed there, but we parse manually
+// so this script can run from any directory)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const envPath = resolve(__dirname, '..', 'api', '.env');
+if (existsSync(envPath)) {
+  const envContent = readFileSync(envPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx);
+    const val = trimmed.slice(eqIdx + 1);
+    if (!process.env[key]) {
+      process.env[key] = val;
+    }
+  }
+}
 
 const [,, flowSid, flowPath, ...flags] = process.argv;
 const shouldPublish = flags.includes('--publish');
