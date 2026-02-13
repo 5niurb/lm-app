@@ -4,6 +4,20 @@
 
 Custom management platform for Le Med Spa. Handles call logging, voicemail, and (eventually) scheduling, POS, CRM, and messaging.
 
+## Day 1 Priority
+
+**Ship call logging + voicemail ASAP to shut down HighLevel.** This is Phase 1A and the #1 priority. Everything else (booking, POS, CRM, messaging) comes after.
+
+## Design Direction
+
+All Le Med Spa properties use the **dark + gold** aesthetic:
+- **Background:** Dark (#0a0a0c)
+- **Accents:** Gold (#d4af37, #c5a24d)
+- **Typography:** Playfair Display (headings) + Inter (body)
+- **Style:** Luxurious, intimate, high-end
+
+The lm-app dashboard should follow this same design language where possible — dark sidebar, gold accents, clean typography. shadcn-svelte components can be themed to match.
+
 ## Tech Stack
 
 - **Frontend:** SvelteKit + Tailwind CSS v4 + shadcn-svelte (Svelte 5)
@@ -46,12 +60,27 @@ lm-app/
 - **shadcn-svelte components** live in `src/lib/components/ui/` — don't edit them directly. Use `npx shadcn-svelte add <component>` to add new ones.
 - **Svelte 5 runes.** Use `$state()`, `$derived()`, `$props()`, `$effect()`. No legacy `let` reactivity.
 
-## Auth Flow
+## Auth & Security
 
+**Architecture:** Full 2FA with trusted device management — designed in from the start, shipped incrementally.
+
+**Day 1 (MVP):**
 1. User enters email + password → `supabase.auth.signInWithPassword()`
-2. Check for trusted device token (cookie → API verification)
-3. If not trusted → OTP challenge via email (Resend)
-4. On success → set trust device cookie, redirect to `/dashboard`
+2. On success → redirect to `/dashboard`
+3. Domain restriction: @lemedspa.com emails only (enforced at signup/invite)
+
+**Phase 2 (ship shortly after):**
+4. Check for trusted device token (cookie → API verification)
+5. If not trusted → OTP challenge via email (Resend)
+6. On success → set trust device cookie, redirect to `/dashboard`
+
+**Full security (built into architecture, enable when ready):**
+- Geo/IP restrictions for staff (middleware exists, needs wiring)
+- Business hours access control (middleware exists, needs wiring)
+- Audit logging on all API actions (table exists, fire-and-forget)
+- HIPAA-ready safeguards (formal BAA in Phase 5)
+
+**Key principle:** Security infrastructure is in the codebase from day 1. Features get enabled progressively — don't let 2FA block shipping call logging.
 
 ## Environment Variables
 
