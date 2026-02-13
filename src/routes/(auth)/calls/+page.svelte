@@ -79,24 +79,20 @@
 	const totalPages = $derived(Math.ceil(totalCount / pageSize) || 1);
 </script>
 
-<div class="space-y-6">
-	<div class="flex items-center justify-between">
-		<div>
-			<h1 class="text-2xl font-bold tracking-tight">Call Log</h1>
-			<p class="text-muted-foreground">View and manage all call records.</p>
-		</div>
+<div class="space-y-8">
+	<div>
+		<h1 class="text-2xl tracking-wide">Call Log</h1>
+		<p class="text-sm text-muted-foreground mt-1">View and manage all call records.</p>
 	</div>
 
 	{#if error}
-		<Card.Root>
-			<Card.Content class="py-4">
-				<p class="text-sm text-destructive">{error}</p>
-			</Card.Content>
-		</Card.Root>
+		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
+			<p class="text-sm text-red-400">{error}</p>
+		</div>
 	{/if}
 
-	<Card.Root>
-		<Card.Header>
+	<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+		<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 				<form class="relative flex-1" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
 					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -107,30 +103,14 @@
 					/>
 				</form>
 				<div class="flex gap-1">
-					<Button
-						variant={filter === 'all' ? 'default' : 'outline'}
-						size="sm"
-						onclick={() => setFilter('all')}
-					>All</Button>
-					<Button
-						variant={filter === 'answered' ? 'default' : 'outline'}
-						size="sm"
-						onclick={() => setFilter('answered')}
-					>Answered</Button>
-					<Button
-						variant={filter === 'missed' ? 'default' : 'outline'}
-						size="sm"
-						onclick={() => setFilter('missed')}
-					>Missed</Button>
-					<Button
-						variant={filter === 'voicemail' ? 'default' : 'outline'}
-						size="sm"
-						onclick={() => setFilter('voicemail')}
-					>Voicemail</Button>
+					<Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('all')}>All</Button>
+					<Button variant={filter === 'answered' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('answered')}>Answered</Button>
+					<Button variant={filter === 'missed' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('missed')}>Missed</Button>
+					<Button variant={filter === 'voicemail' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('voicemail')}>Voicemail</Button>
 				</div>
 			</div>
-		</Card.Header>
-		<Card.Content>
+		</div>
+		<div class="p-5">
 			{#if calls === null}
 				<div class="space-y-3">
 					{#each Array(10) as _}
@@ -140,34 +120,34 @@
 			{:else if calls.length === 0}
 				<div class="flex h-48 items-center justify-center text-muted-foreground">
 					<div class="text-center">
-						<Phone class="mx-auto mb-3 h-10 w-10 opacity-50" />
-						<p>No call records found.</p>
+						<Phone class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
+						<p class="text-sm text-[rgba(255,255,255,0.35)]">No call records found.</p>
 						{#if search || filter !== 'all'}
-							<p class="text-sm">Try adjusting your search or filter.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Try adjusting your search or filter.</p>
 						{:else}
-							<p class="text-sm">Calls will appear here once Twilio webhooks are connected.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Calls will appear here once Twilio webhooks are connected.</p>
 						{/if}
 					</div>
 				</div>
 			{:else}
 				<div class="space-y-1">
 					{#each calls as call}
-						<div class="flex items-center justify-between rounded-md border p-3 hover:bg-muted/50 transition-colors">
+						<div class="group flex items-center justify-between rounded p-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]">
 							<div class="flex items-center gap-3">
 								{#if call.direction === 'inbound'}
-									<PhoneIncoming class="h-4 w-4 shrink-0 text-blue-500" />
+									<PhoneIncoming class="h-4 w-4 shrink-0 text-blue-400/70 group-hover:text-blue-400 transition-colors" />
 								{:else}
-									<PhoneOutgoing class="h-4 w-4 shrink-0 text-green-500" />
+									<PhoneOutgoing class="h-4 w-4 shrink-0 text-emerald-400/70 group-hover:text-emerald-400 transition-colors" />
 								{/if}
 								<div class="min-w-0">
-									<p class="text-sm font-medium truncate">
+									<p class="text-sm font-medium text-[rgba(255,255,255,0.85)] truncate">
 										{#if call.caller_name}
 											{call.caller_name}
 										{:else}
 											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}
 										{/if}
 									</p>
-									<p class="text-xs text-muted-foreground">
+									<p class="text-xs text-[rgba(255,255,255,0.35)]">
 										{#if call.caller_name}
 											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)} &middot;
 										{/if}
@@ -177,7 +157,7 @@
 							</div>
 							<div class="flex items-center gap-3">
 								{#if call.duration > 0}
-									<span class="text-xs text-muted-foreground hidden sm:inline">
+									<span class="text-xs text-[rgba(255,255,255,0.3)] hidden sm:inline">
 										{formatDuration(call.duration)}
 									</span>
 								{/if}
@@ -198,9 +178,7 @@
 							<Button variant="outline" size="sm" onclick={prevPage} disabled={page <= 1}>
 								<ChevronLeft class="h-4 w-4" />
 							</Button>
-							<span class="flex items-center px-2 text-sm text-muted-foreground">
-								{page} / {totalPages}
-							</span>
+							<span class="flex items-center px-2 text-sm text-muted-foreground">{page} / {totalPages}</span>
 							<Button variant="outline" size="sm" onclick={nextPage} disabled={page >= totalPages}>
 								<ChevronRight class="h-4 w-4" />
 							</Button>
@@ -208,6 +186,6 @@
 					</div>
 				{/if}
 			{/if}
-		</Card.Content>
-	</Card.Root>
+		</div>
+	</div>
 </div>

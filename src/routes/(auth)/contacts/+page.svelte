@@ -164,57 +164,53 @@
 	}
 </script>
 
-<div class="space-y-6">
-	<div class="flex items-center justify-between">
-		<div>
-			<h1 class="text-2xl font-bold tracking-tight">Contacts</h1>
-			<p class="text-muted-foreground">CRM directory — {stats?.total || '...'} contacts across all sources.</p>
-		</div>
+<div class="space-y-8">
+	<div>
+		<h1 class="text-2xl tracking-wide">Contacts</h1>
+		<p class="text-sm text-muted-foreground mt-1">CRM directory — {stats?.total || '...'} contacts across all sources.</p>
 	</div>
 
 	{#if error}
-		<Card.Root>
-			<Card.Content class="py-4">
-				<p class="text-sm text-destructive">{error}</p>
-			</Card.Content>
-		</Card.Root>
+		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
+			<p class="text-sm text-red-400">{error}</p>
+		</div>
 	{/if}
 
 	<!-- Tag filter tabs -->
 	{#if stats}
 		<div class="flex flex-wrap gap-2">
 			<button
-				class="rounded-lg border px-4 py-2.5 text-left transition-colors hover:bg-muted/50 {tagFilter === 'all' ? 'border-primary bg-muted/30' : ''}"
+				class="group rounded border px-4 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 {tagFilter === 'all' ? 'border-[rgba(197,165,90,0.4)] bg-[rgba(197,165,90,0.08)]' : 'border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] hover:border-[rgba(197,165,90,0.25)] hover:bg-[rgba(197,165,90,0.06)]'}"
 				onclick={() => setTag('all')}
 			>
-				<span class="text-sm font-medium">All</span>
-				<span class="ml-1.5 text-lg font-bold">{stats.total}</span>
+				<span class="text-xs uppercase tracking-[0.15em] {tagFilter === 'all' ? 'text-[#C5A55A]' : 'text-[rgba(255,255,255,0.4)]'}">All</span>
+				<span class="ml-2 text-xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{stats.total}</span>
 			</button>
 			{#each Object.entries(tagConfig) as [key, config]}
 				{#if stats.byTag?.[key]}
 					<button
-						class="rounded-lg border px-4 py-2.5 text-left transition-colors hover:bg-muted/50 {tagFilter === key ? 'border-primary bg-muted/30' : ''}"
+						class="group rounded border px-4 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 {tagFilter === key ? 'border-[rgba(197,165,90,0.4)] bg-[rgba(197,165,90,0.08)]' : 'border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] hover:border-[rgba(197,165,90,0.25)] hover:bg-[rgba(197,165,90,0.06)]'}"
 						onclick={() => setTag(key)}
 					>
 						<span class="inline-block w-2 h-2 rounded-full mr-1.5 {config.color.split(' ')[0]}">&nbsp;</span>
-						<span class="text-sm font-medium">{config.label}</span>
-						<span class="ml-1.5 text-lg font-bold">{stats.byTag[key]}</span>
+						<span class="text-xs uppercase tracking-[0.15em] {tagFilter === key ? 'text-[#C5A55A]' : 'text-[rgba(255,255,255,0.4)]'}">{config.label}</span>
+						<span class="ml-2 text-xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{stats.byTag[key]}</span>
 					</button>
 				{/if}
 			{/each}
 		</div>
 	{/if}
 
-	<Card.Root>
-		<Card.Header>
+	<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+		<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 				<form class="relative flex-1" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
 					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 					<Input placeholder="Search by name, phone, or email..." class="pl-8" bind:value={search} />
 				</form>
 			</div>
-		</Card.Header>
-		<Card.Content>
+		</div>
+		<div class="p-5">
 			{#if contacts === null}
 				<div class="space-y-3">
 					{#each Array(8) as _}
@@ -224,32 +220,32 @@
 			{:else if contacts.length === 0}
 				<div class="flex h-48 items-center justify-center text-muted-foreground">
 					<div class="text-center">
-						<Users class="mx-auto mb-3 h-10 w-10 opacity-50" />
-						<p>No contacts found.</p>
+						<Users class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
+						<p class="text-sm text-[rgba(255,255,255,0.35)]">No contacts found.</p>
 						{#if search || tagFilter !== 'all'}
-							<p class="text-sm">Try adjusting your search or filters.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Try adjusting your search or filters.</p>
 						{:else}
-							<p class="text-sm">Import contacts using the sync script or add them manually.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Import contacts using the sync script or add them manually.</p>
 						{/if}
 					</div>
 				</div>
 			{:else}
 				<div class="space-y-1">
 					{#each contacts as contact}
-						<div class="rounded-md border transition-colors hover:bg-muted/20">
+						<div class="rounded-md border border-transparent transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)]">
 							<button
 								class="flex w-full items-center justify-between p-3 text-left"
 								onclick={() => toggleExpand(contact.id)}
 							>
 								<div class="flex items-center gap-3 min-w-0 flex-1">
-									<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
+									<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(197,165,90,0.1)] text-sm font-medium text-[#C5A55A]" style="font-family: 'Playfair Display', serif;">
 										{(contact.first_name?.[0] || contact.full_name?.[0] || '?').toUpperCase()}
 									</div>
 									<div class="min-w-0 flex-1">
-										<p class="text-sm font-medium truncate">
+										<p class="text-sm font-medium text-[rgba(255,255,255,0.85)] truncate">
 											{contact.full_name || 'Unknown'}
 										</p>
-										<div class="flex items-center gap-3 text-xs text-muted-foreground">
+										<div class="flex items-center gap-3 text-xs text-[rgba(255,255,255,0.35)]">
 											{#if contact.phone}
 												<span class="flex items-center gap-1">
 													<Phone class="h-3 w-3" />
@@ -277,10 +273,10 @@
 							</button>
 
 							{#if expandedId === contact.id && expandedContact}
-								<div class="border-t px-3 py-3 space-y-4">
+								<div class="border-t border-[rgba(197,165,90,0.08)] px-3 py-3 space-y-4">
 									<!-- Tags section with edit -->
 									<div>
-										<p class="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+										<p class="text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2 flex items-center gap-1">
 											<Tag class="h-3 w-3" /> Tags
 										</p>
 										<div class="flex flex-wrap items-center gap-1.5">
@@ -303,17 +299,17 @@
 												>
 													<input
 														type="text"
-														class="h-6 w-24 rounded-md border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+														class="h-6 w-24 rounded-md border border-[rgba(197,165,90,0.2)] bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#C5A55A]"
 														placeholder="tag name"
 														bind:value={newTagInput}
 														autofocus
 													/>
-													<button type="submit" class="text-xs text-primary hover:underline">Add</button>
+													<button type="submit" class="text-xs text-[#C5A55A] hover:underline">Add</button>
 													<button type="button" class="text-xs text-muted-foreground hover:underline" onclick={() => { addingTag = null; newTagInput = ''; }}>Cancel</button>
 												</form>
 											{:else}
 												<button
-													class="inline-flex items-center gap-0.5 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+													class="inline-flex items-center gap-0.5 rounded-full border border-dashed border-[rgba(197,165,90,0.2)] px-2 py-0.5 text-xs text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A] hover:border-[rgba(197,165,90,0.4)] transition-colors"
 													onclick={(e) => { e.stopPropagation(); addingTag = contact.id; newTagInput = ''; }}
 												>
 													<Plus class="h-3 w-3" /> Add tag
@@ -325,63 +321,63 @@
 									<!-- Contact details grid -->
 									<div class="grid gap-3 sm:grid-cols-2">
 										<div>
-											<p class="text-xs font-medium text-muted-foreground">Full Name</p>
-											<p class="text-sm">{expandedContact.full_name || '—'}</p>
+											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Full Name</p>
+											<p class="text-sm text-[rgba(255,255,255,0.85)]">{expandedContact.full_name || '—'}</p>
 										</div>
 										<div>
-											<p class="text-xs font-medium text-muted-foreground">Email</p>
-											<p class="text-sm">{expandedContact.email || '—'}</p>
+											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Email</p>
+											<p class="text-sm text-[rgba(255,255,255,0.85)]">{expandedContact.email || '—'}</p>
 										</div>
 										<div>
-											<p class="text-xs font-medium text-muted-foreground">Phone</p>
-											<p class="text-sm">{expandedContact.phone ? formatPhone(expandedContact.phone) : '—'}</p>
+											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Phone</p>
+											<p class="text-sm text-[rgba(255,255,255,0.85)]">{expandedContact.phone ? formatPhone(expandedContact.phone) : '—'}</p>
 										</div>
 										<div>
-											<p class="text-xs font-medium text-muted-foreground">Source</p>
-											<p class="text-sm">{sourceLabels[expandedContact.source] || expandedContact.source}</p>
+											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Source</p>
+											<p class="text-sm text-[rgba(255,255,255,0.85)]">{sourceLabels[expandedContact.source] || expandedContact.source}</p>
 										</div>
 										{#if expandedContact.patient_status}
 											<div>
-												<p class="text-xs font-medium text-muted-foreground">Patient Status</p>
-												<p class="text-sm capitalize">{expandedContact.patient_status}</p>
+												<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Patient Status</p>
+												<p class="text-sm capitalize text-[rgba(255,255,255,0.85)]">{expandedContact.patient_status}</p>
 											</div>
 										{/if}
 										{#if expandedContact.source_id}
 											<div>
-												<p class="text-xs font-medium text-muted-foreground">Source ID</p>
-												<p class="text-sm font-mono text-xs">{expandedContact.source_id}</p>
+												<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Source ID</p>
+												<p class="text-sm font-mono text-xs text-[rgba(255,255,255,0.6)]">{expandedContact.source_id}</p>
 											</div>
 										{/if}
 										{#if expandedContact.lists && expandedContact.lists.length > 0}
 											<div>
-												<p class="text-xs font-medium text-muted-foreground">Lists</p>
+												<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Lists</p>
 												<div class="flex flex-wrap gap-1 mt-0.5">
 													{#each expandedContact.lists as list}
-														<span class="inline-flex items-center rounded-md border bg-muted/50 px-1.5 py-0.5 text-xs">{list}</span>
+														<span class="inline-flex items-center rounded-md border border-[rgba(197,165,90,0.15)] bg-[rgba(197,165,90,0.05)] px-1.5 py-0.5 text-xs">{list}</span>
 													{/each}
 												</div>
 											</div>
 										{/if}
 										<div>
-											<p class="text-xs font-medium text-muted-foreground">Last Synced</p>
-											<p class="text-sm">{expandedContact.last_synced_at ? formatRelativeDate(expandedContact.last_synced_at) : '—'}</p>
+											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Last Synced</p>
+											<p class="text-sm text-[rgba(255,255,255,0.85)]">{expandedContact.last_synced_at ? formatRelativeDate(expandedContact.last_synced_at) : '—'}</p>
 										</div>
 									</div>
 
 									<!-- Recent calls -->
 									{#if expandedContact.recent_calls && expandedContact.recent_calls.length > 0}
 										<div>
-											<p class="text-xs font-medium text-muted-foreground mb-2">Recent Calls</p>
+											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2">Recent Calls</p>
 											<div class="space-y-1">
 												{#each expandedContact.recent_calls.slice(0, 5) as call}
-													<div class="flex items-center justify-between text-sm bg-muted/30 rounded-md px-2 py-1.5">
+													<div class="flex items-center justify-between text-sm bg-[rgba(197,165,90,0.04)] rounded-md px-2 py-1.5 border border-[rgba(197,165,90,0.08)]">
 														<div class="flex items-center gap-2">
 															<Badge variant="outline" class="text-xs">
 																{call.direction === 'inbound' ? 'In' : 'Out'}
 															</Badge>
-															<span>{call.disposition || call.status}</span>
+															<span class="text-[rgba(255,255,255,0.7)]">{call.disposition || call.status}</span>
 														</div>
-														<span class="text-xs text-muted-foreground">
+														<span class="text-xs text-[rgba(255,255,255,0.35)]">
 															{formatRelativeDate(call.started_at)}
 														</span>
 													</div>
@@ -389,20 +385,20 @@
 											</div>
 										</div>
 									{:else}
-										<p class="text-sm text-muted-foreground italic">No call history yet.</p>
+										<p class="text-sm text-[rgba(255,255,255,0.3)] italic">No call history yet.</p>
 									{/if}
 
 									<!-- Metadata -->
 									{#if expandedContact.metadata && Object.keys(expandedContact.metadata).length > 0}
 										<details>
-											<summary class="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground">
+											<summary class="text-xs font-medium text-[rgba(255,255,255,0.4)] cursor-pointer hover:text-[#C5A55A] transition-colors">
 												Additional Info ({Object.keys(expandedContact.metadata).length} fields)
 											</summary>
-											<div class="grid gap-1 text-xs bg-muted/30 rounded-md p-2 mt-1">
+											<div class="grid gap-1 text-xs bg-[rgba(197,165,90,0.04)] rounded-md p-2 mt-1 border border-[rgba(197,165,90,0.08)]">
 												{#each Object.entries(expandedContact.metadata) as [key, val]}
 													<div class="flex gap-2">
-														<span class="font-medium capitalize whitespace-nowrap">{key.replace(/_/g, ' ')}:</span>
-														<span class="text-muted-foreground break-all">{typeof val === 'object' ? JSON.stringify(val) : val}</span>
+														<span class="font-medium capitalize whitespace-nowrap text-[rgba(255,255,255,0.6)]">{key.replace(/_/g, ' ')}:</span>
+														<span class="text-[rgba(255,255,255,0.35)] break-all">{typeof val === 'object' ? JSON.stringify(val) : val}</span>
 													</div>
 												{/each}
 											</div>
@@ -431,6 +427,6 @@
 					</div>
 				{/if}
 			{/if}
-		</Card.Content>
-	</Card.Root>
+		</div>
+	</div>
 </div>

@@ -299,12 +299,12 @@
 	<title>Softphone — Le Med Spa</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="space-y-8">
 	<!-- Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold tracking-tight">Softphone</h1>
-			<p class="text-muted-foreground">Answer and make calls from your browser.</p>
+			<h1 class="text-2xl tracking-wide">Softphone</h1>
+			<p class="text-sm text-muted-foreground mt-1">Answer and make calls from your browser.</p>
 		</div>
 		<div class="flex items-center gap-3">
 			<span class="flex items-center gap-2 text-sm">
@@ -312,7 +312,7 @@
 					<span class="absolute inline-flex h-full w-full rounded-full {statusColor(deviceStatus)} opacity-75 {deviceStatus === 'registering' ? 'animate-ping' : ''}"></span>
 					<span class="relative inline-flex h-2.5 w-2.5 rounded-full {statusColor(deviceStatus)}"></span>
 				</span>
-				<span class="text-muted-foreground">{statusMessage}</span>
+				<span class="text-[rgba(255,255,255,0.5)]">{statusMessage}</span>
 			</span>
 			{#if deviceStatus === 'offline' || deviceStatus === 'error'}
 				<Button
@@ -335,31 +335,29 @@
 	</div>
 
 	{#if errorMessage}
-		<Card.Root class="border-destructive/50 bg-destructive/5">
-			<Card.Content class="py-4 flex items-center justify-between">
-				<p class="text-sm text-destructive">{errorMessage}</p>
-				<Button variant="outline" size="sm" onclick={() => { errorMessage = ''; connectDevice(); }}>Retry</Button>
-			</Card.Content>
-		</Card.Root>
+		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3 flex items-center justify-between">
+			<p class="text-sm text-red-400">{errorMessage}</p>
+			<Button variant="outline" size="sm" onclick={() => { errorMessage = ''; connectDevice(); }}>Retry</Button>
+		</div>
 	{/if}
 
 	<div class="grid gap-6 lg:grid-cols-2">
 		<!-- Softphone Panel -->
-		<Card.Root class="overflow-hidden">
-			<Card.Header class="pb-3">
+		<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+			<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
 				<div class="flex items-center gap-2">
-					<Headset class="h-5 w-5 text-primary" />
-					<Card.Title>Phone</Card.Title>
+					<Headset class="h-5 w-5 text-[#C5A55A]" />
+					<h2 class="text-base tracking-wide">Phone</h2>
 				</div>
-			</Card.Header>
-			<Card.Content class="space-y-4">
+			</div>
+			<div class="p-5 space-y-4">
 				<!-- Active Call Display -->
 				{#if callState !== 'idle'}
-					<div class="rounded-lg bg-muted/50 p-4 text-center space-y-2">
+					<div class="rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.15)] p-5 text-center space-y-3">
 						{#if callState === 'incoming'}
 							<div class="flex items-center justify-center gap-2 text-blue-400">
-								<PhoneIncoming class="h-5 w-5 animate-bounce" />
-								<span class="text-sm font-medium animate-pulse">Incoming Call</span>
+								<PhoneIncoming class="h-6 w-6 animate-bounce" />
+								<span class="text-base font-medium animate-pulse">Incoming Call</span>
 							</div>
 						{:else if callState === 'connecting'}
 							<div class="flex items-center justify-center gap-2 text-yellow-400">
@@ -373,33 +371,33 @@
 							</div>
 						{/if}
 
-						<p class="text-lg font-semibold">{formatPhone(callerInfo)}</p>
+						<p class="text-xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
 
 						{#if callState === 'connected'}
-							<div class="flex items-center justify-center gap-1 text-muted-foreground">
+							<div class="flex items-center justify-center gap-1 text-[rgba(255,255,255,0.4)]">
 								<Clock class="h-3.5 w-3.5" />
 								<span class="text-sm font-mono">{formatCallDuration(callDuration)}</span>
 							</div>
 						{/if}
 
 						<!-- Call Controls -->
-						<div class="flex items-center justify-center gap-3 pt-2">
+						<div class="flex items-center justify-center gap-4 pt-3">
 							{#if callState === 'incoming'}
 								<Button
 									variant="default"
 									size="lg"
-									class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full h-14 w-14"
+									class="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full h-16 w-16 shadow-lg shadow-emerald-600/20"
 									onclick={answerCall}
 								>
-									<Phone class="h-6 w-6" />
+									<Phone class="h-7 w-7" />
 								</Button>
 								<Button
 									variant="destructive"
 									size="lg"
-									class="rounded-full h-14 w-14"
+									class="rounded-full h-16 w-16 shadow-lg shadow-red-600/20"
 									onclick={rejectCall}
 								>
-									<PhoneOff class="h-6 w-6" />
+									<PhoneOff class="h-7 w-7" />
 								</Button>
 							{:else}
 								<Button
@@ -418,7 +416,7 @@
 								<Button
 									variant="destructive"
 									size="lg"
-									class="rounded-full h-14 w-14"
+									class="rounded-full h-14 w-14 shadow-lg shadow-red-600/20"
 									onclick={hangUp}
 								>
 									<PhoneOff class="h-6 w-6" />
@@ -430,7 +428,6 @@
 
 				<!-- Dial Pad -->
 				<div class="space-y-3">
-					<!-- Number Input -->
 					<div class="flex gap-2">
 						<Input
 							placeholder="Enter phone number..."
@@ -440,12 +437,11 @@
 						/>
 					</div>
 
-					<!-- Dial Pad Grid -->
 					<div class="grid grid-cols-3 gap-2">
 						{#each dialPad as row}
 							{#each row as digit}
 								<button
-									class="h-14 rounded-lg bg-muted/50 hover:bg-muted text-lg font-medium transition-colors active:scale-95"
+									class="h-14 rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)] hover:bg-[rgba(197,165,90,0.12)] hover:border-[rgba(197,165,90,0.25)] text-lg font-medium transition-all duration-200 active:scale-95 text-[rgba(255,255,255,0.8)]"
 									onclick={() => sendDigit(digit)}
 								>
 									{digit}
@@ -454,10 +450,9 @@
 						{/each}
 					</div>
 
-					<!-- Dial / Hangup Button -->
 					{#if callState === 'idle'}
 						<Button
-							class="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-base"
+							class="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-base shadow-lg shadow-emerald-600/10"
 							onclick={makeCall}
 							disabled={!dialNumber || deviceStatus !== 'registered'}
 						>
@@ -475,31 +470,31 @@
 						</Button>
 					{/if}
 				</div>
-			</Card.Content>
-		</Card.Root>
+			</div>
+		</div>
 
 		<!-- Call History Panel -->
-		<Card.Root>
-			<Card.Header class="pb-3">
+		<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+			<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
 				<div class="flex items-center gap-2">
-					<Clock class="h-5 w-5 text-primary" />
-					<Card.Title>Session Activity</Card.Title>
+					<Clock class="h-5 w-5 text-[#C5A55A]" />
+					<h2 class="text-base tracking-wide">Session Activity</h2>
 				</div>
-				<Card.Description>Calls during this browser session</Card.Description>
-			</Card.Header>
-			<Card.Content>
+				<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">Calls during this browser session</p>
+			</div>
+			<div class="p-5">
 				{#if callHistory.length === 0}
-					<div class="flex h-48 items-center justify-center text-muted-foreground">
+					<div class="flex h-48 items-center justify-center">
 						<div class="text-center">
-							<Headset class="mx-auto mb-3 h-10 w-10 opacity-50" />
-							<p class="text-sm">No calls yet this session.</p>
-							<p class="text-xs mt-1">Click "Connect" then incoming calls will ring here.</p>
+							<Headset class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
+							<p class="text-sm text-[rgba(255,255,255,0.35)]">No calls yet this session.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Click "Connect" then incoming calls will ring here.</p>
 						</div>
 					</div>
 				{:else}
 					<div class="space-y-2 max-h-[400px] overflow-y-auto">
 						{#each callHistory as entry}
-							<div class="flex items-center gap-3 rounded-md border border-border/50 p-3">
+							<div class="flex items-center gap-3 rounded-md border border-[rgba(197,165,90,0.08)] p-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)]">
 								{#if entry.type === 'incoming'}
 									<PhoneIncoming class="h-4 w-4 shrink-0 text-blue-400" />
 								{:else if entry.type === 'outgoing'}
@@ -507,17 +502,17 @@
 								{:else if entry.type === 'ended'}
 									<PhoneOff class="h-4 w-4 shrink-0 text-zinc-400" />
 								{:else}
-									<Headset class="h-4 w-4 shrink-0 text-zinc-500" />
+									<Headset class="h-4 w-4 shrink-0 text-[rgba(197,165,90,0.4)]" />
 								{/if}
 								<div class="min-w-0 flex-1">
-									<p class="text-sm">{entry.info}</p>
+									<p class="text-sm text-[rgba(255,255,255,0.7)]">{entry.info}</p>
 								</div>
-								<span class="text-xs text-muted-foreground shrink-0">{entry.time}</span>
+								<span class="text-xs text-[rgba(255,255,255,0.3)] shrink-0">{entry.time}</span>
 							</div>
 						{/each}
 					</div>
 				{/if}
-			</Card.Content>
-		</Card.Root>
+			</div>
+		</div>
 	</div>
 </div>
