@@ -18,6 +18,11 @@ const PORT = process.env.PORT || 3001;
 import webhookVoice from './routes/webhooks/voice.js';
 app.use('/api/webhooks/voice', webhookVoice);
 
+// Twilio softphone routes (token + TwiML — needs URL-encoded for TwiML callbacks)
+import twilioRoutes from './routes/twilio.js';
+import expressUrlEncoded from 'express';
+app.use('/api/twilio', expressUrlEncoded.urlencoded({ extended: false }), expressUrlEncoded.json(), twilioRoutes);
+
 // JSON parsing for all other routes
 app.use(express.json());
 app.use(cors({

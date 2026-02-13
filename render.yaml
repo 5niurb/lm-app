@@ -35,5 +35,13 @@ services:
         sync: false
       - key: TEXTMAGIC_USERNAME
         sync: false
+      - key: TWILIO_API_KEY_SID
+        sync: false
+      - key: TWILIO_API_KEY_SECRET
+        sync: false
+      - key: TWILIO_TWIML_APP_SID
+        sync: false
+      - key: TWILIO_OPERATOR_FALLBACK
+        sync: false
       - key: FRONTEND_URL
         sync: false
