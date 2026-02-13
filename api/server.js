@@ -46,8 +46,14 @@ app.listen(PORT, () => {
 });
 
 // Keep-alive ping in production (prevent Render free tier spin-down)
-if (process.env.RENDER_EXTERNAL_URL) {
+// RENDER_EXTERNAL_URL is auto-set by Render; fallback to known URL
+const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || (process.env.NODE_ENV === 'production' ? 'https://lm-app-api.onrender.com' : null);
+if (KEEP_ALIVE_URL) {
+  const INTERVAL = 14 * 60 * 1000; // 14 minutes
   setInterval(() => {
-    fetch(`${process.env.RENDER_EXTERNAL_URL}/api/health`).catch(() => {});
-  }, 14 * 60 * 1000);
+    fetch(`${KEEP_ALIVE_URL}/api/health`)
+      .then(r => console.log(`[keep-alive] ${r.status}`))
+      .catch(e => console.warn(`[keep-alive] failed: ${e.message}`));
+  }, INTERVAL);
+  console.log(`Keep-alive ping enabled: ${KEEP_ALIVE_URL} every 14m`);
 }
