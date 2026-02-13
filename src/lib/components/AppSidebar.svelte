@@ -2,16 +2,40 @@
 	import { page } from '$app/state';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.ts';
 	import { LayoutDashboard, Phone, Headset, Voicemail, MessageSquare, Users, Settings } from '@lucide/svelte';
+	import { api } from '$lib/api/client.js';
 
 	const navItems = [
 		{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 		{ href: '/softphone', label: 'Softphone', icon: Headset },
 		{ href: '/calls', label: 'Calls', icon: Phone },
 		{ href: '/voicemails', label: 'Voicemails', icon: Voicemail },
-		{ href: '/messages', label: 'Messages', icon: MessageSquare },
+		{ href: '/messages', label: 'Messages', icon: MessageSquare, badgeKey: 'unreadMessages' },
 		{ href: '/contacts', label: 'Contacts', icon: Users },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
+
+	/** @type {{ unreadMessages: number }} */
+	let badges = $state({ unreadMessages: 0 });
+
+	/** @type {number|null} */
+	let badgeInterval = null;
+
+	async function loadBadges() {
+		try {
+			const [msgStats] = await Promise.all([
+				api('/api/messages/stats').catch(() => ({ unreadConversations: 0 }))
+			]);
+			badges.unreadMessages = msgStats.unreadConversations || 0;
+		} catch (e) {
+			// Silent — badges are non-critical
+		}
+	}
+
+	$effect(() => {
+		loadBadges();
+		badgeInterval = setInterval(loadBadges, 15000); // Refresh badges every 15s
+		return () => { if (badgeInterval) clearInterval(badgeInterval); };
+	});
 </script>
 
 <Sidebar.Root>
@@ -37,9 +61,16 @@
 								isActive={page.url.pathname.startsWith(item.href)}
 							>
 								{#snippet child({ props })}
-									<a href={item.href} {...props}>
-										<item.icon class="h-4 w-4" />
-										<span>{item.label}</span>
+									<a href={item.href} {...props} class="flex items-center justify-between w-full">
+										<span class="flex items-center gap-2">
+											<item.icon class="h-4 w-4" />
+											<span>{item.label}</span>
+										</span>
+										{#if item.badgeKey === 'unreadMessages' && badges.unreadMessages > 0}
+											<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]">
+												{badges.unreadMessages}
+											</span>
+										{/if}
 									</a>
 								{/snippet}
 							</Sidebar.MenuButton>

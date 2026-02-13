@@ -128,10 +128,16 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
   try {
     // Send via Twilio
     const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+    // Build the status callback URL for delivery tracking
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
+    const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+
     const twilioMsg = await client.messages.create({
       to: toNumber,
       from: fromNumber,
-      body
+      body,
+      ...(statusCallback && { statusCallback })
     });
 
     // Find or create conversation
@@ -204,6 +210,7 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 
     return res.json({
       data: msg,
+      conversation_id: convId,
       twilio_sid: twilioMsg.sid,
       status: twilioMsg.status
     });

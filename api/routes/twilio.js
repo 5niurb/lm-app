@@ -202,7 +202,11 @@ router.post('/connect-operator-status', (req, res) => {
     );
     twiml.record({
       maxLength: 120,
-      transcribe: true,
+      transcribe: false,
+      transcribeCallback: '/api/webhooks/voice/transcription',
+      recordingStatusCallback: '/api/webhooks/voice/recording',
+      recordingStatusCallbackMethod: 'POST',
+      recordingStatusCallbackEvent: 'completed',
       action: '/api/webhooks/voice/recording',
       method: 'POST'
     });

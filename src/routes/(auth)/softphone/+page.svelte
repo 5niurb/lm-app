@@ -53,16 +53,98 @@
 		['*', '0', '#']
 	];
 
+	/** @type {AudioContext|null} */
+	let audioCtx = null;
+	/** @type {OscillatorNode|null} */
+	let ringOscillator = null;
+	/** @type {any} Ring interval */
+	let ringInterval = null;
+
+	/** Play a browser-native ringtone using Web Audio API */
+	function startRingtone() {
+		try {
+			audioCtx = new (window.AudioContext || /** @type {any} */ (window).webkitAudioContext)();
+			playRingBurst();
+			// Ring pattern: 1s ring, 2s silence
+			ringInterval = setInterval(playRingBurst, 3000);
+		} catch (e) {
+			console.warn('Could not play ringtone:', e);
+		}
+	}
+
+	function playRingBurst() {
+		if (!audioCtx) return;
+		const osc = audioCtx.createOscillator();
+		const gain = audioCtx.createGain();
+		osc.type = 'sine';
+		osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+		gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+		gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+		osc.connect(gain);
+		gain.connect(audioCtx.destination);
+		osc.start();
+		osc.stop(audioCtx.currentTime + 0.8);
+
+		// Second tone at slightly higher pitch for classic ring sound
+		const osc2 = audioCtx.createOscillator();
+		const gain2 = audioCtx.createGain();
+		osc2.type = 'sine';
+		osc2.frequency.setValueAtTime(480, audioCtx.currentTime);
+		gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
+		gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+		osc2.connect(gain2);
+		gain2.connect(audioCtx.destination);
+		osc2.start();
+		osc2.stop(audioCtx.currentTime + 0.8);
+	}
+
+	function stopRingtone() {
+		if (ringInterval) {
+			clearInterval(ringInterval);
+			ringInterval = null;
+		}
+		if (audioCtx) {
+			audioCtx.close().catch(() => {});
+			audioCtx = null;
+		}
+	}
+
 	onMount(() => {
 		return () => {
 			// Cleanup on unmount
 			if (durationTimer) clearInterval(durationTimer);
+			stopRingtone();
 			if (device) {
 				device.destroy();
 				device = null;
 			}
 		};
 	});
+
+	/** Request browser notification permission (for incoming call alerts) */
+	function requestNotificationPermission() {
+		if ('Notification' in window && Notification.permission === 'default') {
+			Notification.requestPermission();
+		}
+	}
+
+	/** Show browser notification for incoming call */
+	function showIncomingCallNotification(caller) {
+		if ('Notification' in window && Notification.permission === 'granted') {
+			const n = new Notification('Incoming Call — Le Med Spa', {
+				body: `Call from ${formatPhone(caller)}`,
+				icon: '/favicon.png',
+				tag: 'incoming-call',
+				requireInteraction: true
+			});
+			n.onclick = () => {
+				window.focus();
+				n.close();
+			};
+			// Auto-close after 20 seconds
+			setTimeout(() => n.close(), 20000);
+		}
+	}
 
 	/**
 	 * Connect to Twilio — must be triggered by user click (browser autoplay policy).
@@ -96,6 +178,22 @@
 			}
 
 			const { token } = await res.json();
+			// Request browser notification permission
+			requestNotificationPermission();
+
+			// Request microphone permission early (so the user grants it once, not during a call)
+			try {
+				statusMessage = 'Requesting microphone access...';
+				const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+				// Release the stream — we just needed the permission
+				stream.getTracks().forEach(t => t.stop());
+			} catch (micErr) {
+				if (micErr.name === 'NotAllowedError' || micErr.name === 'PermissionDeniedError') {
+					throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
+				}
+				console.warn('Mic permission check:', micErr.message);
+			}
+
 			statusMessage = 'Connecting to Twilio...';
 			deviceStatus = 'registering';
 
@@ -103,7 +201,8 @@
 			device = new TwilioDevice(token, {
 				logLevel: 1,
 				codecPreferences: [TwilioCall.Codec.Opus, TwilioCall.Codec.PCMU],
-				allowIncomingWhileBusy: false
+				allowIncomingWhileBusy: false,
+				closeProtection: true
 			});
 
 			// Register event handlers
@@ -134,10 +233,40 @@
 				statusMessage = `Incoming call from ${formatPhone(callerInfo)}`;
 				addToHistory('incoming', `From: ${formatPhone(callerInfo)}`);
 
-				// Play ringtone audio indicator
-				call.on('disconnect', handleDisconnect);
+				// Play audible ringtone + browser notification
+				startRingtone();
+				showIncomingCallNotification(callerInfo);
+
+				call.on('accept', () => {
+					stopRingtone();
+					callState = 'connected';
+					statusMessage = `Connected — ${formatPhone(callerInfo)}`;
+					startDurationTimer();
+					addToHistory('system', 'Call connected (audio active)');
+				});
+
+				call.on('disconnect', () => {
+					stopRingtone();
+					handleDisconnect();
+				});
+
 				call.on('cancel', () => {
+					stopRingtone();
 					addToHistory('system', 'Call canceled by caller');
+					handleDisconnect();
+				});
+
+				call.on('error', (err) => {
+					stopRingtone();
+					console.error('Incoming call error:', err);
+					errorMessage = `Call error: ${err.message || 'unknown'}`;
+					addToHistory('system', `Call error: ${err.message || 'unknown'}`);
+					handleDisconnect();
+				});
+
+				call.on('reject', () => {
+					stopRingtone();
+					addToHistory('system', 'Call rejected');
 					handleDisconnect();
 				});
 			});
@@ -170,22 +299,40 @@
 		statusMessage = device ? 'Ready — listening for calls' : 'Disconnected';
 	}
 
-	function answerCall() {
-		if (activeCall) {
+	async function answerCall() {
+		if (!activeCall) return;
+
+		callState = 'connecting';
+		statusMessage = 'Answering...';
+		addToHistory('system', 'Answering call...');
+
+		try {
+			// Request microphone permission first
+			await navigator.mediaDevices.getUserMedia({ audio: true });
+
 			activeCall.accept({
 				rtcConstraints: {
 					audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
 				}
 			});
-			callState = 'connected';
-			statusMessage = `Connected — ${formatPhone(callerInfo)}`;
-			startDurationTimer();
-			addToHistory('system', 'Call answered');
+			// callState → 'connected' will be set by the 'accept' event handler above
+		} catch (err) {
+			console.error('Failed to answer call:', err);
+			if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+				errorMessage = 'Microphone permission denied. Please allow microphone access and try again.';
+			} else {
+				errorMessage = `Failed to answer: ${err.message}`;
+			}
+			addToHistory('system', `Failed to answer: ${err.message}`);
+			// Don't disconnect — let the call keep ringing so they can retry
+			callState = 'incoming';
+			statusMessage = `Incoming call from ${formatPhone(callerInfo)}`;
 		}
 	}
 
 	function rejectCall() {
 		if (activeCall) {
+			stopRingtone();
 			activeCall.reject();
 			addToHistory('system', 'Call rejected');
 			handleDisconnect();
@@ -385,6 +532,16 @@
 									<span class="text-sm font-medium text-red-400 uppercase tracking-wider">Decline</span>
 								</div>
 							</div>
+						</div>
+					{:else if callState === 'connecting' && activeCall}
+						<!-- Answering / connecting state -->
+						<div class="rounded-xl border-2 border-yellow-400/40 bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 p-6 text-center space-y-3">
+							<div class="flex items-center justify-center gap-2 text-yellow-400">
+								<Phone class="h-6 w-6 animate-pulse" />
+								<span class="text-lg font-medium">Connecting...</span>
+							</div>
+							<p class="text-2xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
+							<p class="text-xs text-[rgba(255,255,255,0.35)]">Setting up audio...</p>
 						</div>
 					{:else}
 						<!-- Connecting / Connected state -->
