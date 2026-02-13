@@ -1,3 +1,48 @@
+## Session — 2026-02-13 (Session 4)
+**Focus:** Studio Flow deployment, new recordings upload, API verification
+
+**Accomplished:**
+- Fixed Twilio Studio Flow validation error: `event: 'fail'` → `event: 'failed'` for HTTP Request widgets
+- Fixed HTTP Request body format: JSON strings → proper URL-encoded params (Express compatibility)
+- Deployed modified flow to test SID (FW9d3adadbd331019576b71c0a586fc491) — published revision 39
+- Uploaded 3 new Elise recordings to Twilio Assets (created `lm-ivr-assets` Serverless service):
+  - `0a-Main-Elise.wav` — new main greeting
+  - `0b-Apologize-missed-Elise.wav` — "sorry we missed your call" (available, not yet wired)
+  - `Hours-Location-Elise-wav.wav` — new hours/location recording
+  - All hosted at: `lm-ivr-assets-2112.twil.io`
+- Updated flow JSON with new recording URLs (replaced periwinkle-partridge → lm-ivr-assets)
+- Created `twilio/upload-assets.js` for Twilio Serverless asset management
+- Verified all 4 webhook endpoints locally:
+  - /incoming → creates call_log, returns 200 (no TwiML) ✅
+  - /event → creates call_event linked to call_log ✅
+  - /recording → creates voicemail with mailbox param ✅
+  - /status, /transcription → unchanged, working ✅
+- Committed and pushed all changes
+
+**Current State:**
+- Test Studio Flow: Published with 5 HTTP Request widgets + new Elise recordings
+- Production Studio Flow: Unchanged (still original, safe)
+- API: All webhooks verified working locally (port 3001)
+- Render service: `lm-app-api.onrender.com` exists but returns `no-server` — needs env vars + deploy
+- Database: All tables ready, tested with mock data (cleaned up)
+- Frontend: Build passes, all pages functional
+
+**Issues:**
+- Render service not yet fully deployed (needs env vars configured in dashboard)
+- SIP endpoint for operator forwarding not configured (still dials HighLevel number)
+- OTP login still accepts hardcoded '000000'
+- `0b-Apologize-missed-Elise.wav` not yet wired into any flow state
+- Need to confirm where "apologize missed" recording should go in the flow
+
+**Next Steps:**
+1. Deploy API to Render (configure env vars in dashboard)
+2. Update Studio Flow webhook URLs to use Render URL
+3. End-to-end test: call test number → IVR → verify logs in dashboard
+4. Deploy modified flow to production
+5. Wire up "apologize missed" recording if needed
+
+---
+
 ## Session — 2026-02-12 (Session 3)
 **Focus:** Brainstorming Twilio phone flow + Approach A implementation
 
@@ -27,20 +72,8 @@
 - Both servers work: API on 3001, SvelteKit on 5173
 - .env files configured with Supabase + Twilio credentials
 
-**Issues:**
-- Twilio Studio Flow not yet modified (no HTTP Request widgets added yet)
-- No test flow created yet for test phone number
-- SIP endpoint for operator forwarding not configured
-- OTP login still accepts hardcoded '000000'
-- API not deployed to Render yet
-
-**Next Steps (from implementation plan):**
-1. Export current Twilio Studio Flow JSON → save to `twilio/flows/main-ivr.json`
-2. Modify Studio Flow: add HTTP Request widgets at key points, replace HighLevel number with SIP
-3. Deploy API to Render + configure env vars
-4. End-to-end test with test Twilio number (ngrok → webhook → DB → dashboard)
-5. Update Studio Flow with production API URLs
-6. Deploy to production
+**Next Steps:**
+- ✅ Completed in Session 4
 
 ---
 
