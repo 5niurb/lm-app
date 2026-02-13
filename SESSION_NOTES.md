@@ -1,32 +1,28 @@
 ## Session — 2026-02-12
-**Focus:** Cross-repo alignment analysis — current state vs. target state
+**Focus:** Cross-repo alignment analysis + cleanup + sync
 
 **Accomplished:**
-- Deep exploration of all 6 directories in lmdev workspace
-- Compared lm-docs research/plans against actual implementation state in each repo
-- Identified tech stack alignment (perfect), design discrepancies (website), and duplicate files
+- Analyzed all 6 directories in workspace for alignment between plans (lm-docs) and implementation
+- Removed duplicate research/guide docs from lm-app/ and lmdev/ root (authoritative copies stay in lm-docs)
+- Deleted empty lmwebappdev/ directory (lmappdev/ locked by VS — skip for now)
+- Updated lm-docs research: all Netlify references → Cloudflare Pages, design direction updated to dark+gold (archived cream/ivory concept)
+- Updated lm-app CLAUDE.md: added Day 1 priority (call logging), design direction (dark+gold), security approach (2FA designed in, ships incrementally)
+- Updated workspace CLAUDE.md: lm-app repo now exists, design alignment noted, status updated
+- Committed and pushed all 3 repos (lm-app, lm-docs, lmdev)
 
 **Current State:**
-- **lm-docs:** Research 100% complete. 5-phase plan with detailed tech stack, cost analysis, architecture. Authoritative source of truth for planning.
-- **lm-app:** Scaffolded (~5% functional). 1 commit. SvelteKit + Express + Supabase. Database schema fully designed (8 tables). Auth middleware works. All API routes are stubs with TODO comments. OTP accepts only hardcoded '000000'. No real data operations.
-- **lemedspa-website:** Production (~70%). Dark theme + gold accents. Cloudflare Pages. 10 pages. Active visual polish phase. Design does NOT match lm-docs warm/cream vision — unclear if redesign still planned.
-- **timetracker:** Production (~95%). Fully working employee time/payroll tracker. Express + Supabase. Render.com. Different fonts (Cormorant Garamond + Montserrat) than lm-app plan.
-- **lmappdev / lmwebappdev:** Empty/abandoned. Can be deleted.
-
-**Key Findings:**
-1. Tech stack alignment is perfect across lm-docs plan → lm-app implementation
-2. Website design direction mismatch: lm-docs says warm/cream/minimal, actual site is dark/gold
-3. Duplicate research/guide docs exist in lm-app/ and lmdev/ root (should live only in lm-docs/)
-4. lm-docs still references Netlify hosting; website migrated to Cloudflare Pages
-5. lm-app Phase 1A is ready to implement — scaffold is solid, just needs real logic
+- All repos clean and pushed to GitHub
+- lm-docs research now accurately reflects: Cloudflare Pages hosting, dark+gold design, website ~70% complete
+- lm-app CLAUDE.md now has clear priorities: Day 1 = call logging + voicemail, 2FA later
+- No more duplicate docs across repos
 
 **Issues:**
-- Website design direction needs clarification (dark vs warm)
-- Duplicate docs in multiple repos
-- lm-docs hosting references outdated (Netlify → Cloudflare)
+- lmappdev/ couldn't be fully deleted (VS Copilot index files locked). Close Visual Studio and retry later.
 
 **Next Steps:**
-- Clarify website design direction with Lea
-- Clean up duplicate docs and empty directories
-- Begin Phase 1A implementation in lm-app (auth flow → Twilio → call CRUD → dashboard)
-- Update lm-docs to reflect Cloudflare hosting migration
+- Begin Phase 1A implementation in lm-app (call logging + voicemail)
+  - Complete auth flow (email+password MVP, skip 2FA for now)
+  - Wire up Twilio Voice webhooks
+  - Implement call log CRUD operations
+  - Build dashboard UI with real data
+- Delete lmappdev/ after closing Visual Studio
