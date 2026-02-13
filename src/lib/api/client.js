@@ -1,7 +1,8 @@
 import { get } from 'svelte/store';
 import { session } from '$lib/stores/auth.js';
+import { PUBLIC_API_URL } from '$env/static/public';
 
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = PUBLIC_API_URL || 'http://localhost:3001';
 
 /**
  * Fetch wrapper that attaches auth token and handles JSON
