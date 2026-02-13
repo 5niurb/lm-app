@@ -35,6 +35,17 @@
         "@upstash/context7-mcp@latest"
       ],
       "env": {}
+    },
+    "firecrawl": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-2a428dda412646c99d00cf5915324de6"
+      }
     }
   }
 }
