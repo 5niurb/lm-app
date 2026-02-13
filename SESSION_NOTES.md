@@ -1,3 +1,44 @@
+## Session — 2026-02-13 (Session 10)
+**Focus:** Dark+gold theme, softphone UX, 2-way messaging, operator routing, outbound call logging
+
+**Accomplished:**
+- **Dark+gold theme applied to ALL pages**: Dashboard, voicemails, calls, contacts, settings, softphone — all now match lemedspa-website aesthetic (Playfair Display headings, gold #C5A55A accents, hover translateY effects, gold borders)
+- **Softphone incoming call UI redesigned**: Large 80px Answer/Decline buttons with labels, blue gradient background, bounce animation, ring glow effects — impossible to miss
+- **2-way SMS messaging system built (full feature)**:
+  - DB: `conversations` + `messages` tables (migration applied to Supabase)
+  - API: `api/routes/messages.js` — list conversations, get thread, send message, stats
+  - Webhook: `api/routes/webhooks/sms.js` — incoming SMS + delivery status callbacks
+  - Frontend: `/messages` page — conversation list, chat thread, compose, new conversation, 10s auto-refresh, gold-themed chat bubbles
+  - Added Messages to sidebar navigation (MessageSquare icon)
+- **Outbound call logging**: `/api/twilio/voice` now logs outbound calls to `call_logs` + new `/api/twilio/outbound-status` callback for final status/duration
+- **Operator routing cleaned up**: Removed +12797327364 fallback number — now SIP + softphone only. Ring timeout set to 20 seconds.
+- **Fixed contacts source CHECK constraint**: Added 'inbound_call' to allow auto-creation of contacts from calls
+- **Voicemail tiles reordered**: Main/Care → Lea → Operations → Clinical (was alphabetical)
+- **SIP routing added**: `connect-operator` dials `lemedflex.sip.twilio.com` + browser client simultaneously
+
+**Current State:**
+- API running locally on :3001, SvelteKit on :5173
+- All 7 pages themed and functional: Dashboard, Softphone, Calls, Voicemails, Messages, Contacts, Settings
+- Render deploy triggered (3 commits pushed)
+- DB migration applied: conversations + messages tables live
+- SMS webhook endpoint ready at `/api/webhooks/sms/incoming`
+
+**Issues:**
+- **Twilio SMS webhook not configured yet**: Need to point Twilio number's SMS webhook to `https://lm-app-api.onrender.com/api/webhooks/sms/incoming`
+- **SIP credentials blank in local .env** — need values from Render (or enter manually)
+- **Frontend not deployed to Cloudflare Pages** — only accessible locally
+- **Softphone incoming call not connecting** — heard ringing but UI didn't fully connect (may be a Twilio client registration or audio permission issue)
+
+**Next Steps:**
+1. Configure Twilio SMS webhook URL in Twilio console → point to Render API
+2. Test 2-way messaging end-to-end (send from app, receive reply)
+3. Debug softphone call connection issue (audio permissions, client registration)
+4. Deploy frontend to Cloudflare Pages
+5. Test SIP routing with real SIP credentials
+6. Update production Studio flow once everything is verified
+
+---
+
 ## Session — 2026-02-13 (Session 9, continued)
 **Focus:** Render keep-alive, Studio flow update, browser softphone, Ops voicemail menu, global 0-to-operator
 
