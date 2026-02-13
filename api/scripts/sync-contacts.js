@@ -110,6 +110,7 @@ function parseCsvLine(line) {
 /**
  * Map a CSV record to our contacts table schema.
  * Adapts to various column naming conventions.
+ * Handles the patients3 unified sheet format (AR + GHL + TextMagic columns).
  */
 function mapRecord(raw) {
   // Try common column names for each field
@@ -120,23 +121,61 @@ function mapRecord(raw) {
   const phone = raw['phone'] || raw['phone number'] || raw['phone_number'] || raw['mobile'] || raw['cell'] || '';
   const email = raw['email'] || raw['email address'] || raw['email_address'] || '';
   const source = raw['source'] || raw['origin'] || 'google_sheet';
-  const sourceId = raw['id'] || raw['patient id'] || raw['patient_id'] || raw['contact id'] || '';
-  const status = raw['status'] || raw['patient status'] || raw['patient_status'] || '';
+  const sourceId = raw['ar id'] || raw['id'] || raw['patient id'] || raw['patient_id'] || raw['contact id'] || '';
+  const status = raw['status'] || raw['patient status'] || raw['patient_status'] || raw['contact type'] || '';
 
-  // Build metadata from any extra fields
-  const metadata = {};
-  const knownKeys = new Set([
+  // Primary fields that go into top-level columns (not metadata)
+  const primaryKeys = new Set([
     'first name', 'first_name', 'firstname', 'first',
     'last name', 'last_name', 'lastname', 'last',
     'full name', 'full_name', 'name', 'contact name',
     'phone', 'phone number', 'phone_number', 'mobile', 'cell',
     'email', 'email address', 'email_address',
-    'source', 'origin', 'id', 'patient id', 'patient_id', 'contact id',
-    'status', 'patient status', 'patient_status'
+    'source', 'origin',
+    'ar id', 'id', 'patient id', 'patient_id', 'contact id',
+    'status', 'patient status', 'patient_status', 'contact type'
   ]);
+
+  // Columns we specifically want in metadata (vs. junk columns)
+  const metadata = {};
+  const metadataMapping = {
+    'total sales': 'total_sales',
+    'visited': 'last_visited',
+    'nick name': 'nickname',
+    'referral source': 'referral_source',
+    'dob': 'dob',
+    'address line 1': 'address_line1',
+    'address line 2': 'address_line2',
+    'city': 'city',
+    'state': 'state',
+    'zip': 'zip',
+    'country': 'country',
+    'membership type': 'membership_type',
+    'patient created date': 'patient_created_date',
+    'lists': 'lists',
+    'tags': 'tags',
+    'ghl contact id': 'ghl_contact_id',
+    'ghl contact name': 'ghl_contact_name',
+    'ghl date added': 'ghl_date_added',
+    'ghl date updated': 'ghl_date_updated',
+    'ghl phone': 'ghl_phone',
+    'textmagic phone': 'textmagic_phone',
+    'textmagic contact id': 'textmagic_contact_id',
+    'textmagic make': 'textmagic_make'
+  };
+
+  for (const [csvKey, metaKey] of Object.entries(metadataMapping)) {
+    if (raw[csvKey] && raw[csvKey].trim()) {
+      metadata[metaKey] = raw[csvKey].trim();
+    }
+  }
+
+  // Catch any extra columns not in primary or metadata mapping
   for (const [key, val] of Object.entries(raw)) {
-    if (!knownKeys.has(key) && val) {
-      metadata[key] = val;
+    if (!primaryKeys.has(key) && !metadataMapping[key] && val && val.trim()) {
+      // Skip image columns and empty values
+      if (key.includes('image') || key.includes('user_image')) continue;
+      metadata[key] = val.trim();
     }
   }
 
@@ -161,7 +200,7 @@ function mapRecord(raw) {
     email: email || null,
     source: normalizedSource,
     source_id: sourceId || null,
-    patient_status: status || null,
+    patient_status: status ? status.toLowerCase() : null,
     metadata: Object.keys(metadata).length > 0 ? metadata : {},
     last_synced_at: new Date().toISOString()
   };
