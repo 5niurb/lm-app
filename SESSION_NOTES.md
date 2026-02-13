@@ -1,3 +1,38 @@
+## Session — 2026-02-13 (Session 13)
+**Focus:** Cloudflare Pages deployment, Render verification, session 12 commit
+
+**Accomplished:**
+- **Frontend deployed to Cloudflare Pages**: https://lm-app.pages.dev — fully functional with login, dashboard, all 7 pages
+- **wrangler.toml created**: nodejs_compat flag, env vars (PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, PUBLIC_API_URL)
+- **Login verified end-to-end**: ops@lemedspa.com → Supabase auth → redirect to dashboard (on deployed CF Pages)
+- **All pages verified on deployed app**: Dashboard, Softphone, Calls, Voicemails, Messages, Contacts, Settings
+- **Render API verified**: Health check, SMS webhook, messages stats — all working
+- **SVG favicon added**: Gold LM branding, theme-color meta
+- **Session 12 work committed**: RCS assets, Terms of Service, playwright dep, .gitignore update
+- **Dev servers restarted**: API :3001, SvelteKit :5173
+
+**Current State:**
+- **Frontend**: Live at https://lm-app.pages.dev (Cloudflare Pages)
+- **API**: Live at https://lm-app-api.onrender.com (Render)
+- **Database**: Supabase (skvsjcckissnyxcafwyr) — all tables, migrations, RLS
+- **SMS webhook**: Configured in Twilio → Render API
+- **All 7 pages**: Themed, functional, deployed
+- Dev servers running locally: API :3001, SvelteKit :5173
+
+**Issues:**
+- **Softphone incoming call audio untested**: Code fixes from session 11 deployed but need real call test
+- **Production Studio flow not updated**: Still using old flow — test flow has all changes
+- **SIP credentials**: In Render env vars but blank locally
+
+**Next Steps:**
+1. Test softphone end-to-end (call Twilio number → press 0 → answer in deployed app)
+2. Test 2-way messaging end-to-end (SMS → verify in Messages page → reply)
+3. Update production Studio flow once testing passes
+4. Create RCS Sender in Twilio Console
+5. Continue Phase 1A development
+
+---
+
 ## Session — 2026-02-13 (Session 12)
 **Focus:** RCS prerequisites completion, TOS creation, textme hook fix, session continuation
 
