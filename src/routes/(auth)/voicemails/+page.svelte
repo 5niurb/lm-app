@@ -102,7 +102,7 @@
 		}
 	}
 
-	function playRecording(vm) {
+	async function playRecording(vm) {
 		if (playingId === vm.id) {
 			audioEl?.pause();
 			playingId = null;
@@ -111,10 +111,34 @@
 		if (audioEl) {
 			audioEl.pause();
 		}
-		audioEl = new Audio(vm.recording_url);
-		audioEl.play();
-		playingId = vm.id;
-		audioEl.onended = () => { playingId = null; };
+		// Use our API proxy instead of direct Twilio URL (which requires auth)
+		const proxyUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:3001'}/api/voicemails/${vm.id}/recording`;
+		const currentSession = (await import('$lib/stores/auth.js')).session;
+		const { get } = await import('svelte/store');
+		const token = get(currentSession)?.access_token;
+
+		audioEl = new Audio();
+		// Set auth header via fetch + blob URL since Audio element can't set headers
+		try {
+			playingId = vm.id;
+			const res = await fetch(proxyUrl, {
+				headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+			});
+			if (!res.ok) throw new Error('Failed to load recording');
+			const blob = await res.blob();
+			audioEl.src = URL.createObjectURL(blob);
+			audioEl.play();
+			audioEl.onended = () => { playingId = null; };
+		} catch (e) {
+			console.error('Failed to play recording:', e);
+			playingId = null;
+			error = 'Failed to play recording';
+		}
+
+		// Auto-mark as read when played
+		if (vm.is_new) {
+			toggleRead(vm);
+		}
 	}
 
 	function nextPage() {

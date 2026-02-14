@@ -119,6 +119,81 @@ router.get('/:id', logAction('voicemails.read'), async (req, res) => {
 });
 
 /**
+ * GET /api/voicemails/:id/recording
+ * Proxy the Twilio recording audio so the browser doesn't need Twilio credentials.
+ * Streams the audio through our API with proper auth.
+ */
+router.get('/:id/recording', logAction('voicemails.playRecording'), async (req, res) => {
+  const { id } = req.params;
+
+  // Look up the voicemail to get the recording URL
+  const { data: vm, error } = await supabaseAdmin
+    .from('voicemails')
+    .select('recording_url, recording_sid')
+    .eq('id', id)
+    .single();
+
+  if (error || !vm) {
+    return res.status(404).json({ error: 'Voicemail not found' });
+  }
+
+  if (!vm.recording_url && !vm.recording_sid) {
+    return res.status(404).json({ error: 'No recording available' });
+  }
+
+  try {
+    // Build the Twilio recording URL (prefer .mp3 format)
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    let recordingUrl = vm.recording_url;
+
+    // Ensure we're fetching the .mp3 version
+    if (recordingUrl && !recordingUrl.endsWith('.mp3') && !recordingUrl.endsWith('.wav')) {
+      recordingUrl = recordingUrl + '.mp3';
+    }
+
+    // If we only have a SID, build the URL
+    if (!recordingUrl && vm.recording_sid) {
+      recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${vm.recording_sid}.mp3`;
+    }
+
+    // Fetch from Twilio with Basic Auth
+    const twilioRes = await fetch(recordingUrl, {
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+      }
+    });
+
+    if (!twilioRes.ok) {
+      console.error(`Twilio recording fetch failed: ${twilioRes.status} ${twilioRes.statusText}`);
+      return res.status(502).json({ error: 'Failed to fetch recording from Twilio' });
+    }
+
+    // Stream the audio back to the client
+    res.set('Content-Type', twilioRes.headers.get('content-type') || 'audio/mpeg');
+    const contentLength = twilioRes.headers.get('content-length');
+    if (contentLength) res.set('Content-Length', contentLength);
+    res.set('Cache-Control', 'private, max-age=3600'); // Cache for 1 hour
+
+    // Pipe the response body
+    const reader = twilioRes.body.getReader();
+    const pump = async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) { res.end(); break; }
+        res.write(value);
+      }
+    };
+    await pump();
+  } catch (e) {
+    console.error('Recording proxy error:', e.message);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Failed to proxy recording' });
+    }
+  }
+});
+
+/**
  * PATCH /api/voicemails/:id/read
  * Mark a voicemail as read (is_new = false).
  */
