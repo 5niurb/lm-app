@@ -24,7 +24,7 @@
 	/** @type {'offline'|'registering'|'registered'|'error'} */
 	let deviceStatus = $state('offline');
 	/** @type {string} */
-	let statusMessage = $state('Click "Connect" to start');
+	let statusMessage = $state('Connecting...');
 	/** @type {string} Error message */
 	let errorMessage = $state('');
 	/** @type {string} */
@@ -110,6 +110,11 @@
 	}
 
 	onMount(() => {
+		// Auto-connect to Twilio on page load — no manual "Connect" button needed.
+		// Registering with Twilio's signaling server costs nothing; bandwidth is only
+		// used when an actual call happens.
+		connectDevice();
+
 		return () => {
 			// Cleanup on unmount
 			if (durationTimer) clearInterval(durationTimer);
@@ -147,7 +152,9 @@
 	}
 
 	/**
-	 * Connect to Twilio — must be triggered by user click (browser autoplay policy).
+	 * Connect to Twilio. Auto-called on mount; can also be triggered manually
+	 * (e.g. after disconnect or error). Browser mic permission is requested
+	 * during this flow.
 	 */
 	async function connectDevice() {
 		if (isConnecting || deviceStatus === 'registered') return;
@@ -437,7 +444,7 @@
 			device = null;
 		}
 		deviceStatus = 'offline';
-		statusMessage = 'Click "Connect" to start';
+		statusMessage = 'Disconnected — click Connect to reconnect';
 		addToHistory('system', 'Disconnected');
 	}
 </script>
@@ -657,7 +664,7 @@
 						<div class="text-center">
 							<Headset class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
 							<p class="text-sm text-[rgba(255,255,255,0.35)]">No calls yet this session.</p>
-							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Click "Connect" then incoming calls will ring here.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Incoming calls will ring here once connected.</p>
 						</div>
 					</div>
 				{:else}
