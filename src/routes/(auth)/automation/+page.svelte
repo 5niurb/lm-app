@@ -1,7 +1,7 @@
 <script>
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
-	import { Zap, Play, Pause, Plus, Pencil, Trash2, Clock, Mail, MessageSquare, Send, X, ChevronDown, ChevronRight } from '@lucide/svelte';
+	import { Zap, Play, Pause, Plus, Pencil, Trash2, Clock, Mail, MessageSquare, Send, X, ChevronDown, ChevronRight, FileText, Link2 } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { isAdmin } from '$lib/stores/auth.js';
 
@@ -35,6 +35,7 @@
 	let formChannel = $state('both');
 	let formTemplate = $state('confirmation');
 	let formServiceId = $state('');
+	let formContentRef = $state('');
 	let formSubject = $state('');
 	let formBody = $state('');
 	let formActive = $state(true);
@@ -43,6 +44,10 @@
 	// Services (for dropdown)
 	/** @type {any[]} */
 	let services = $state([]);
+
+	// Content blocks for selected service (for content_ref dropdown)
+	/** @type {any[]} */
+	let serviceContentBlocks = $state([]);
 
 	// Toast
 	let toast = $state('');
@@ -91,6 +96,16 @@
 		}
 	});
 
+	// Load content blocks when service changes in form
+	$effect(() => {
+		if (formServiceId) {
+			loadServiceContent(formServiceId);
+		} else {
+			serviceContentBlocks = [];
+			formContentRef = '';
+		}
+	});
+
 	async function loadSequences() {
 		seqLoading = true;
 		try {
@@ -132,6 +147,26 @@
 		} catch {
 			services = [];
 		}
+	}
+
+	async function loadServiceContent(serviceId) {
+		try {
+			const res = await api(`/api/services/${serviceId}/content`);
+			serviceContentBlocks = res.data || [];
+		} catch {
+			serviceContentBlocks = [];
+		}
+	}
+
+	function contentTypeLabel(type) {
+		const labels = {
+			pre_instructions: 'Pre-Treatment',
+			post_instructions: 'Post-Treatment',
+			faq: 'FAQ',
+			consent_form: 'Consent',
+			promo: 'Promotion'
+		};
+		return labels[type] || type;
 	}
 
 	function showToast(msg, type = 'success') {
@@ -200,9 +235,11 @@
 		formChannel = 'both';
 		formTemplate = 'confirmation';
 		formServiceId = '';
+		formContentRef = '';
 		formSubject = '';
 		formBody = '';
 		formActive = true;
+		serviceContentBlocks = [];
 		showForm = true;
 	}
 
@@ -214,10 +251,12 @@
 		formChannel = seq.channel;
 		formTemplate = seq.template_type;
 		formServiceId = seq.service_id || '';
+		formContentRef = seq.content_ref || '';
 		formSubject = seq.subject_line || '';
 		formBody = seq.message_body || '';
 		formActive = seq.is_active;
 		showForm = true;
+		// Content blocks will load via the $effect when formServiceId changes
 	}
 
 	async function saveSequence() {
@@ -234,6 +273,7 @@
 				channel: formChannel,
 				template_type: formTemplate,
 				service_id: formServiceId || null,
+				content_ref: formContentRef || null,
 				subject_line: formSubject || null,
 				message_body: formBody || null,
 				is_active: formActive
@@ -427,6 +467,35 @@
 				</div>
 			</div>
 
+			<!-- Content Block Link (only when service selected) -->
+			{#if formServiceId}
+				<div class="rounded border border-[rgba(197,165,90,0.1)] bg-[rgba(197,165,90,0.02)] p-4">
+					<div class="flex items-center gap-2 mb-2">
+						<Link2 class="h-3.5 w-3.5 text-[#c5a55a]" />
+						<label class="text-xs uppercase tracking-[0.12em] text-[rgba(197,165,90,0.6)]">Link Content Block</label>
+					</div>
+					{#if serviceContentBlocks.length > 0}
+						<select bind:value={formContentRef}
+							class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors">
+							<option value="">No linked content (use custom body)</option>
+							{#each serviceContentBlocks as block}
+								<option value={block.id}>[{contentTypeLabel(block.content_type)}] {block.title}</option>
+							{/each}
+						</select>
+						{#if formContentRef}
+							{@const linked = serviceContentBlocks.find(b => b.id === formContentRef)}
+							{#if linked?.summary}
+								<p class="text-[10px] text-[rgba(255,255,255,0.25)] mt-1.5 leading-relaxed">
+									<span class="text-[rgba(197,165,90,0.4)]">SMS preview:</span> {linked.summary}
+								</p>
+							{/if}
+						{/if}
+					{:else}
+						<p class="text-xs text-[rgba(255,255,255,0.25)]">No content blocks for this service. <a href="/services" class="text-[#c5a55a] hover:underline">Create content →</a></p>
+					{/if}
+				</div>
+			{/if}
+
 			<div>
 				<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block">Email Subject (optional)</label>
 				<input type="text" bind:value={formSubject} placeholder="Auto-generated if blank"
@@ -506,12 +575,18 @@
 										{/if}
 									</button>
 
-									<!-- Name + timing -->
+									<!-- Name + timing + content link -->
 									<div class="flex-1 min-w-0">
-										<div class="flex items-center gap-2">
+										<div class="flex items-center gap-2 flex-wrap">
 											<span class="text-sm {seq.is_active ? 'text-[rgba(255,255,255,0.85)]' : 'text-[rgba(255,255,255,0.35)]'}">{seq.name}</span>
 											{#if seq.service?.name}
 												<span class="text-[10px] px-1.5 py-0.5 rounded border border-[rgba(197,165,90,0.1)] text-[rgba(197,165,90,0.5)]">{seq.service.name}</span>
+											{/if}
+											{#if seq.content}
+												<span class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/15 text-emerald-400/60 bg-emerald-500/5">
+													<FileText class="h-2.5 w-2.5" />
+													{seq.content.title}
+												</span>
 											{/if}
 										</div>
 										<div class="flex items-center gap-2 mt-0.5">
@@ -519,6 +594,11 @@
 											<span class="text-[10px] text-[rgba(255,255,255,0.3)] font-mono">
 												{formatTiming(seq.timing_offset)} {formatTimingDirection(seq.timing_offset)}
 											</span>
+											{#if seq.content?.summary}
+												<span class="text-[10px] text-[rgba(255,255,255,0.15)] hidden lg:inline truncate max-w-xs">
+													· SMS: {seq.content.summary.slice(0, 60)}...
+												</span>
+											{/if}
 										</div>
 									</div>
 
