@@ -7,7 +7,7 @@
 	const navItems = [
 		{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
 		{ href: '/softphone', label: 'Softphone', icon: Headset },
-		{ href: '/calls', label: 'Phone Log', icon: Phone },
+		{ href: '/calls', label: 'Phone Log', icon: Phone, badgeKey: 'unheardVoicemails' },
 		{ href: '/messages', label: 'Messages', icon: MessageSquare, badgeKey: 'unreadMessages' },
 		{ href: '/contacts', label: 'Contacts', icon: Users },
 		{ href: '/services', label: 'Services', icon: Sparkles },
@@ -15,18 +15,20 @@
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
 
-	/** @type {{ unreadMessages: number }} */
-	let badges = $state({ unreadMessages: 0 });
+	/** @type {{ unreadMessages: number, unheardVoicemails: number }} */
+	let badges = $state({ unreadMessages: 0, unheardVoicemails: 0 });
 
 	/** @type {number|null} */
 	let badgeInterval = null;
 
 	async function loadBadges() {
 		try {
-			const [msgStats] = await Promise.all([
-				api('/api/messages/stats').catch(() => ({ unreadConversations: 0 }))
+			const [msgStats, vmStats] = await Promise.all([
+				api('/api/messages/stats').catch(() => ({ unreadConversations: 0 })),
+				api('/api/voicemails/stats').catch(() => ({ unheard: 0 }))
 			]);
 			badges.unreadMessages = msgStats.unreadConversations || 0;
+			badges.unheardVoicemails = vmStats.total_unheard || 0;
 		} catch (e) {
 			// Silent — badges are non-critical
 		}
@@ -67,9 +69,9 @@
 											<item.icon class="h-4 w-4" />
 											<span>{item.label}</span>
 										</span>
-										{#if item.badgeKey === 'unreadMessages' && badges.unreadMessages > 0}
-											<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]">
-												{badges.unreadMessages}
+										{#if item.badgeKey && badges[item.badgeKey] > 0}
+											<span class="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold {item.badgeKey === 'unheardVoicemails' ? 'bg-red-500/80 text-white' : 'bg-[#C5A55A] text-[#1A1A1A]'}">
+												{badges[item.badgeKey]}
 											</span>
 										{/if}
 									</a>
