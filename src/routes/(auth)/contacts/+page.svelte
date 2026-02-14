@@ -242,47 +242,31 @@
 									<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(197,165,90,0.1)] text-sm font-medium text-[#C5A55A]" style="font-family: 'Playfair Display', serif;">
 										{(contact.first_name?.[0] || contact.full_name?.[0] || '?').toUpperCase()}
 									</div>
-									<div class="min-w-0 flex-1">
-										<p class="text-sm font-medium text-[rgba(255,255,255,0.85)] truncate">
-											{contact.full_name || 'Unknown'}
-										</p>
-										<div class="flex items-center gap-3 text-xs text-[rgba(255,255,255,0.35)]">
-											{#if contact.phone}
-												<span class="flex items-center gap-1">
-													<Phone class="h-3 w-3" />
-													{formatPhone(contact.phone)}
-												</span>
-											{/if}
-											{#if contact.email}
-												<span class="flex items-center gap-1 truncate">
-													<Mail class="h-3 w-3" />
-													{contact.email}
-												</span>
-											{/if}
+									<p class="text-sm font-medium text-[rgba(255,255,255,0.85)] truncate">
+										{contact.full_name || 'Unknown'}
+									</p>
+									<!-- Quick actions right next to name -->
+									{#if contact.phone}
+										<div class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+											<a
+												href="/softphone?call={encodeURIComponent(contact.phone)}"
+												class="inline-flex items-center justify-center h-11 w-11 rounded-xl hover:bg-emerald-500/15 text-[rgba(255,255,255,0.25)] hover:text-emerald-400 transition-all"
+												title="Call {contact.full_name || 'contact'}"
+												onclick={(e) => e.stopPropagation()}
+											>
+												<PhoneOutgoing class="h-7 w-7" />
+											</a>
+											<a
+												href="/messages?phone={encodeURIComponent(contact.phone)}&new=true"
+												class="inline-flex items-center justify-center h-11 w-11 rounded-xl hover:bg-blue-500/15 text-[rgba(255,255,255,0.25)] hover:text-blue-400 transition-all"
+												title="Message {contact.full_name || 'contact'}"
+												onclick={(e) => e.stopPropagation()}
+											>
+												<MessageSquare class="h-7 w-7" />
+											</a>
 										</div>
-									</div>
+									{/if}
 								</div>
-								<!-- Quick actions (visible on hover, next to name) -->
-								{#if contact.phone}
-									<div class="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-										<a
-											href="/softphone?call={encodeURIComponent(contact.phone)}"
-											class="inline-flex items-center justify-center h-12 w-12 rounded-xl hover:bg-emerald-500/15 text-[rgba(255,255,255,0.3)] hover:text-emerald-400 transition-all"
-											title="Call {contact.full_name || 'contact'}"
-											onclick={(e) => e.stopPropagation()}
-										>
-											<PhoneOutgoing class="h-8 w-8" />
-										</a>
-										<a
-											href="/messages?phone={encodeURIComponent(contact.phone)}"
-											class="inline-flex items-center justify-center h-12 w-12 rounded-xl hover:bg-blue-500/15 text-[rgba(255,255,255,0.3)] hover:text-blue-400 transition-all"
-											title="Message {contact.full_name || 'contact'}"
-											onclick={(e) => e.stopPropagation()}
-										>
-											<MessageSquare class="h-8 w-8" />
-										</a>
-									</div>
-								{/if}
 								<div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap justify-end">
 									{#if contact.tags && contact.tags.length > 0}
 										{#each contact.tags as tag}

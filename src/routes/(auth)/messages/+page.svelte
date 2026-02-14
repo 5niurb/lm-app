@@ -1,4 +1,6 @@
 <script>
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
@@ -27,6 +29,16 @@
 
 	/** @type {number|null} Auto-refresh interval */
 	let refreshInterval = null;
+
+	// Check URL params for ?phone=xxx&new=true (from contacts page quick action)
+	onMount(() => {
+		const params = new URLSearchParams(window.location.search);
+		const phoneParam = params.get('phone');
+		if (phoneParam) {
+			showNewConvo = true;
+			newConvoPhone = phoneParam;
+		}
+	});
 
 	$effect(() => {
 		loadConversations();
