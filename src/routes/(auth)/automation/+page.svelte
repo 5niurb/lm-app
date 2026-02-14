@@ -56,6 +56,19 @@
 	// Expanded group
 	let expandedTrigger = $state('');
 
+	// Test Send modal
+	let showTestSend = $state(false);
+	let testSeqId = $state('');
+	let testClientSearch = $state('');
+	/** @type {any[]} */
+	let testClientResults = $state([]);
+	/** @type {any} */
+	let testClient = $state(null);
+	let testSending = $state(false);
+	/** @type {any} */
+	let testResult = $state(null);
+	let testSearching = $state(false);
+
 	const triggerEvents = [
 		{ value: 'booking_confirmed', label: 'Booking Confirmed', icon: '📅' },
 		{ value: 'pre_appointment', label: 'Pre-Appointment', icon: '⏰' },
@@ -330,6 +343,83 @@
 			month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
 		});
 	}
+
+	// --- Test Send ---
+
+	function openTestSend(seq) {
+		testSeqId = seq?.id || '';
+		testClientSearch = '';
+		testClientResults = [];
+		testClient = null;
+		testSending = false;
+		testResult = null;
+		showTestSend = true;
+	}
+
+	let searchTimeout;
+	function onTestClientSearch() {
+		clearTimeout(searchTimeout);
+		if (testClientSearch.length < 2) {
+			testClientResults = [];
+			return;
+		}
+		searchTimeout = setTimeout(async () => {
+			testSearching = true;
+			try {
+				const res = await api(`/api/contacts/search?q=${encodeURIComponent(testClientSearch)}&limit=8`);
+				testClientResults = res.data || [];
+			} catch {
+				testClientResults = [];
+			} finally {
+				testSearching = false;
+			}
+		}, 300);
+	}
+
+	function selectTestClient(c) {
+		testClient = c;
+		testClientSearch = c.full_name || c.phone || '';
+		testClientResults = [];
+	}
+
+	async function executeTrigger() {
+		if (!testSeqId || !testClient) {
+			showToast('Select a sequence and a contact', 'error');
+			return;
+		}
+		testSending = true;
+		testResult = null;
+		try {
+			const res = await api('/api/automation/trigger', {
+				method: 'POST',
+				body: JSON.stringify({
+					sequence_id: testSeqId,
+					client_id: testClient.id
+				})
+			});
+			testResult = res;
+			showToast(res.message || 'Sent!');
+			// Refresh log if on that tab
+			if (activeTab === 'log') loadLog();
+			loadStats();
+		} catch (e) {
+			testResult = { error: e.message };
+			showToast(e.message, 'error');
+		} finally {
+			testSending = false;
+		}
+	}
+
+	async function processQueue() {
+		try {
+			const res = await api('/api/automation/process', { method: 'POST' });
+			showToast(res.message || `Processed ${res.processed} entries`);
+			loadStats();
+			if (activeTab === 'log') loadLog();
+		} catch (e) {
+			showToast(e.message, 'error');
+		}
+	}
 </script>
 
 <div class="space-y-6">
@@ -339,14 +429,35 @@
 			<h1 class="text-2xl tracking-wide">Automation</h1>
 			<p class="text-sm text-muted-foreground mt-1">Automated message sequences for patient journey.</p>
 		</div>
-		{#if $isAdmin && activeTab === 'sequences'}
-			<button
-				onclick={openCreateForm}
-				class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-[#c5a55a] text-[#0a0a0c] hover:bg-[#d4af37] transition-colors font-medium"
-			>
-				<Plus class="h-4 w-4" />
-				Add Sequence
-			</button>
+		{#if $isAdmin}
+			<div class="flex items-center gap-2">
+				{#if activeTab === 'log'}
+					<button
+						onclick={processQueue}
+						class="flex items-center gap-2 px-3 py-2 rounded text-sm border border-[rgba(197,165,90,0.2)] text-[rgba(255,255,255,0.5)] hover:text-[#c5a55a] hover:border-[rgba(197,165,90,0.4)] transition-colors"
+						title="Process all scheduled entries"
+					>
+						<Play class="h-3.5 w-3.5" />
+						Process Queue
+					</button>
+				{/if}
+				<button
+					onclick={() => openTestSend(null)}
+					class="flex items-center gap-2 px-3 py-2 rounded text-sm border border-emerald-500/20 text-emerald-400/70 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
+				>
+					<Send class="h-3.5 w-3.5" />
+					Test Send
+				</button>
+				{#if activeTab === 'sequences'}
+					<button
+						onclick={openCreateForm}
+						class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-[#c5a55a] text-[#0a0a0c] hover:bg-[#d4af37] transition-colors font-medium"
+					>
+						<Plus class="h-4 w-4" />
+						Add Sequence
+					</button>
+				{/if}
+			</div>
 		{/if}
 	</div>
 
@@ -613,6 +724,10 @@
 									<!-- Actions -->
 									{#if $isAdmin}
 										<div class="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+											<button onclick={() => openTestSend(seq)}
+												class="p-1 rounded text-[rgba(255,255,255,0.2)] hover:text-emerald-400 transition-colors" title="Test send">
+												<Send class="h-3.5 w-3.5" />
+											</button>
 											<button onclick={() => openEditForm(seq)}
 												class="p-1 rounded text-[rgba(255,255,255,0.2)] hover:text-[#c5a55a] transition-colors" title="Edit">
 												<Pencil class="h-3.5 w-3.5" />
@@ -723,5 +838,123 @@
 				</div>
 			{/if}
 		{/if}
+	{/if}
+
+	<!-- TEST SEND MODAL -->
+	{#if showTestSend}
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+			onclick={(e) => { if (e.target === e.currentTarget) showTestSend = false; }}>
+			<div class="w-full max-w-md rounded-lg border border-[rgba(197,165,90,0.2)] bg-[#111113] p-6 shadow-2xl space-y-4">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<Send class="h-4 w-4 text-emerald-400" />
+						<h2 class="text-base tracking-wide text-white">Test Send</h2>
+					</div>
+					<button onclick={() => showTestSend = false} class="text-[rgba(255,255,255,0.3)] hover:text-white transition-colors">
+						<X class="h-4 w-4" />
+					</button>
+				</div>
+
+				<p class="text-xs text-[rgba(255,255,255,0.3)]">
+					Send a real SMS/email to a contact using an automation sequence. This will actually deliver the message.
+				</p>
+
+				<!-- Sequence select -->
+				<div>
+					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block">Sequence</label>
+					<select bind:value={testSeqId}
+						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors">
+						<option value="">Select a sequence...</option>
+						{#each sequences as seq}
+							<option value={seq.id}>{seq.name} ({seq.channel})</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Contact search -->
+				<div>
+					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block">Recipient</label>
+					<input type="text" bind:value={testClientSearch} oninput={onTestClientSearch}
+						placeholder="Search contacts by name or phone..."
+						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors" />
+
+					{#if testSearching}
+						<p class="text-[10px] text-[rgba(255,255,255,0.2)] mt-1">Searching...</p>
+					{/if}
+
+					{#if testClientResults.length > 0}
+						<div class="mt-1 rounded border border-[rgba(255,255,255,0.1)] bg-[#0a0a0c] max-h-40 overflow-y-auto">
+							{#each testClientResults as c}
+								<button
+									onclick={() => selectTestClient(c)}
+									class="w-full text-left px-3 py-2 text-sm hover:bg-[rgba(197,165,90,0.05)] transition-colors flex items-center justify-between"
+								>
+									<span class="text-[rgba(255,255,255,0.7)]">{c.full_name || 'Unknown'}</span>
+									<span class="text-[10px] text-[rgba(255,255,255,0.25)]">{c.phone || c.email || ''}</span>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				<!-- Selected contact info -->
+				{#if testClient}
+					<div class="rounded border border-emerald-500/15 bg-emerald-500/5 p-3 space-y-1">
+						<div class="flex items-center gap-2">
+							<span class="text-sm text-emerald-400">{testClient.full_name || 'Unknown'}</span>
+						</div>
+						{#if testClient.phone}
+							<div class="flex items-center gap-2 text-[10px]">
+								<MessageSquare class="h-3 w-3 text-[rgba(255,255,255,0.2)]" />
+								<span class="text-[rgba(255,255,255,0.4)]">{testClient.phone}</span>
+							</div>
+						{/if}
+						{#if testClient.email}
+							<div class="flex items-center gap-2 text-[10px]">
+								<Mail class="h-3 w-3 text-[rgba(255,255,255,0.2)]" />
+								<span class="text-[rgba(255,255,255,0.4)]">{testClient.email}</span>
+							</div>
+						{/if}
+					</div>
+				{/if}
+
+				<!-- Result -->
+				{#if testResult}
+					<div class="rounded border p-3 text-sm {testResult.error ? 'border-red-500/20 bg-red-500/5 text-red-400' : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'}">
+						{#if testResult.error}
+							<span>Error: {testResult.error}</span>
+						{:else}
+							<span>{testResult.message}</span>
+							{#if testResult.sms?.twilioSid}
+								<p class="text-[10px] text-[rgba(255,255,255,0.25)] mt-1">SMS SID: {testResult.sms.twilioSid}</p>
+							{/if}
+							{#if testResult.email?.resendId}
+								<p class="text-[10px] text-[rgba(255,255,255,0.25)] mt-1">Email ID: {testResult.email.resendId}</p>
+							{/if}
+						{/if}
+					</div>
+				{/if}
+
+				<!-- Actions -->
+				<div class="flex items-center justify-end gap-2 pt-2">
+					<button onclick={() => showTestSend = false}
+						class="px-4 py-2 text-sm text-[rgba(255,255,255,0.5)] hover:text-white transition-colors">
+						{testResult ? 'Close' : 'Cancel'}
+					</button>
+					{#if !testResult}
+						<button onclick={executeTrigger}
+							disabled={!testSeqId || !testClient || testSending}
+							class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-medium disabled:opacity-30">
+							{#if testSending}
+								Sending...
+							{:else}
+								<Send class="h-3.5 w-3.5" />
+								Send Now
+							{/if}
+						</button>
+					{/if}
+				</div>
+			</div>
+		</div>
 	{/if}
 </div>

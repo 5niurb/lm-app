@@ -63,6 +63,10 @@ app.get('/api/health', (req, res) => {
 import webhookContactForm from './routes/webhooks/contact-form.js';
 app.use('/api/webhooks/contact-form', webhookContactForm);
 
+// Public content API — no auth, for patient-facing care instruction pages
+import publicContentRoutes from './routes/public-content.js';
+app.use('/api/public/content', publicContentRoutes);
+
 // API routes
 import authRoutes from './routes/auth.js';
 import callRoutes from './routes/calls.js';

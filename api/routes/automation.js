@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
+import { executeSequence, processScheduledAutomation } from '../services/automation.js';
 
 const router = Router();
 
@@ -357,17 +358,20 @@ router.get('/stats', logAction('automation.stats'), async (req, res) => {
  * Body: { sequence_id, client_id }
  */
 router.post('/trigger', requireAdmin, logAction('automation.trigger'), async (req, res) => {
-  const { sequence_id, client_id } = req.body;
+  const { sequence_id, client_id, dry_run } = req.body;
 
   if (!sequence_id || !client_id) {
     return res.status(400).json({ error: 'sequence_id and client_id are required' });
   }
 
   try {
-    // Get the sequence
+    // Get the sequence with linked content
     const { data: sequence, error: seqErr } = await supabaseAdmin
       .from('automation_sequences')
-      .select('*')
+      .select(`
+        *,
+        content:service_content(id, title, content_type, summary, content_json)
+      `)
       .eq('id', sequence_id)
       .single();
 
@@ -386,37 +390,59 @@ router.post('/trigger', requireAdmin, logAction('automation.trigger'), async (re
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    // Create log entry (scheduled → will be picked up by automation engine)
-    const { data: logEntry, error: logErr } = await supabaseAdmin
-      .from('automation_log')
-      .insert({
-        client_id: client.id,
-        sequence_id: sequence.id,
-        channel: sequence.channel === 'both' ? 'sms' : sequence.channel,
-        status: 'scheduled',
-        scheduled_at: new Date().toISOString(),
-        metadata: {
-          triggered_by: req.user.id,
-          manual: true,
-          client_name: client.full_name,
-          sequence_name: sequence.name
+    // Dry run — return what would be sent without actually sending
+    if (dry_run) {
+      return res.json({
+        dry_run: true,
+        sequence: { name: sequence.name, channel: sequence.channel, template_type: sequence.template_type },
+        client: { name: client.full_name, phone: client.phone, email: client.email },
+        content: sequence.content ? { title: sequence.content.title, type: sequence.content.content_type } : null,
+        channels: {
+          sms: (sequence.channel === 'sms' || sequence.channel === 'both') && !!client.phone,
+          email: (sequence.channel === 'email' || sequence.channel === 'both') && !!client.email
         }
-      })
-      .select()
-      .single();
+      });
+    }
 
-    if (logErr) throw logErr;
+    // Execute immediately (sends SMS/email and logs)
+    const results = await executeSequence({
+      sequence,
+      client,
+      content: sequence.content || null,
+      triggeredBy: req.user.id,
+      manual: true
+    });
 
-    // TODO: In the future, this will actually send via Twilio/Resend.
-    // For now, we just create the log entry as "scheduled".
+    const sent = results.logEntries.filter(e => e.status === 'sent').length;
+    const failed = results.logEntries.filter(e => e.status === 'failed').length;
 
     res.status(201).json({
-      data: logEntry,
-      message: `Sequence "${sequence.name}" scheduled for ${client.full_name}. Automation engine will process it.`
+      data: results.logEntries,
+      sms: results.smsResult || null,
+      email: results.emailResult || null,
+      message: `Sequence "${sequence.name}" executed for ${client.full_name}: ${sent} sent, ${failed} failed.`
     });
   } catch (err) {
     console.error('Automation trigger error:', err.message);
     res.status(500).json({ error: 'Failed to trigger automation' });
+  }
+});
+
+/**
+ * POST /api/automation/process
+ * Process all scheduled automation entries that are due.
+ * Can be called by cron (pg_cron → pg_net) or manually by admin.
+ */
+router.post('/process', requireAdmin, logAction('automation.process'), async (req, res) => {
+  try {
+    const results = await processScheduledAutomation();
+    res.json({
+      message: `Processed ${results.processed} entries: ${results.sent} sent, ${results.failed} failed.`,
+      ...results
+    });
+  } catch (err) {
+    console.error('Automation process error:', err.message);
+    res.status(500).json({ error: 'Failed to process automation queue' });
   }
 });
 
