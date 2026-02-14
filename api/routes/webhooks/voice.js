@@ -26,16 +26,27 @@ router.post('/incoming', async (req, res) => {
   const callerName = req.body.CallerName || null;
 
   // Try to match caller against known contacts by phone number
+  // Use multiple format variants for robust matching
   let contactId = null;
   let contactName = null;
   if (From) {
-    // Normalize the phone number to digits only for matching
     const phoneDigits = From.replace(/\D/g, '');
 
+    // Build variants: +13106218356 → ['13106218356', '3106218356', '+13106218356']
+    const variants = [phoneDigits];
+    if (phoneDigits.length === 11 && phoneDigits.startsWith('1')) {
+      variants.push(phoneDigits.slice(1));
+    }
+    if (phoneDigits.length === 10) {
+      variants.push('1' + phoneDigits);
+    }
+    variants.push(From);
+
+    const orFilter = variants.map(v => `phone_normalized.eq.${v},phone.eq.${v}`).join(',');
     const { data: contact } = await supabaseAdmin
       .from('contacts')
       .select('id, full_name, tags')
-      .or(`phone_normalized.eq.${phoneDigits},phone.eq.${From}`)
+      .or(orFilter)
       .limit(1)
       .maybeSingle();
 
@@ -211,8 +222,31 @@ router.post('/status', async (req, res) => {
 
   if (error) {
     // Call log might not exist yet if incoming webhook hasn't fired
-    // Try to create it instead
+    // Try to create it instead, with contact lookup
     if (error.message.includes('0 rows')) {
+      // Try to match against contacts for caller name
+      let contactId = null;
+      let contactName = null;
+      const lookupPhone = From || To;
+      if (lookupPhone) {
+        const digits = lookupPhone.replace(/\D/g, '');
+        const variants = [digits];
+        if (digits.length === 11 && digits.startsWith('1')) variants.push(digits.slice(1));
+        if (digits.length === 10) variants.push('1' + digits);
+        variants.push(lookupPhone);
+        const orFilter = variants.map(v => `phone_normalized.eq.${v},phone.eq.${v}`).join(',');
+        const { data: contact } = await supabaseAdmin
+          .from('contacts')
+          .select('id, full_name')
+          .or(orFilter)
+          .limit(1)
+          .maybeSingle();
+        if (contact) {
+          contactId = contact.id;
+          contactName = contact.full_name;
+        }
+      }
+
       const { error: insertError } = await supabaseAdmin
         .from('call_logs')
         .insert({
@@ -220,6 +254,8 @@ router.post('/status', async (req, res) => {
           direction: 'inbound',
           from_number: From || 'unknown',
           to_number: To || '',
+          caller_name: contactName,
+          contact_id: contactId,
           ...update
         });
 

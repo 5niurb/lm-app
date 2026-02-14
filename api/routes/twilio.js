@@ -1,7 +1,43 @@
 import { Router } from 'express';
 import twilio from 'twilio';
+import { supabaseAdmin } from '../services/supabase.js';
 
 const router = Router();
+
+/**
+ * Look up a contact by phone number, trying multiple format variants.
+ * Returns { contactId, contactName } or nulls if not found.
+ */
+async function lookupContactByPhone(phone) {
+  if (!phone || phone.startsWith('client:')) return { contactId: null, contactName: null };
+
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return { contactId: null, contactName: null };
+
+  // Build variants: +13106218356 → ['13106218356', '3106218356', '+13106218356']
+  const variants = [digits];
+  if (digits.length === 11 && digits.startsWith('1')) {
+    variants.push(digits.slice(1)); // strip country code
+  }
+  if (digits.length === 10) {
+    variants.push('1' + digits); // add country code
+  }
+  variants.push(phone); // original format with +
+
+  // Query using OR across all variants
+  const orFilter = variants.map(v => `phone_normalized.eq.${v},phone.eq.${v}`).join(',');
+  const { data: contact } = await supabaseAdmin
+    .from('contacts')
+    .select('id, full_name')
+    .or(orFilter)
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    contactId: contact?.id || null,
+    contactName: contact?.full_name || null
+  };
+}
 
 const { AccessToken } = twilio.jwt;
 const { VoiceGrant } = AccessToken;
@@ -59,10 +95,10 @@ router.post('/voice', async (req, res) => {
   const from = req.body.From || req.body.Caller || process.env.TWILIO_PHONE_NUMBER;
 
   if (to) {
-    // Log outbound call to DB
+    // Log outbound call to DB with contact lookup
     if (callSid) {
       try {
-        const { supabaseAdmin } = await import('../services/supabase.js');
+        const { contactId, contactName } = await lookupContactByPhone(to);
         await supabaseAdmin
           .from('call_logs')
           .insert({
@@ -71,6 +107,8 @@ router.post('/voice', async (req, res) => {
             from_number: process.env.TWILIO_PHONE_NUMBER || from,
             to_number: to,
             status: 'initiated',
+            caller_name: contactName,
+            contact_id: contactId,
             metadata: {
               source: 'softphone',
               caller_identity: req.body.From || 'unknown'
@@ -116,7 +154,6 @@ router.post('/outbound-status', async (req, res) => {
 
   if (callSid) {
     try {
-      const { supabaseAdmin } = await import('../services/supabase.js');
       const update = {
         status: dialStatus === 'completed' ? 'completed' : dialStatus || 'completed',
         ended_at: new Date().toISOString()
