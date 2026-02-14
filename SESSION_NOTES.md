@@ -1,3 +1,74 @@
+## Session — 2026-02-14 (Session 22)
+**Focus:** Consent form public pages with digital signature capture
+
+**Accomplished:**
+- **Public consent API** (`api/routes/public-consent.js`):
+  - `GET /api/public/consent/:slug` — fetches consent form by slug (no auth, consent_form type filter)
+  - `POST /api/public/consent/:slug/submit` — submits signed consent with:
+    - Signature data (base64 PNG from canvas)
+    - Questionnaire responses (JSONB)
+    - Patient identification (client_id from URL param OR name/email/phone for walk-ins)
+    - Auto-creates contact for new walk-in patients
+    - Records IP address + user agent
+    - Resolves form_id + service_id from slug
+  - Mounted in server.js: `/api/public/consent`
+- **Patient-facing consent form page** (`src/routes/consent/[slug]/+page.svelte`):
+  - Canvas-based signature pad — touch + mouse support, retina-ready (devicePixelRatio scaling)
+  - Gold ink (#c5a55a) signature on dark background
+  - Renders `content_json` sections with mixed types:
+    - Informational sections (numbered, Playfair Display headings)
+    - Checkbox questions (with custom labels)
+    - Radio button groups (from `options` array)
+    - Text area responses (with placeholders)
+  - Walk-in patient form: name (required), email, phone — only shown without client_id
+  - Agreement checkbox with full consent acknowledgment text
+  - Branded dark+gold design matching care instruction pages
+  - Success page with green checkmark after submission
+  - URL parameter `?cid=` for client_id passthrough from automation links
+  - Mobile responsive with touch-optimized signature area
+- **Seeded 5 consent forms** in Supabase:
+  - Neuromodulators (8 sections: procedure, benefits, risks, contraindications, 2 checkboxes, alternatives, post-care)
+  - Dermal Fillers (8 sections: procedure, benefits, risks, contraindications, 2 checkboxes, dissolving, post-care)
+  - Microneedling (7 sections: procedure, benefits, risks, contraindications, 2 checkboxes, post-care)
+  - Chemical Peels (7 sections: procedure, benefits, risks, contraindications, 2 checkboxes, post-care)
+  - Laser Resurfacing (7 sections: procedure, benefits, risks, contraindications, 2 checkboxes, post-care)
+
+**Files Created:**
+- `api/routes/public-consent.js` — Public consent API (no auth, form retrieval + submission)
+- `src/routes/consent/[slug]/+page.svelte` — Patient-facing consent form with signature pad
+
+**Files Modified:**
+- `api/server.js` — Mounted public consent route
+
+**Deployed:**
+- ✅ Frontend deployed to Cloudflare Pages (commit ebf33fd)
+- ✅ API deployed to Render (auto-deploy on push)
+- ✅ All 5 consent form API endpoints return 200
+- ✅ Build passes clean
+
+**Available Consent Forms (5 total):**
+- consent-neuromodulators, consent-dermal-fillers, consent-microneedling
+- consent-chemical-peels, consent-laser-resurfacing
+
+**Access URLs:**
+- https://lm-app.pages.dev/consent/consent-neuromodulators
+- https://lm-app.pages.dev/consent/consent-dermal-fillers
+- https://lm-app.pages.dev/consent/consent-microneedling
+- https://lm-app.pages.dev/consent/consent-chemical-peels
+- https://lm-app.pages.dev/consent/consent-laser-resurfacing
+
+**Database:** 18 content blocks total (13 care + 5 consent), consent_submissions table ready (0 rows)
+
+**Next Steps:**
+1. Test consent form end-to-end: sign and submit from phone, verify in DB
+2. Wire consent forms into automation sequences (consent_request template type)
+3. Set up pg_cron for automation processing (`/api/automation/process`)
+4. Add content for remaining services (IV Therapy, Bioidentical Hormones, Body Contouring)
+5. Build admin view for consent submissions (view signatures, responses, status)
+6. Wire booking confirmations to trigger automation sequences automatically
+
+---
+
 ## Session — 2026-02-14 (Session 21, continued)
 **Focus:** Dashboard polish, sidebar badges, header clinic status, codebase assessment
 
