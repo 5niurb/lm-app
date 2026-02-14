@@ -236,7 +236,8 @@
               "value": "0"
             }
           ],
-          "event": "match"
+          "event": "match",
+          "next": "connect_call_HighLevel"
         }
       ],
       "type": "split-based-on"
@@ -338,7 +339,8 @@
               "value": "0"
             }
           ],
-          "event": "match"
+          "event": "match",
+          "next": "connect_call_HighLevel"
         }
       ],
       "type": "split-based-on"
@@ -621,25 +623,26 @@
     },
     {
       "name": "connect_call_HighLevel",
+      "type": "add-twiml-redirect",
       "properties": {
-        "caller_id": "{{contact.channel.address}}",
-        "noun": "number",
+        "url": "https://lm-app-api.onrender.com/api/twilio/connect-operator",
+        "method": "POST",
         "offset": {
           "x": 1340,
           "y": 550
-        },
-        "timeout": 30,
-        "to": "+18184632211"
+        }
       },
       "transitions": [
         {
-          "event": "callCompleted"
+          "event": "return"
         },
         {
-          "event": "hangup"
+          "event": "timeout"
+        },
+        {
+          "event": "fail"
         }
-      ],
-      "type": "connect-call-to"
+      ]
     }
   ]
 }

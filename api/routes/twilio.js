@@ -156,17 +156,20 @@ router.post('/outbound-status', async (req, res) => {
  * First one to answer wins.
  *
  * Studio calls this as a TwiML Redirect widget.
+ * IMPORTANT: All callback URLs must be ABSOLUTE because Twilio executes this
+ * TwiML in a redirect context and relative URLs won't resolve back to us.
  */
 router.post('/connect-operator', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
   const callerNumber = req.body.From || req.body.Caller || 'Unknown';
   const sipUser = process.env.TWILIO_SIP1_USERNAME;
   const sipPass = process.env.TWILIO_SIP1_PASSWORD;
+  const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL_PUBLIC || 'https://lm-app-api.onrender.com';
 
   const dial = twiml.dial({
     callerId: callerNumber,
-    timeout: 20,
-    action: '/api/twilio/connect-operator-status',
+    timeout: 25,
+    action: `${baseUrl}/api/twilio/connect-operator-status`,
     method: 'POST'
   });
 
@@ -190,11 +193,13 @@ router.post('/connect-operator', (req, res) => {
 /**
  * POST /api/twilio/connect-operator-status
  * Called after the operator dial completes.
- * If nobody answered, you could route to voicemail here.
+ * If nobody answered, falls back to voicemail.
+ * All URLs MUST be absolute (see connect-operator comment).
  */
 router.post('/connect-operator-status', (req, res) => {
   const twiml = new twilio.twiml.VoiceResponse();
   const dialStatus = req.body.DialCallStatus;
+  const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.FRONTEND_URL_PUBLIC || 'https://lm-app-api.onrender.com';
 
   if (dialStatus === 'no-answer' || dialStatus === 'busy' || dialStatus === 'failed') {
     twiml.say({ voice: 'Polly.Joanna' },
@@ -203,11 +208,11 @@ router.post('/connect-operator-status', (req, res) => {
     twiml.record({
       maxLength: 120,
       transcribe: false,
-      transcribeCallback: '/api/webhooks/voice/transcription',
-      recordingStatusCallback: '/api/webhooks/voice/recording',
+      transcribeCallback: `${baseUrl}/api/webhooks/voice/transcription`,
+      recordingStatusCallback: `${baseUrl}/api/webhooks/voice/recording`,
       recordingStatusCallbackMethod: 'POST',
       recordingStatusCallbackEvent: 'completed',
-      action: '/api/webhooks/voice/recording',
+      action: `${baseUrl}/api/webhooks/voice/recording`,
       method: 'POST'
     });
   }
