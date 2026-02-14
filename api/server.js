@@ -15,8 +15,22 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // CORS — must be BEFORE all routes so every response gets headers
+// Allow both the production CF Pages URL and local dev
+const ALLOWED_ORIGINS = [
+  'https://lm-app.pages.dev',
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin(origin, cb) {
+    // Allow requests with no origin (curl, server-to-server, Twilio webhooks)
+    if (!origin) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.lm-app.pages.dev')) {
+      return cb(null, origin);
+    }
+    cb(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 
