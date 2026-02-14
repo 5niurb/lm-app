@@ -236,52 +236,91 @@ router.post('/status', async (req, res) => {
 
 /**
  * POST /api/webhooks/voice/recording
- * Twilio recording callback (from Studio Record widget action URL).
- * Creates a voicemail entry linked to the call log.
- * Studio sends `mailbox` param to identify which voicemail box.
+ * Twilio recording callback — called from BOTH:
+ *   1. <Record action="..."> — fires when caller hangs up (has From number)
+ *   2. recordingStatusCallback — fires when recording is processed (may lack From)
+ *
+ * Both hit the same endpoint, so we use upsert on recording_sid to avoid
+ * creating duplicate voicemail entries. The first hit (with From) wins;
+ * the second hit updates only if it has better data.
  */
 router.post('/recording', async (req, res) => {
   const { CallSid, RecordingSid, RecordingUrl, RecordingDuration, From } = req.body;
   const mailbox = req.body.mailbox || req.body.Mailbox || null;
 
-  // Look up the call log to link the voicemail
-  const { data: callLog } = await supabaseAdmin
-    .from('call_logs')
-    .select('id')
-    .eq('twilio_sid', CallSid)
-    .maybeSingle();
-
-  // Create the voicemail entry
-  const { error } = await supabaseAdmin
-    .from('voicemails')
-    .insert({
-      call_log_id: callLog?.id || null,
-      from_number: From || 'unknown',
-      recording_url: RecordingUrl || '',
-      recording_sid: RecordingSid || null,
-      duration: parseInt(RecordingDuration, 10) || 0,
-      transcription_status: 'pending',
-      mailbox: mailbox
-    });
-
-  if (error) {
-    console.error('Failed to create voicemail:', error.message);
+  if (!RecordingSid) {
+    // Nothing to record without a RecordingSid
+    res.type('text/xml');
+    res.send('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup /></Response>');
+    return;
   }
 
-  // Update the call log disposition to voicemail
-  if (callLog?.id) {
-    await supabaseAdmin
+  // Check if this recording already exists (from the other callback)
+  const { data: existing } = await supabaseAdmin
+    .from('voicemails')
+    .select('id, from_number, call_log_id')
+    .eq('recording_sid', RecordingSid)
+    .maybeSingle();
+
+  if (existing) {
+    // Already have this recording — update only if we have better data
+    const updates = {};
+    if (From && From !== 'unknown' && existing.from_number === 'unknown') {
+      updates.from_number = From;
+    }
+    if (!existing.call_log_id && CallSid) {
+      const { data: callLog } = await supabaseAdmin
+        .from('call_logs')
+        .select('id')
+        .eq('twilio_sid', CallSid)
+        .maybeSingle();
+      if (callLog?.id) updates.call_log_id = callLog.id;
+    }
+    if (Object.keys(updates).length > 0) {
+      await supabaseAdmin
+        .from('voicemails')
+        .update(updates)
+        .eq('id', existing.id);
+    }
+  } else {
+    // First time seeing this recording — create the voicemail
+    const { data: callLog } = await supabaseAdmin
       .from('call_logs')
-      .update({
-        disposition: 'voicemail',
-        recording_url: RecordingUrl,
-        recording_duration: parseInt(RecordingDuration, 10) || 0
-      })
-      .eq('id', callLog.id);
+      .select('id')
+      .eq('twilio_sid', CallSid)
+      .maybeSingle();
+
+    const { error } = await supabaseAdmin
+      .from('voicemails')
+      .insert({
+        call_log_id: callLog?.id || null,
+        from_number: From || 'unknown',
+        recording_url: RecordingUrl || '',
+        recording_sid: RecordingSid,
+        duration: parseInt(RecordingDuration, 10) || 0,
+        transcription_status: 'pending',
+        mailbox: mailbox
+      });
+
+    if (error) {
+      console.error('Failed to create voicemail:', error.message);
+    }
+
+    // Update the call log disposition to voicemail
+    if (callLog?.id) {
+      await supabaseAdmin
+        .from('call_logs')
+        .update({
+          disposition: 'voicemail',
+          recording_url: RecordingUrl,
+          recording_duration: parseInt(RecordingDuration, 10) || 0
+        })
+        .eq('id', callLog.id);
+    }
   }
 
   // Respond with TwiML to end the call gracefully
-  // (Studio Record widget expects TwiML back from the action URL)
+  // (The <Record> action URL expects TwiML back; recordingStatusCallback ignores it)
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="Polly.Joanna">Thank you. Goodbye.</Say>
