@@ -1,6 +1,4 @@
 <script>
-	import * as Card from '$lib/components/ui/card/index.ts';
-	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
 	import { Phone, PhoneMissed, Voicemail, Clock, PhoneIncoming, PhoneOutgoing, MessageSquare, ArrowRight } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
@@ -41,13 +39,22 @@
 		}
 	}
 
-	function dispositionColor(disposition) {
-		switch (disposition) {
-			case 'answered': return 'default';
-			case 'missed': return 'destructive';
-			case 'voicemail': return 'secondary';
-			default: return 'outline';
+	function getActionSummary(call) {
+		const vm = call.voicemails?.[0];
+		if (call.disposition === 'voicemail' && vm?.transcription) {
+			const preview = vm.transcription.length > 60 ? vm.transcription.slice(0, 60).trim() + '...' : vm.transcription;
+			return { text: preview, type: 'voicemail' };
 		}
+		if (call.disposition === 'voicemail') return { text: 'Voicemail left', type: 'voicemail' };
+		if (call.disposition === 'answered') {
+			return { text: call.duration > 0 ? `Answered \u00b7 ${formatDuration(call.duration)}` : 'Answered', type: 'answered' };
+		}
+		if (call.disposition === 'missed') return { text: 'Missed call', type: 'missed' };
+		if (call.disposition === 'abandoned') return { text: 'Caller hung up', type: 'abandoned' };
+		if (call.status === 'busy') return { text: 'Line busy', type: 'missed' };
+		if (call.status === 'no-answer') return { text: 'No answer', type: 'missed' };
+		if (call.status === 'failed') return { text: 'Call failed', type: 'failed' };
+		return { text: call.status || '', type: 'default' };
 	}
 
 	// Business hours helpers
@@ -329,41 +336,49 @@
 					</div>
 				</div>
 			{:else}
-				<div class="space-y-1">
+				<div class="space-y-0.5">
 					{#each recentCalls as call}
-						<div class="group flex items-center justify-between rounded p-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]">
-							<div class="flex items-center gap-3">
-								{#if call.direction === 'inbound'}
+						{@const summary = getActionSummary(call)}
+						<div class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]">
+							<div class="mt-0.5 shrink-0">
+								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
+									<PhoneMissed class="h-4 w-4 text-red-400/70" />
+								{:else if call.direction === 'inbound'}
 									<PhoneIncoming class="h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors" />
 								{:else}
 									<PhoneOutgoing class="h-4 w-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors" />
 								{/if}
-								<div>
-									<p class="text-sm font-medium flex items-center gap-1.5">
+							</div>
+							<div class="min-w-0 flex-1">
+								<div class="flex items-center justify-between gap-2">
+									<p class="text-sm font-medium truncate flex items-center gap-1.5">
 										{#if call.contact_id && call.caller_name}
-											<span class="text-[#C5A55A] text-[10px]" title="Contact">◆</span>
+											<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
 											<span class="text-[rgba(255,255,255,0.9)]">{call.caller_name}</span>
 										{:else if call.caller_name}
 											<span class="text-[rgba(255,255,255,0.7)]">{call.caller_name}</span>
-											<span class="text-[9px] uppercase tracking-wider px-1 py-px rounded bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.3)] leading-none">CID</span>
 										{:else}
 											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}</span>
 										{/if}
 									</p>
-									<p class="text-xs text-[rgba(255,255,255,0.35)]">
-										{#if call.caller_name}
-											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)} &middot;
-										{/if}
-										{formatRelativeDate(call.started_at)}
-										{#if call.duration > 0}
-											&middot; {formatDuration(call.duration)}
-										{/if}
-									</p>
+									<span class="text-xs text-[rgba(255,255,255,0.3)] shrink-0">{formatRelativeDate(call.started_at)}</span>
+								</div>
+								<div class="mt-0.5">
+									{#if summary.type === 'voicemail'}
+										<span class="text-xs text-[rgba(255,255,255,0.4)] italic flex items-center gap-1.5">
+											<Voicemail class="h-3 w-3 shrink-0 text-[#C5A55A]/60" />{summary.text}
+										</span>
+									{:else if summary.type === 'answered'}
+										<span class="text-xs text-emerald-400/60">{summary.text}</span>
+									{:else if summary.type === 'missed'}
+										<span class="text-xs text-red-400/70">{summary.text}</span>
+									{:else if summary.type === 'abandoned'}
+										<span class="text-xs text-[rgba(255,255,255,0.3)]">{summary.text}</span>
+									{:else}
+										<span class="text-xs text-[rgba(255,255,255,0.3)]">{summary.text}</span>
+									{/if}
 								</div>
 							</div>
-							<Badge variant={dispositionColor(call.disposition)}>
-								{call.disposition || call.status}
-							</Badge>
 						</div>
 					{/each}
 				</div>
