@@ -1,4 +1,44 @@
-node_modules/
-dist/
-*.tsbuildinfo
+node_modules
+api/node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+.cloudflare
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Env
 .env
+.env.*
+.env-vars
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local database
+*.db
+
+# Claude Code
+.claude/
+
+# Audio assets (hosted on Twilio, not in git)
+twilio/assets/
+
+# Screenshots (temp working files, not deliverables)
+*.png
+!docs/rcs-assets/*.png
