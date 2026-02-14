@@ -262,28 +262,28 @@
 										</div>
 									</div>
 								</div>
-								<!-- Quick actions (visible on hover) -->
-								<div class="flex items-center gap-0.5 shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
-									{#if contact.phone}
+								<!-- Quick actions (visible on hover, next to name) -->
+								{#if contact.phone}
+									<div class="flex items-center gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
 										<a
 											href="/softphone?call={encodeURIComponent(contact.phone)}"
-											class="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-[rgba(197,165,90,0.15)] text-[rgba(255,255,255,0.35)] hover:text-emerald-400 transition-colors"
+											class="inline-flex items-center justify-center h-12 w-12 rounded-xl hover:bg-emerald-500/15 text-[rgba(255,255,255,0.3)] hover:text-emerald-400 transition-all"
 											title="Call {contact.full_name || 'contact'}"
 											onclick={(e) => e.stopPropagation()}
 										>
-											<PhoneOutgoing class="h-3.5 w-3.5" />
+											<PhoneOutgoing class="h-8 w-8" />
 										</a>
 										<a
 											href="/messages?phone={encodeURIComponent(contact.phone)}"
-											class="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-[rgba(197,165,90,0.15)] text-[rgba(255,255,255,0.35)] hover:text-blue-400 transition-colors"
+											class="inline-flex items-center justify-center h-12 w-12 rounded-xl hover:bg-blue-500/15 text-[rgba(255,255,255,0.3)] hover:text-blue-400 transition-all"
 											title="Message {contact.full_name || 'contact'}"
 											onclick={(e) => e.stopPropagation()}
 										>
-											<MessageSquare class="h-3.5 w-3.5" />
+											<MessageSquare class="h-8 w-8" />
 										</a>
-									{/if}
-								</div>
-								<div class="flex items-center gap-1.5 shrink-0 ml-2 flex-wrap justify-end">
+									</div>
+								{/if}
+								<div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap justify-end">
 									{#if contact.tags && contact.tags.length > 0}
 										{#each contact.tags as tag}
 											<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium {getTagClasses(tag)}">

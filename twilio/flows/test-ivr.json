@@ -135,32 +135,6 @@
           ],
           "event": "match",
           "next": "x2b-Company_Directory"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "4",
-              "type": "equal_to",
-              "value": "4"
-            }
-          ],
-          "event": "match"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "9",
-              "type": "equal_to",
-              "value": "9"
-            }
-          ],
-          "event": "match"
         }
       ],
       "type": "split-based-on"
@@ -537,25 +511,26 @@
     },
     {
       "name": "connect_call_accounts",
+      "type": "add-twiml-redirect",
       "properties": {
-        "caller_id": "{{contact.channel.address}}",
-        "noun": "number",
+        "url": "https://lm-app-api.onrender.com/api/twilio/connect-operator",
+        "method": "POST",
         "offset": {
           "x": 1390,
           "y": 1640
-        },
-        "timeout": 30,
-        "to": "+12134442242"
+        }
       },
       "transitions": [
         {
-          "event": "callCompleted"
+          "event": "return"
         },
         {
-          "event": "hangup"
+          "event": "timeout"
+        },
+        {
+          "event": "fail"
         }
-      ],
-      "type": "connect-call-to"
+      ]
     },
     {
       "name": "play_MsgSentGoodbye",
@@ -574,30 +549,6 @@
         }
       ],
       "type": "say-play"
-    },
-    {
-      "name": "redirect_FlexSIP",
-      "properties": {
-        "method": "GET",
-        "offset": {
-          "x": 2160,
-          "y": -160
-        },
-        "timeout": "14400",
-        "url": "https://handler.twilio.com/twiml/EH6dfadeabe0337c465b8b9b36c8082bea"
-      },
-      "transitions": [
-        {
-          "event": "return"
-        },
-        {
-          "event": "timeout"
-        },
-        {
-          "event": "fail"
-        }
-      ],
-      "type": "add-twiml-redirect"
     },
     {
       "name": "fcn_NewSMSEmailNotify",
