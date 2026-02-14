@@ -30,13 +30,23 @@
 
 	$effect(() => {
 		loadConversations();
-		// Poll for new messages every 10 seconds
-		refreshInterval = setInterval(() => {
-			loadConversations();
-			if (selectedConvo) loadMessages(selectedConvo.id);
-		}, 10000);
+		// Poll for new messages every 5 seconds
+		refreshInterval = setInterval(refreshAll, 5000);
 		return () => { if (refreshInterval) clearInterval(refreshInterval); };
 	});
+
+	async function refreshAll() {
+		await loadConversations();
+		// If viewing a thread, refresh messages too
+		if (selectedConvo) {
+			const prevCount = messages.length;
+			await loadMessages(selectedConvo.id);
+			// Auto-scroll if new messages arrived
+			if (messages.length > prevCount) {
+				setTimeout(scrollToBottom, 100);
+			}
+		}
+	}
 
 	async function loadConversations() {
 		try {
@@ -44,6 +54,11 @@
 			if (search) params.set('search', search);
 			const res = await api(`/api/messages/conversations?${params}`);
 			conversations = res.data;
+			// Keep selectedConvo in sync with refreshed data
+			if (selectedConvo) {
+				const updated = conversations?.find(c => c.id === selectedConvo.id);
+				if (updated) selectedConvo = updated;
+			}
 		} catch (e) {
 			error = e.message;
 		}

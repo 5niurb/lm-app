@@ -119,7 +119,11 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
   if (toNumber.length === 10) toNumber = '+1' + toNumber;
   if (!toNumber.startsWith('+')) toNumber = '+' + toNumber;
 
-  const fromNumber = process.env.TWILIO_PHONE_NUMBER || process.env.TWILIO_MAIN_PHONE_NUMBER;
+  // Use test number for outbound SMS if available, otherwise fall back to main
+  const fromNumber = process.env.TWILIO_SMS_FROM_NUMBER
+    || process.env.TWILIO_TEST1_PHONE_NUMBER
+    || process.env.TWILIO_PHONE_NUMBER
+    || process.env.TWILIO_MAIN_PHONE_NUMBER;
 
   if (!fromNumber) {
     return res.status(500).json({ error: 'No Twilio phone number configured' });
