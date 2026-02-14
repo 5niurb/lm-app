@@ -52,18 +52,22 @@
 - `api/server.js` — Mounted services + automation routes
 - `src/lib/components/AppSidebar.svelte` — Added Services + Automation nav items
 
+**Deployed:**
+- ✅ Phase 1C schema applied to Supabase (8 migrations: tables, RLS, seeds)
+- ✅ Frontend deployed to Cloudflare Pages (https://lm-app.pages.dev)
+- ✅ API routes live on Render (auto-deployed from push)
+- ✅ CORS verified working for production origin
+- ✅ 10 services + 14 automation sequences seeded in production DB
+
 **Issues:**
 - svelte-check still shows 230 pre-existing `.ts` import path warnings (shadcn-svelte generated files, not ours)
-- Phase 1C schema not yet applied to Supabase — needs manual run in SQL editor
 
 **Next Steps:**
-1. Run `schema-phase1c.sql` on Supabase to create Phase 1C tables
-2. Build service content editor (WYSIWYG or markdown for content_json blocks)
-3. Wire automation engine to actually send via Twilio/Resend (pg_cron + edge function)
-4. Build consent form public page (patient-facing, signature_pad)
-5. Build care instruction static pages on lemedspa.com
-6. Lead pipeline/CRM (Kanban board) — coordinate with other session re: contacts
-7. Deploy all changes to Cloudflare Pages + Render
+1. Build service content editor (WYSIWYG or markdown for content_json blocks)
+2. Wire automation engine to actually send via Twilio/Resend (pg_cron + edge function)
+3. Build consent form public page (patient-facing, signature_pad)
+4. Build care instruction static pages on lemedspa.com
+5. Lead pipeline/CRM (Kanban board) — coordinate with other session re: contacts
 
 ---
 
