@@ -219,14 +219,16 @@
 					{/each}
 				</div>
 			{:else if contacts.length === 0}
-				<div class="flex h-48 items-center justify-center text-muted-foreground">
+				<div class="flex h-56 items-center justify-center">
 					<div class="text-center">
-						<Users class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
-						<p class="text-sm text-[rgba(255,255,255,0.35)]">No contacts found.</p>
+						<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]">
+							<Users class="h-6 w-6 empty-state-icon" />
+						</div>
+						<p class="text-sm font-light text-[rgba(255,255,255,0.4)] mb-1" style="font-family: 'Playfair Display', serif;">No contacts found</p>
 						{#if search || tagFilter !== 'all'}
-							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Try adjusting your search or filters.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)]">Try adjusting your search or filters.</p>
 						{:else}
-							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Import contacts using the sync script or add them manually.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)]">Import contacts using the sync script or add them manually.</p>
 						{/if}
 					</div>
 				</div>
@@ -240,10 +242,10 @@
 							>
 								<div class="flex items-center gap-3 min-w-0 flex-1">
 									<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(197,165,90,0.1)] text-sm font-medium text-[#C5A55A]" style="font-family: 'Playfair Display', serif;">
-										{(contact.first_name?.[0] || contact.full_name?.[0] || '?').toUpperCase()}
+										{(contact.first_name?.[0] || contact.full_name?.[0] || (contact.phone ? '#' : '?')).toUpperCase()}
 									</div>
 									<p class="font-medium text-[rgba(255,255,255,0.85)] truncate transition-all duration-200 {expandedId === contact.id ? 'text-lg tracking-wide' : 'text-sm group-hover:text-base group-hover:tracking-wide'}" style="font-family: 'Playfair Display', serif;">
-										{contact.full_name || 'Unknown'}
+										{contact.full_name || (contact.phone ? formatPhone(contact.phone) : 'Unknown')}
 									</p>
 									<!-- Quick actions — visible on hover or when expanded -->
 									{#if contact.phone}

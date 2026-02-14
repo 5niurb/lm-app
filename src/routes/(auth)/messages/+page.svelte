@@ -200,8 +200,10 @@
 			{:else if conversations.length === 0}
 				<div class="flex h-48 items-center justify-center">
 					<div class="text-center">
-						<MessageSquare class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
-						<p class="text-sm text-[rgba(255,255,255,0.35)]">No conversations yet.</p>
+						<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]">
+							<MessageSquare class="h-5 w-5 empty-state-icon" />
+						</div>
+						<p class="text-sm font-light text-[rgba(255,255,255,0.4)]" style="font-family: 'Playfair Display', serif;">No conversations</p>
 						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Incoming texts and auto-replies will appear here.</p>
 					</div>
 				</div>
@@ -357,10 +359,22 @@
 			</div>
 		{:else}
 			<!-- Empty state -->
-			<div class="flex-1 flex items-center justify-center">
-				<div class="text-center">
-					<MessageSquare class="mx-auto mb-3 h-10 w-10 text-[rgba(197,165,90,0.15)]" />
-					<p class="text-sm text-[rgba(255,255,255,0.35)]">Select a conversation to view messages.</p>
+			<div class="flex-1 flex items-center justify-center relative">
+				<!-- Subtle radial glow -->
+				<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(197,165,90,0.03)_0%,_transparent_60%)]"></div>
+				<div class="text-center relative z-10">
+					<div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)]">
+						<MessageSquare class="h-8 w-8 text-[rgba(197,165,90,0.25)]" />
+					</div>
+					<p class="text-base font-light text-[rgba(255,255,255,0.4)] mb-1" style="font-family: 'Playfair Display', serif;">No conversation selected</p>
+					<p class="text-xs text-[rgba(255,255,255,0.2)]">Choose a conversation from the left, or start a new one.</p>
+					<button
+						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-[#C5A55A] border border-[rgba(197,165,90,0.2)] hover:bg-[rgba(197,165,90,0.06)] transition-colors"
+						onclick={() => { showNewConvo = true; }}
+					>
+						<MessageSquare class="h-3.5 w-3.5" />
+						New conversation
+					</button>
 				</div>
 			</div>
 		{/if}

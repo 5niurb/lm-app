@@ -3,6 +3,7 @@
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Label } from '$lib/components/ui/label/index.ts';
 	import { Separator } from '$lib/components/ui/separator/index.ts';
+	import { Clock, Phone, GitBranch, Shield } from '@lucide/svelte';
 	import { isAdmin } from '$lib/stores/auth.js';
 	import { api } from '$lib/api/client.js';
 	import { toast } from 'svelte-sonner';
@@ -46,10 +47,10 @@
 	let mfaTrustDays = $state(30);
 
 	const tabs = [
-		{ id: 'hours', label: 'Business Hours', icon: '🕐' },
-		{ id: 'phone', label: 'Phone System', icon: '📞' },
-		{ id: 'routing', label: 'Call Routing', icon: '🔀' },
-		{ id: 'security', label: 'Security', icon: '🔒' }
+		{ id: 'hours', label: 'Business Hours', icon: Clock },
+		{ id: 'phone', label: 'Phone System', icon: Phone },
+		{ id: 'routing', label: 'Call Routing', icon: GitBranch },
+		{ id: 'security', label: 'Security', icon: Shield }
 	];
 
 	async function loadSettings() {
@@ -283,12 +284,12 @@
 		<div class="flex gap-1 border-b border-[rgba(197,165,90,0.12)]">
 			{#each tabs as tab}
 				<button
-					class="px-4 py-2.5 text-sm transition-colors relative {activeTab === tab.id
+					class="flex items-center gap-1.5 px-4 py-2.5 text-sm transition-colors relative {activeTab === tab.id
 						? 'text-[#c5a55a]'
 						: 'text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]'}"
 					onclick={() => (activeTab = tab.id)}
 				>
-					<span class="mr-1.5">{tab.icon}</span>
+					<tab.icon class="h-4 w-4" />
 					{tab.label}
 					{#if activeTab === tab.id}
 						<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#c5a55a]"></div>
@@ -445,7 +446,13 @@
 							{/if}
 
 							{#if extensions.length === 0}
-								<p class="text-sm text-[rgba(255,255,255,0.3)] text-center py-6">No extensions configured.</p>
+								<div class="flex flex-col items-center py-8">
+									<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]">
+										<Phone class="h-5 w-5 text-[rgba(197,165,90,0.2)]" />
+									</div>
+									<p class="text-sm text-[rgba(255,255,255,0.3)]">No extensions configured.</p>
+									<p class="text-xs text-[rgba(255,255,255,0.15)] mt-0.5">Add staff extensions for the Twilio phone system.</p>
+								</div>
 							{:else}
 								<div class="space-y-2">
 									{#each extensions as ext}
@@ -598,7 +605,13 @@
 							{/if}
 
 							{#if routingRules.length === 0}
-								<p class="text-sm text-[rgba(255,255,255,0.3)] text-center py-6">No routing rules configured.</p>
+								<div class="flex flex-col items-center py-8">
+									<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]">
+										<GitBranch class="h-5 w-5 text-[rgba(197,165,90,0.2)]" />
+									</div>
+									<p class="text-sm text-[rgba(255,255,255,0.3)]">No routing rules configured.</p>
+									<p class="text-xs text-[rgba(255,255,255,0.15)] mt-0.5">Rules determine how incoming calls are handled.</p>
+								</div>
 							{:else}
 								<div class="space-y-2">
 									{#each routingRules as rule}

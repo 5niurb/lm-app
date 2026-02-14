@@ -613,11 +613,12 @@
 						/>
 					</div>
 
-					<div class="grid grid-cols-3 gap-2">
+					<div class="grid grid-cols-3 gap-3 px-4">
 						{#each dialPad as row}
 							{#each row as digit}
 								<button
-									class="h-14 rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)] hover:bg-[rgba(197,165,90,0.12)] hover:border-[rgba(197,165,90,0.25)] text-lg font-medium transition-all duration-200 active:scale-95 text-[rgba(255,255,255,0.8)]"
+									class="dial-btn h-16 w-16 mx-auto rounded-full bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)] hover:bg-[rgba(197,165,90,0.12)] hover:border-[rgba(197,165,90,0.25)] text-xl font-light transition-all duration-150 text-[rgba(255,255,255,0.85)]"
+									style="font-family: 'Playfair Display', serif;"
 									onclick={() => sendDigit(digit)}
 								>
 									{digit}
@@ -628,7 +629,7 @@
 
 					{#if callState === 'idle'}
 						<Button
-							class="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-base shadow-lg shadow-emerald-600/10"
+							class="w-full bg-[#C5A55A] hover:bg-[#d4af37] text-[#1A1A1A] h-12 text-base font-medium tracking-wide shadow-lg shadow-[rgba(197,165,90,0.15)] transition-all duration-200 hover:shadow-xl hover:shadow-[rgba(197,165,90,0.2)]"
 							onclick={makeCall}
 							disabled={!dialNumber || deviceStatus !== 'registered'}
 						>
@@ -662,9 +663,11 @@
 				{#if callHistory.length === 0}
 					<div class="flex h-48 items-center justify-center">
 						<div class="text-center">
-							<Headset class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
-							<p class="text-sm text-[rgba(255,255,255,0.35)]">No calls yet this session.</p>
-							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Incoming calls will ring here once connected.</p>
+							<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]">
+								<Headset class="h-6 w-6 empty-state-icon" />
+							</div>
+							<p class="text-sm font-light text-[rgba(255,255,255,0.4)] mb-1" style="font-family: 'Playfair Display', serif;">No calls yet</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)]">Incoming calls will ring here once connected.</p>
 						</div>
 					</div>
 				{:else}

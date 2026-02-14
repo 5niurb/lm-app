@@ -465,9 +465,17 @@
 		</div>
 	{:else if services.length === 0}
 		<div class="flex flex-col items-center justify-center h-64 text-center">
-			<Sparkles class="h-10 w-10 text-[rgba(197,165,90,0.2)] mb-3" />
-			<p class="text-sm text-[rgba(255,255,255,0.35)]">No services yet.</p>
-			<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Run the Phase 1C schema migration to seed default services.</p>
+			<div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]">
+				<Sparkles class="h-7 w-7 empty-state-icon" />
+			</div>
+			<p class="text-base font-light text-[rgba(255,255,255,0.4)] mb-1" style="font-family: 'Playfair Display', serif;">No services yet</p>
+			<p class="text-xs text-[rgba(255,255,255,0.2)]">Run the Phase 1C schema migration to seed default services.</p>
+			{#if $isAdmin}
+				<button onclick={openCreateForm}
+					class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-[#C5A55A] border border-[rgba(197,165,90,0.2)] hover:bg-[rgba(197,165,90,0.06)] transition-colors">
+					<Plus class="h-3.5 w-3.5" /> Add your first service
+				</button>
+			{/if}
 		</div>
 	{:else}
 		{#each grouped as group}
@@ -479,7 +487,7 @@
 
 				<div class="space-y-1">
 					{#each group.services as service}
-						<div class="rounded border border-[rgba(197,165,90,0.08)] hover:border-[rgba(197,165,90,0.15)] transition-colors bg-[rgba(255,255,255,0.01)]">
+						<div class="rounded border border-[rgba(197,165,90,0.08)] hover:border-[rgba(197,165,90,0.15)] transition-all duration-200 bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(197,165,90,0.02)] {group.value === 'advanced_aesthetics' ? 'border-l-2 border-l-[rgba(197,165,90,0.3)]' : group.value === 'regenerative_wellness' ? 'border-l-2 border-l-emerald-500/30' : 'border-l-2 border-l-purple-500/30'}">
 							<!-- Service row -->
 							<div class="flex items-center gap-3 px-4 py-3">
 								<button onclick={() => toggleExpanded(service.id)} class="text-[rgba(255,255,255,0.25)] hover:text-[#c5a55a] transition-colors">
