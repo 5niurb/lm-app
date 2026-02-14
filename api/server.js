@@ -67,6 +67,10 @@ app.use('/api/webhooks/contact-form', webhookContactForm);
 import publicContentRoutes from './routes/public-content.js';
 app.use('/api/public/content', publicContentRoutes);
 
+// Public consent API — no auth, for patient-facing consent forms
+import publicConsentRoutes from './routes/public-consent.js';
+app.use('/api/public/consent', publicConsentRoutes);
+
 // API routes
 import authRoutes from './routes/auth.js';
 import callRoutes from './routes/calls.js';
