@@ -1,3 +1,72 @@
+## Session — 2026-02-13 (Session 16)
+**Focus:** Phase 1C groundwork — services, automation engine, content repository
+
+**Accomplished:**
+- **Dashboard enhancements** verified working (call volume chart, clinic open/closed, quick access panel)
+- **Phase 1C database schema** — `api/db/schema-phase1c.sql` with 5 new tables:
+  - `services` — treatment catalog (10 seeded from LM menu, 3 categories)
+  - `service_content` — per-service content blocks (pre/post instructions, consent, questionnaire, FAQ)
+  - `automation_sequences` — configurable message timing/channel/template (14 seeded default sequences)
+  - `automation_log` — execution tracking (scheduled/sent/delivered/opened/failed)
+  - `consent_submissions` — signed consent forms + questionnaire responses
+  - All with full RLS policies, indexes, triggers, and seed data
+- **Services API** — `api/routes/services.js` — full CRUD for services + content blocks
+  - `GET/POST/PUT/DELETE /api/services(/:id)`
+  - `GET/POST /api/services/:serviceId/content`
+  - `GET/PUT/DELETE /api/services/content/:contentId`
+  - Content versioning (auto-bumps on content_json changes)
+- **Automation API** — `api/routes/automation.js` — sequences, log, stats, consent
+  - `GET/POST/PUT/DELETE /api/automation/sequences(/:id)`
+  - `POST /api/automation/sequences/reorder` — drag-and-drop support
+  - `GET /api/automation/log` — paginated execution log with client/sequence joins
+  - `GET /api/automation/stats` — delivery rate, open rate, channel breakdown
+  - `POST /api/automation/trigger` — manual test trigger
+  - `GET /api/automation/consents(/:id)` — consent submission viewer
+- **Services frontend** — `/services` page with:
+  - Category-grouped service list (Advanced Aesthetics, Regenerative Wellness, Bespoke)
+  - Create/edit form with auto-slug generation
+  - Expandable content block viewer (shows checklist of content types)
+  - CRUD with admin guards
+- **Automation frontend** — `/automation` page with:
+  - Stats cards (total sent, delivery rate, open rate, failed)
+  - Sequences tab: grouped by trigger event, toggle active/inactive, edit/delete
+  - Execution Log tab: paginated table with client, sequence, channel, status
+  - Create/edit sequence form with timing offset, channel, template type, service selector
+- **Sidebar updated** — Added Services (Sparkles icon) and Automation (Zap icon) to navigation
+- Both new route files mounted in `server.js`
+
+**Current State:**
+- API: Running on localhost:3001 with all new routes responding (401 without auth = expected)
+- Frontend: Running on localhost:5173
+- Schema migration (`schema-phase1c.sql`) needs to be run on Supabase to create the tables
+- All pages use the dark+gold theme matching existing pages
+
+**Files Created:**
+- `api/db/schema-phase1c.sql` — Phase 1C migration (services, content, automation, consents)
+- `api/routes/services.js` — Services + content CRUD API
+- `api/routes/automation.js` — Automation sequences + log + stats API
+- `src/routes/(auth)/services/+page.svelte` — Services management page
+- `src/routes/(auth)/automation/+page.svelte` — Automation dashboard page
+
+**Files Modified:**
+- `api/server.js` — Mounted services + automation routes
+- `src/lib/components/AppSidebar.svelte` — Added Services + Automation nav items
+
+**Issues:**
+- svelte-check still shows 230 pre-existing `.ts` import path warnings (shadcn-svelte generated files, not ours)
+- Phase 1C schema not yet applied to Supabase — needs manual run in SQL editor
+
+**Next Steps:**
+1. Run `schema-phase1c.sql` on Supabase to create Phase 1C tables
+2. Build service content editor (WYSIWYG or markdown for content_json blocks)
+3. Wire automation engine to actually send via Twilio/Resend (pg_cron + edge function)
+4. Build consent form public page (patient-facing, signature_pad)
+5. Build care instruction static pages on lemedspa.com
+6. Lead pipeline/CRM (Kanban board) — coordinate with other session re: contacts
+7. Deploy all changes to Cloudflare Pages + Render
+
+---
+
 ## Session — 2026-02-13 (Session 15)
 **Focus:** Call log outbound filter, deployment, answers to user questions
 

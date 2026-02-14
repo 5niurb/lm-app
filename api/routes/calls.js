@@ -118,6 +118,50 @@ router.get('/stats', logAction('calls.stats'), async (req, res) => {
 });
 
 /**
+ * GET /api/calls/stats/daily
+ * Get daily call counts for the last N days (for charts).
+ *
+ * Query params: days (default 7)
+ */
+router.get('/stats/daily', logAction('calls.stats.daily'), async (req, res) => {
+  const days = Math.min(90, Math.max(1, parseInt(req.query.days, 10) || 7));
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  const { data, error } = await supabaseAdmin
+    .from('call_logs')
+    .select('started_at, disposition')
+    .gte('started_at', since.toISOString())
+    .order('started_at', { ascending: true });
+
+  if (error) {
+    console.error('Failed to fetch daily stats:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch daily stats' });
+  }
+
+  // Group by date
+  const dailyMap = {};
+  for (let i = 0; i < days; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - (days - 1 - i));
+    const key = d.toISOString().split('T')[0];
+    dailyMap[key] = { date: key, total: 0, answered: 0, missed: 0, voicemail: 0 };
+  }
+
+  for (const call of (data || [])) {
+    const key = call.started_at?.split('T')[0];
+    if (dailyMap[key]) {
+      dailyMap[key].total++;
+      if (call.disposition === 'answered') dailyMap[key].answered++;
+      else if (call.disposition === 'missed') dailyMap[key].missed++;
+      else if (call.disposition === 'voicemail') dailyMap[key].voicemail++;
+    }
+  }
+
+  return res.json({ data: Object.values(dailyMap) });
+});
+
+/**
  * GET /api/calls/:id
  * Get a single call log by ID.
  */

@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/state';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.ts';
-	import { LayoutDashboard, Phone, Headset, Voicemail, MessageSquare, Users, Settings } from '@lucide/svelte';
+	import { LayoutDashboard, Phone, Headset, Voicemail, MessageSquare, Users, Settings, Sparkles, Zap } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 
 	const navItems = [
@@ -11,6 +11,8 @@
 		{ href: '/voicemails', label: 'Voicemails', icon: Voicemail },
 		{ href: '/messages', label: 'Messages', icon: MessageSquare, badgeKey: 'unreadMessages' },
 		{ href: '/contacts', label: 'Contacts', icon: Users },
+		{ href: '/services', label: 'Services', icon: Sparkles },
+		{ href: '/automation', label: 'Automation', icon: Zap },
 		{ href: '/settings', label: 'Settings', icon: Settings }
 	];
 

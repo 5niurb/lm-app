@@ -2,11 +2,7 @@
 
 ## What This Is
 
-Custom management platform for Le Med Spa. Handles call logging, voicemail, and (eventually) scheduling, POS, CRM, and messaging.
-
-## Day 1 Priority
-
-**Ship call logging + voicemail ASAP to shut down HighLevel.** This is Phase 1A and the #1 priority. Everything else (booking, POS, CRM, messaging) comes after.
+Custom management platform for Le Med Spa. Replaces HighLevel, TextMagic, and (eventually) Aesthetic Record. Handles call logging, voicemail, 2-way SMS messaging, CRM/contacts, softphone, services catalog, and automation sequences.
 
 ## Design Direction
 
@@ -34,9 +30,15 @@ lm-app/
     routes/
       login/              — Public login page
       (auth)/             — Auth-protected routes (sidebar layout)
-        dashboard/
-        calls/
-        settings/
+        dashboard/        — Stats, call volume chart, quick access
+        softphone/        — Browser-based Twilio softphone (auto-connects)
+        calls/            — Call log with inbound/outbound/missed filters
+        voicemails/       — Voicemails by mailbox, audio proxy playback
+        messages/         — 2-way SMS conversations
+        contacts/         — CRM with tags, quick actions, website form leads
+        services/         — Treatment catalog (Phase 1C)
+        automation/       — Message sequences + execution log (Phase 1C)
+        settings/         — App settings
     lib/
       components/ui/      — shadcn-svelte components (auto-generated, don't edit)
       components/         — App components (AppSidebar, AppHeader)
@@ -44,11 +46,24 @@ lm-app/
       api/                — API client wrapper
       utils/              — Supabase client, formatters
   api/                    — Express backend
-    server.js             — Entry point
-    routes/               — Route handlers
+    server.js             — Entry point, CORS multi-origin config
+    routes/
+      calls.js            — Call logs CRUD + stats
+      voicemails.js       — Voicemails CRUD + recording proxy
+      messages.js         — SMS conversations + threads
+      contacts.js         — Contacts CRUD + tags + form submissions
+      services.js         — Services + content blocks (Phase 1C)
+      automation.js       — Sequences + log + stats (Phase 1C)
+      settings.js         — App settings
+      webhooks/
+        voice.js          — Twilio voice webhooks (incoming, event, recording, status, transcription)
+        sms.js            — Twilio SMS incoming + delivery status
+        contact-form.js   — Website contact form → lead creation
     middleware/            — Auth, business hours, geo, audit
     services/             — Supabase, Twilio, Resend clients
-    db/schema.sql         — Database schema
+    db/
+      schema.sql          — Phase 1A/1B schema (core tables)
+      schema-phase1c.sql  — Phase 1C schema (services, automation, consents)
   supabase/seed.sql       — Dev seed data
 ```
 
