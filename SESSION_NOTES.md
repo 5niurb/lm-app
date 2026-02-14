@@ -1,3 +1,58 @@
+## Session — 2026-02-14 (Session 21, continued)
+**Focus:** Dashboard polish, sidebar badges, header clinic status, codebase assessment
+
+**Accomplished:**
+- **Dashboard recent calls upgraded** — replaced disposition badges with inline action summaries matching Phone Log:
+  - `getActionSummary(call)` function shared pattern with Phone Log
+  - Voicemail rows show transcription preview with Voicemail icon
+  - Answered calls show duration, missed/abandoned color-coded
+  - PhoneMissed icon (red) for missed/abandoned calls
+  - Quick access voicemail link now uses `?filter=voicemail`
+- **Sidebar voicemail badge** — Phone Log nav item shows red badge with unheard voicemail count:
+  - Badge system generalized — any nav item can have a `badgeKey` referencing badge state
+  - Voicemail badge is red (`bg-red-500/80`), message badge stays gold
+  - Loads from `/api/voicemails/stats` (total_unheard field)
+  - Auto-refreshes every 15 seconds
+- **Header clinic open/closed status** — live indicator with green dot glow:
+  - Reads business hours from `/api/settings` on load + every 60 seconds
+  - Shows "Open" (green dot with glow) or "Closed" (dim dot)
+  - Shows next state change: "Closes 17:00" or "Opens Monday 09:00"
+  - Quick-dial button linking to softphone
+  - Border style updated to match gold theme
+- **Full codebase assessment** — all pages and APIs are now complete:
+  - Services page: fully built (602 lines) with CRUD, content editor overlay, section builder
+  - Automation page: fully built (961 lines) with sequences, execution log, test send modal
+  - Settings page: fully built (716 lines) with business hours, extensions, routing, security
+  - Phase 1C schema already applied: 10 services, 13 content blocks, 14 sequences
+  - All 8 pages functional end-to-end
+
+**Deployed:**
+- ✅ Dashboard deployed to Cloudflare Pages (commit f4fa79a)
+- ✅ Sidebar + Header deployed to Cloudflare Pages (commit fff524a)
+- ✅ Both commits pushed to GitHub
+- ✅ Build passes clean
+
+**Current State:**
+- **App is ~80% feature-complete** for Phase 1A-1C
+- All 8 pages fully functional: Dashboard, Softphone, Phone Log, Messages, Contacts, Services, Automation, Settings
+- Sidebar has live badges: unread messages (gold) + unheard voicemails (red)
+- Header shows clinic open/closed status with quick-dial
+- Database: 540 contacts, 10 services, 13 content blocks, 14 automation sequences, 2 call logs, 6 voicemails
+
+**Commits this session:**
+- `f4fa79a` — [dashboard] Upgrade recent calls to match Phone Log inline summaries
+- `fff524a` — [ui] Add sidebar voicemail badges + header clinic status indicator
+
+**Next Steps:**
+1. Test end-to-end: call test number, press 1, verify message appears in messages chat
+2. Update production Studio flow (FW839cc419ccdd08f5199da5606f463f87)
+3. Set up pg_cron for automation processing (`/api/automation/process`)
+4. Build consent form public page (patient-facing, signature_pad)
+5. Add content for remaining services (IV Therapy, Bioidentical Hormones, Body Contouring)
+6. Wire booking confirmations to trigger automation sequences automatically
+
+---
+
 ## Session — 2026-02-14 (Session 20)
 **Focus:** Automation execution engine, test send UI, public care pages
 
