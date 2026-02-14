@@ -1,3 +1,66 @@
+## Session — 2026-02-14 (Session 20)
+**Focus:** Automation execution engine, test send UI, public care pages
+
+**Accomplished:**
+- **Automation execution engine** (`api/services/automation.js`):
+  - `sendSms()` — Twilio SMS with conversation/message recording (appears in Messages page)
+  - `sendEmail()` — Resend email with branded dark+gold HTML template
+  - `executeSequence()` — resolves content blocks, sends on SMS/email/both channels
+  - `processScheduledAutomation()` — batch processor for cron-triggered entries
+  - Content-aware: uses `content_json` sections for rich email, `summary` for SMS
+  - Template variables: `{name}`, `{first_name}` replaced with contact data
+- **Trigger endpoint now sends live** (was a "scheduled" stub):
+  - `POST /api/automation/trigger` sends immediately via Twilio/Resend
+  - `dry_run` option to preview what would be sent without sending
+  - `POST /api/automation/process` batch-processes all due scheduled entries
+- **Test Send UI** on automation page:
+  - Modal with sequence selector + contact search autocomplete
+  - Shows selected contact info (phone/email availability)
+  - Real-time result display (Twilio SID, Resend ID, errors)
+  - Test send (▶) button on each sequence row for quick testing
+  - "Process Queue" button on execution log tab for batch processing
+- **Public care instruction pages** (`/care/[slug]`):
+  - No-auth patient-facing page that renders `content_json` beautifully
+  - Branded dark+gold design matching lemedspa.com aesthetic
+  - Numbered sections with Playfair Display headings
+  - Mobile responsive, contact card with clickable phone link
+  - Footer with address, legal links, trademark
+  - `GET /api/public/content/:slug` — public API (no auth required)
+  - `GET /api/public/content` — index endpoint for sitemap
+  - Example: https://lm-app.pages.dev/care/neuromodulators-pre
+
+**Files Created:**
+- `api/services/automation.js` — Execution engine (sendSms, sendEmail, executeSequence, processScheduled)
+- `api/routes/public-content.js` — Public content API (no auth)
+- `src/routes/care/[slug]/+page.svelte` — Patient-facing care instruction page
+
+**Files Modified:**
+- `api/routes/automation.js` — Wired trigger to live execution + added /process endpoint
+- `api/server.js` — Mounted public content route
+- `src/routes/(auth)/automation/+page.svelte` — Added test send modal + process queue button
+
+**Deployed:**
+- ✅ Frontend deployed to Cloudflare Pages
+- ✅ API auto-deployed to Render (public content endpoint verified)
+- ✅ Build passes clean
+- ✅ Public API verified: `/api/public/content/neuromodulators-pre` returns full content
+
+**Available Care Pages (13 total):**
+- neuromodulators-pre, neuromodulators-post, neuromodulators-faq
+- dermal-fillers-pre, dermal-fillers-post, dermal-fillers-faq
+- microneedling-pre, microneedling-post, microneedling-faq
+- chemical-peels-pre, chemical-peels-post
+- laser-resurfacing-pre, laser-resurfacing-post
+
+**Next Steps:**
+1. Test automation end-to-end: use Test Send to send a real SMS to a test contact
+2. Set up pg_cron job to call /api/automation/process on a schedule
+3. Build consent form public page (patient-facing, signature_pad)
+4. Add content for remaining services (IV Therapy, Bioidentical Hormones, Body Contouring)
+5. Wire booking confirmations to trigger automation sequences automatically
+
+---
+
 ## Session — 2026-02-14 (Session 19)
 **Focus:** Contacts page UI polish + combined Phone Log page
 
