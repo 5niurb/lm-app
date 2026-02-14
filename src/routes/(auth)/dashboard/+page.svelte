@@ -251,7 +251,7 @@
 				<h2 class="text-base tracking-wide">Quick Access</h2>
 			</div>
 			<div class="p-3 space-y-1">
-				<a href="/calls?view=voicemails" class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group">
+				<a href="/calls?filter=voicemail" class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group">
 					<div class="flex items-center gap-3">
 						<Voicemail class="h-4 w-4 text-[rgba(255,255,255,0.3)] group-hover:text-[#c5a55a] transition-colors" />
 						<span class="text-sm text-[rgba(255,255,255,0.6)] group-hover:text-white transition-colors">Voicemails</span>

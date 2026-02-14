@@ -2,9 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 
-	// Redirect to combined phone log page with voicemails tab active
+	// Redirect to phone log (voicemails now shown inline)
 	onMount(() => {
-		goto('/calls?view=voicemails', { replaceState: true });
+		goto('/calls?filter=voicemail', { replaceState: true });
 	});
 </script>
 

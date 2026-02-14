@@ -22,7 +22,7 @@ router.get('/', logAction('calls.list'), async (req, res) => {
 
   let query = supabaseAdmin
     .from('call_logs')
-    .select('*', { count: 'exact' });
+    .select('*, voicemails(id, transcription, transcription_status, is_new, recording_url, duration, mailbox)', { count: 'exact' });
 
   // Filters
   if (req.query.direction) {
