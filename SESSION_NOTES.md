@@ -1,3 +1,50 @@
+## Session — 2026-02-14 (Session 24)
+**Focus:** Comprehensive frontend design polish — 11 improvements across all pages
+
+**Accomplished:**
+- **P0 Fixes:**
+  - Contacts: phone-only contacts now show formatted phone as display name (not "Unknown"), avatar shows "#" instead of "?"
+  - Settings: replaced emoji tab icons (🕐📞🔀🛡️) with proper Lucide components (Clock, Phone, GitBranch, Shield)
+- **P1 Major Improvements:**
+  - Login page: complete redesign — split-panel layout with brand visual (left) and form (right), gold ornaments, noise texture, "Private. Intimate. Exclusive." tagline
+  - Global texture/depth system: noise texture overlay class, card-elevated with gradient+shadow, page-enter fade-up animation, empty-state-icon gold glow
+  - All empty states upgraded across dashboard, contacts, services, softphone, messages, settings — rounded icon containers, Playfair Display headings, better CTAs
+- **P2 Polish:**
+  - Softphone dial pad: round buttons (was square), gold call button (was green), active press animation
+  - Page transitions: fade-up animation on auth layout content area
+  - Messages empty pane: radial glow, Playfair heading, gold-bordered "New conversation" button
+- **P3 Refinements:**
+  - Dashboard: SVG sparklines on Total Calls & Missed Calls cards, enlarged chart (h-36→h-48), card-elevated class
+  - Typography: heading weight hierarchy (h1=300 light, h2=400 regular, h3=500 medium)
+  - Services: colored left borders by category (gold/emerald/purple), hover transition
+
+**Files Changed (9 files, +293/-70):**
+- `src/app.css` — Global animation, texture, card, and typography classes
+- `src/routes/(auth)/+layout.svelte` — page-enter animation class
+- `src/routes/(auth)/contacts/+page.svelte` — Phone formatting fix, empty state
+- `src/routes/(auth)/dashboard/+page.svelte` — Sparklines, card-elevated, empty states
+- `src/routes/(auth)/messages/+page.svelte` — Empty pane redesign
+- `src/routes/(auth)/services/+page.svelte` — Category borders, empty state
+- `src/routes/(auth)/settings/+page.svelte` — Lucide icons, empty states
+- `src/routes/(auth)/softphone/+page.svelte` — Round dial pad, gold call button
+- `src/routes/login/+page.svelte` — Complete split-panel redesign
+
+**Technical Notes:**
+- Svelte 5 restriction: `{@const}` cannot be used directly inside `<svg>` — must use `$derived()` and helper functions instead
+- Sparkline SVGs use `<linearGradient>` with unique IDs and `<polyline>` + `<polygon>` for line + fill
+
+**Current State:**
+- Build passes, deployed to https://lm-app.pages.dev
+- Committed: `84ecd29` → pushed to GitHub
+- All 11 design improvements live in production
+
+**Next Steps:**
+- Visual verification on production site (login page, dashboard, contacts, softphone, messages, services, settings)
+- Consider accessibility audit on new components (color contrast on gold elements)
+- Phase 1A functional work: call logging, voicemail playback
+
+---
+
 ## Session — 2026-02-14 (Session 23)
 **Focus:** Full Claude Code automation suite — skills, hooks, rules, testing, CI
 
