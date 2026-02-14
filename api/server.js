@@ -19,7 +19,9 @@ const PORT = process.env.PORT || 3001;
 const ALLOWED_ORIGINS = [
   'https://lm-app.pages.dev',
   'http://localhost:5173',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_LOCAL,
+  process.env.FRONTEND_URL_PUBLIC
 ].filter(Boolean);
 
 app.use(cors({

@@ -49,3 +49,7 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: FRONTEND_URL_LOCAL
+        sync: false
+      - key: FRONTEND_URL_PUBLIC
+        sync: false
