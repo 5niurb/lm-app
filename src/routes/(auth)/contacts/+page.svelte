@@ -239,30 +239,30 @@
 								onclick={() => toggleExpand(contact.id)}
 							>
 								<div class="flex items-center gap-3 min-w-0 flex-1">
-									<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(197,165,90,0.1)] text-base font-medium text-[#C5A55A]" style="font-family: 'Playfair Display', serif;">
+									<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(197,165,90,0.1)] text-sm font-medium text-[#C5A55A]" style="font-family: 'Playfair Display', serif;">
 										{(contact.first_name?.[0] || contact.full_name?.[0] || '?').toUpperCase()}
 									</div>
-									<p class="text-2xl tracking-wide font-medium text-[rgba(255,255,255,0.85)] truncate" style="font-family: 'Playfair Display', serif;">
+									<p class="font-medium text-[rgba(255,255,255,0.85)] truncate transition-all duration-200 {expandedId === contact.id ? 'text-lg tracking-wide' : 'text-sm group-hover:text-base group-hover:tracking-wide'}" style="font-family: 'Playfair Display', serif;">
 										{contact.full_name || 'Unknown'}
 									</p>
-									<!-- Quick actions right next to name -->
+									<!-- Quick actions — visible on hover or when expanded -->
 									{#if contact.phone}
-										<div class="flex items-center gap-1.5 shrink-0">
+										<div class="flex items-center gap-1.5 shrink-0 transition-opacity duration-200 {expandedId === contact.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}">
 											<a
 												href="/softphone?call={encodeURIComponent(contact.phone)}"
-												class="inline-flex items-center justify-center h-11 w-11 rounded-xl border border-emerald-500/40 text-emerald-400/60 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-emerald-500/40 text-emerald-400/60 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
 												title="Call {contact.full_name || 'contact'}"
 												onclick={(e) => e.stopPropagation()}
 											>
-												<PhoneOutgoing class="h-7 w-7" />
+												<PhoneOutgoing class="h-4 w-4" />
 											</a>
 											<a
 												href="/messages?phone={encodeURIComponent(contact.phone)}&new=true"
-												class="inline-flex items-center justify-center h-11 w-11 rounded-xl border border-blue-500/40 text-blue-400/60 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
+												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-blue-500/40 text-blue-400/60 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 												title="Message {contact.full_name || 'contact'}"
 												onclick={(e) => e.stopPropagation()}
 											>
-												<MessageSquare class="h-7 w-7" />
+												<MessageSquare class="h-4 w-4" />
 											</a>
 										</div>
 									{/if}
