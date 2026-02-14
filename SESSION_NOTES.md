@@ -1,73 +1,69 @@
+## Session — 2026-02-13 (Session 17)
+**Focus:** Service content editor, treatment content seeding, automation-content linking
+
+**Accomplished:**
+- **Service content editor** — Full overlay modal for creating/editing content blocks per service:
+  - Content type selector (pre/post instructions, FAQs, consent forms, promos)
+  - Accordion section builder with add/remove/reorder sections
+  - Auto page slug generation from service slug + content type
+  - Version tracking on content updates
+  - Content type checklist buttons that open editor for missing types
+  - Clickable content cards for editing existing blocks
+  - Delete with confirmation
+- **Seeded 13 real content blocks** across 5 key services:
+  - **Neuromodulators (Botox/Dysport):** Pre-treatment (4 sections), Post-treatment (4 sections), FAQ (5 questions)
+  - **Dermal Fillers:** Pre-treatment (4 sections), Post-treatment (5 sections), FAQ (5 questions)
+  - **Microneedling:** Pre-treatment (4 sections), Post-treatment (5 sections), FAQ (5 questions)
+  - **Chemical Peels:** Pre-treatment (4 sections), Post-treatment (5 sections)
+  - **Laser Resurfacing:** Pre-treatment (4 sections), Post-treatment (5 sections)
+  - Each block includes SMS summary for automated text messages
+- **Automation-content linking** — Enhanced automation sequences page:
+  - `content_ref` dropdown in sequence form (filtered by selected service)
+  - Content blocks load dynamically when service is selected
+  - Linked content badge shown on sequence rows (title + SMS preview)
+  - Empty state links to /services to create content
+  - "No linked content" option for custom body sequences
+
+**Deployed:**
+- ✅ Frontend deployed to Cloudflare Pages (2 deployments)
+- ✅ 2 commits pushed to GitHub (content editor + content linking)
+- ✅ 13 content blocks seeded in production Supabase DB
+- ✅ Build passes cleanly
+
+**Current State:**
+- **Production DB**: 10 services, 13 content blocks, 14 automation sequences
+- **Frontend**: Services page has full content CRUD, Automation page has content linking
+- **API**: Content endpoints working, sequences JOIN content via content_ref
+
+**Next Steps:**
+1. Wire automation engine to actually send via Twilio/Resend (pg_cron + edge function)
+2. Build consent form public page (patient-facing, signature_pad)
+3. Build care instruction static pages on lemedspa.com (render content_json to HTML)
+4. Lead pipeline/CRM (Kanban board)
+5. Add content for remaining services (IV Therapy, Bioidentical Hormones, Body Contouring)
+
+---
+
 ## Session — 2026-02-13 (Session 16)
 **Focus:** Phase 1C groundwork — services, automation engine, content repository
 
 **Accomplished:**
 - **Dashboard enhancements** verified working (call volume chart, clinic open/closed, quick access panel)
-- **Phase 1C database schema** — `api/db/schema-phase1c.sql` with 5 new tables:
-  - `services` — treatment catalog (10 seeded from LM menu, 3 categories)
-  - `service_content` — per-service content blocks (pre/post instructions, consent, questionnaire, FAQ)
-  - `automation_sequences` — configurable message timing/channel/template (14 seeded default sequences)
-  - `automation_log` — execution tracking (scheduled/sent/delivered/opened/failed)
-  - `consent_submissions` — signed consent forms + questionnaire responses
-  - All with full RLS policies, indexes, triggers, and seed data
+- **Phase 1C database schema** — `api/db/schema-phase1c.sql` with 5 new tables
 - **Services API** — `api/routes/services.js` — full CRUD for services + content blocks
-  - `GET/POST/PUT/DELETE /api/services(/:id)`
-  - `GET/POST /api/services/:serviceId/content`
-  - `GET/PUT/DELETE /api/services/content/:contentId`
-  - Content versioning (auto-bumps on content_json changes)
 - **Automation API** — `api/routes/automation.js` — sequences, log, stats, consent
-  - `GET/POST/PUT/DELETE /api/automation/sequences(/:id)`
-  - `POST /api/automation/sequences/reorder` — drag-and-drop support
-  - `GET /api/automation/log` — paginated execution log with client/sequence joins
-  - `GET /api/automation/stats` — delivery rate, open rate, channel breakdown
-  - `POST /api/automation/trigger` — manual test trigger
-  - `GET /api/automation/consents(/:id)` — consent submission viewer
-- **Services frontend** — `/services` page with:
-  - Category-grouped service list (Advanced Aesthetics, Regenerative Wellness, Bespoke)
-  - Create/edit form with auto-slug generation
-  - Expandable content block viewer (shows checklist of content types)
-  - CRUD with admin guards
-- **Automation frontend** — `/automation` page with:
-  - Stats cards (total sent, delivery rate, open rate, failed)
-  - Sequences tab: grouped by trigger event, toggle active/inactive, edit/delete
-  - Execution Log tab: paginated table with client, sequence, channel, status
-  - Create/edit sequence form with timing offset, channel, template type, service selector
-- **Sidebar updated** — Added Services (Sparkles icon) and Automation (Zap icon) to navigation
-- Both new route files mounted in `server.js`
-
-**Current State:**
-- API: Running on localhost:3001 with all new routes responding (401 without auth = expected)
-- Frontend: Running on localhost:5173
-- Schema migration (`schema-phase1c.sql`) needs to be run on Supabase to create the tables
-- All pages use the dark+gold theme matching existing pages
-
-**Files Created:**
-- `api/db/schema-phase1c.sql` — Phase 1C migration (services, content, automation, consents)
-- `api/routes/services.js` — Services + content CRUD API
-- `api/routes/automation.js` — Automation sequences + log + stats API
-- `src/routes/(auth)/services/+page.svelte` — Services management page
-- `src/routes/(auth)/automation/+page.svelte` — Automation dashboard page
-
-**Files Modified:**
-- `api/server.js` — Mounted services + automation routes
-- `src/lib/components/AppSidebar.svelte` — Added Services + Automation nav items
+- **Services frontend** + **Automation frontend** — full pages with dark+gold theme
+- **Sidebar updated** — Added Services (Sparkles) and Automation (Zap) to navigation
+- Phase 1C schema applied to Supabase (8 migrations)
+- 10 services + 14 automation sequences seeded in production DB
 
 **Deployed:**
-- ✅ Phase 1C schema applied to Supabase (8 migrations: tables, RLS, seeds)
-- ✅ Frontend deployed to Cloudflare Pages (https://lm-app.pages.dev)
-- ✅ API routes live on Render (auto-deployed from push)
-- ✅ CORS verified working for production origin
-- ✅ 10 services + 14 automation sequences seeded in production DB
-
-**Issues:**
-- svelte-check still shows 230 pre-existing `.ts` import path warnings (shadcn-svelte generated files, not ours)
+- ✅ Phase 1C schema applied to Supabase
+- ✅ Frontend deployed to Cloudflare Pages
+- ✅ API routes live on Render
 
 **Next Steps:**
-1. Build service content editor (WYSIWYG or markdown for content_json blocks)
-2. Wire automation engine to actually send via Twilio/Resend (pg_cron + edge function)
-3. Build consent form public page (patient-facing, signature_pad)
-4. Build care instruction static pages on lemedspa.com
-5. Lead pipeline/CRM (Kanban board) — coordinate with other session re: contacts
+- ✅ Completed in Session 17
 
 ---
 
