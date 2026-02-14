@@ -267,10 +267,19 @@ router.get('/:id', logAction('contacts.read'), async (req, res) => {
     .order('started_at', { ascending: false })
     .limit(20);
 
+  // Get form submissions for this contact
+  const { data: formSubmissions } = await supabaseAdmin
+    .from('contact_form_submissions')
+    .select('id, message, interested_in, preferred_contact, referral_source, status, created_at')
+    .eq('contact_id', id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
   return res.json({
     data: {
       ...contact,
-      recent_calls: calls || []
+      recent_calls: calls || [],
+      form_submissions: formSubmissions || []
     }
   });
 });

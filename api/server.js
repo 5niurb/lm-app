@@ -18,6 +18,9 @@ const PORT = process.env.PORT || 3001;
 // Allow both the production CF Pages URL and local dev
 const ALLOWED_ORIGINS = [
   'https://lm-app.pages.dev',
+  'https://lemedspa.com',
+  'https://www.lemedspa.com',
+  'https://lemedspa.pages.dev',
   'http://localhost:5173',
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL_LOCAL,
@@ -28,7 +31,9 @@ app.use(cors({
   origin(origin, cb) {
     // Allow requests with no origin (curl, server-to-server, Twilio webhooks)
     if (!origin) return cb(null, true);
-    if (ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.lm-app.pages.dev')) {
+    if (ALLOWED_ORIGINS.includes(origin)
+        || origin.endsWith('.lm-app.pages.dev')
+        || origin.endsWith('.lemedspa.pages.dev')) {
       return cb(null, origin);
     }
     cb(new Error('Not allowed by CORS'));
@@ -54,18 +59,24 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Public webhook — website contact form (no auth, needs JSON parsing)
+import webhookContactForm from './routes/webhooks/contact-form.js';
+app.use('/api/webhooks/contact-form', webhookContactForm);
+
 // API routes
 import authRoutes from './routes/auth.js';
 import callRoutes from './routes/calls.js';
 import voicemailRoutes from './routes/voicemails.js';
 import contactRoutes from './routes/contacts.js';
 import messageRoutes from './routes/messages.js';
+import settingsRoutes from './routes/settings.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/calls', callRoutes);
 app.use('/api/voicemails', voicemailRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.listen(PORT, () => {
   console.log(`LM App API running on port ${PORT}`);

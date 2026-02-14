@@ -4,7 +4,7 @@
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
-	import { Users, Search, Phone, Mail, ChevronLeft, ChevronRight, Tag, X, Plus } from '@lucide/svelte';
+	import { Users, Search, Phone, Mail, ChevronLeft, ChevronRight, Tag, X, Plus, MessageSquare, PhoneOutgoing, FileText } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 
@@ -38,7 +38,8 @@
 		textmagic: 'TextMagic',
 		google_sheet: 'Google Sheet',
 		manual: 'Manual',
-		inbound_call: 'Inbound Call'
+		inbound_call: 'Inbound Call',
+		website_form: 'Website Form'
 	};
 
 	$effect(() => {
@@ -232,7 +233,7 @@
 			{:else}
 				<div class="space-y-1">
 					{#each contacts as contact}
-						<div class="rounded-md border border-transparent transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)]">
+						<div class="group rounded-md border border-transparent transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)]">
 							<button
 								class="flex w-full items-center justify-between p-3 text-left"
 								onclick={() => toggleExpand(contact.id)}
@@ -260,6 +261,27 @@
 											{/if}
 										</div>
 									</div>
+								</div>
+								<!-- Quick actions (visible on hover) -->
+								<div class="flex items-center gap-0.5 shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+									{#if contact.phone}
+										<a
+											href="/softphone?call={encodeURIComponent(contact.phone)}"
+											class="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-[rgba(197,165,90,0.15)] text-[rgba(255,255,255,0.35)] hover:text-emerald-400 transition-colors"
+											title="Call {contact.full_name || 'contact'}"
+											onclick={(e) => e.stopPropagation()}
+										>
+											<PhoneOutgoing class="h-3.5 w-3.5" />
+										</a>
+										<a
+											href="/messages?phone={encodeURIComponent(contact.phone)}"
+											class="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-[rgba(197,165,90,0.15)] text-[rgba(255,255,255,0.35)] hover:text-blue-400 transition-colors"
+											title="Message {contact.full_name || 'contact'}"
+											onclick={(e) => e.stopPropagation()}
+										>
+											<MessageSquare class="h-3.5 w-3.5" />
+										</a>
+									{/if}
 								</div>
 								<div class="flex items-center gap-1.5 shrink-0 ml-2 flex-wrap justify-end">
 									{#if contact.tags && contact.tags.length > 0}
@@ -386,6 +408,43 @@
 										</div>
 									{:else}
 										<p class="text-sm text-[rgba(255,255,255,0.3)] italic">No call history yet.</p>
+									{/if}
+
+									<!-- Form submissions -->
+									{#if expandedContact.form_submissions && expandedContact.form_submissions.length > 0}
+										<div>
+											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2 flex items-center gap-1">
+												<FileText class="h-3 w-3" /> Website Inquiries
+											</p>
+											<div class="space-y-2">
+												{#each expandedContact.form_submissions as sub}
+													<div class="bg-[rgba(197,165,90,0.04)] rounded-md px-3 py-2 border border-[rgba(197,165,90,0.08)]">
+														<div class="flex items-center justify-between mb-1">
+															<div class="flex items-center gap-2">
+																{#if sub.interested_in}
+																	<Badge variant="outline" class="text-xs">{sub.interested_in}</Badge>
+																{/if}
+																<Badge variant={sub.status === 'new' ? 'default' : 'secondary'} class="text-xs">{sub.status}</Badge>
+															</div>
+															<span class="text-xs text-[rgba(255,255,255,0.35)]">{formatRelativeDate(sub.created_at)}</span>
+														</div>
+														{#if sub.message}
+															<p class="text-sm text-[rgba(255,255,255,0.7)] leading-relaxed mt-1">{sub.message}</p>
+														{/if}
+														{#if sub.preferred_contact || sub.referral_source}
+															<div class="flex gap-3 mt-1 text-xs text-[rgba(255,255,255,0.35)]">
+																{#if sub.preferred_contact}
+																	<span>Prefers: {sub.preferred_contact}</span>
+																{/if}
+																{#if sub.referral_source}
+																	<span>Found via: {sub.referral_source}</span>
+																{/if}
+															</div>
+														{/if}
+													</div>
+												{/each}
+											</div>
+										</div>
 									{/if}
 
 									<!-- Metadata -->
