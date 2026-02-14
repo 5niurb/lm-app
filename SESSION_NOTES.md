@@ -1,3 +1,37 @@
+## Session — 2026-02-14 (Session 18)
+**Focus:** IVR SMS routing through messages pipeline
+
+**Accomplished:**
+- **IVR-initiated SMS now routes through our API** — messages appear in the messages chat:
+  - Created `/api/webhooks/sms/studio-send` endpoint in `api/routes/webhooks/sms.js`
+  - Endpoint: receives caller phone + message body from Studio, sends SMS via Twilio, creates conversation + message records
+  - Messages tagged with `metadata: { source: 'ivr' }` for tracking
+  - Replaces Studio's built-in `send-message` widget which bypassed our DB entirely
+- **Studio flow updated (revision 55)**:
+  - Replaced `send_message_accounts` from `send-message` type → `make-http-request` type
+  - POSTs to `https://lm-app-api.onrender.com/api/webhooks/sms/studio-send`
+  - Sends JSON body: `{ to, body, callSid }` using Studio variables
+  - Removed `fcn_NewSMSEmailNotify` (old Twilio Function for legacy email notifications)
+  - Made `play_MsgSentGoodbye` terminal (no longer chains to removed function)
+- **Script**: `scripts/wire-studio-sms.mjs` for flow JSON modification
+
+**Deployed:**
+- ✅ Studio flow revision 55 published (test flow)
+- ✅ API deployed to Render (commit 3c3818d)
+- ✅ New endpoint verified: returns proper 400 on empty body
+
+**Current State:**
+- **IVR press-1-to-text flow**: Now creates conversation + message in our DB → visible in messages chat
+- **Studio flow**: 16 states, all SMS goes through our API
+- **API**: `/api/webhooks/sms/studio-send` live on Render
+
+**Next Steps:**
+1. Test end-to-end: call test number, press 1, verify message appears in messages chat
+2. Update production Studio flow (FW839cc419ccdd08f5199da5606f463f87) when test flow verified
+3. Continue Phase 1A/1B development
+
+---
+
 ## Session — 2026-02-13 (Session 17)
 **Focus:** Service content editor, treatment content seeding, automation-content linking
 

@@ -150,11 +150,17 @@
 									<PhoneOutgoing class="h-4 w-4 shrink-0 text-emerald-400/70 group-hover:text-emerald-400 transition-colors" />
 								{/if}
 								<div class="min-w-0">
-									<p class="text-sm font-medium text-[rgba(255,255,255,0.85)] truncate">
-										{#if call.caller_name}
-											{call.caller_name}
+									<p class="text-sm font-medium truncate flex items-center gap-1.5">
+										{#if call.contact_id && call.caller_name}
+											<!-- Known contact from our DB -->
+											<span class="text-[#C5A55A] text-[10px]" title="Contact">◆</span>
+											<span class="text-[rgba(255,255,255,0.9)]">{call.caller_name}</span>
+										{:else if call.caller_name}
+											<!-- Name from Twilio Caller ID (CNAM) -->
+											<span class="text-[rgba(255,255,255,0.7)]">{call.caller_name}</span>
+											<span class="text-[9px] uppercase tracking-wider px-1 py-px rounded bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.3)] leading-none">CID</span>
 										{:else}
-											{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}
+											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}</span>
 										{/if}
 									</p>
 									<p class="text-xs text-[rgba(255,255,255,0.35)]">

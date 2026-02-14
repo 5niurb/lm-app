@@ -237,11 +237,15 @@
 										<MailOpen class="h-4 w-4 shrink-0 text-muted-foreground" />
 									{/if}
 									<div class="min-w-0">
-										<p class="text-sm font-medium truncate">
-											{#if vm.call_logs?.caller_name}
-												{vm.call_logs.caller_name}
+										<p class="text-sm font-medium truncate flex items-center gap-1.5">
+											{#if vm.call_logs?.contact_id && vm.call_logs?.caller_name}
+												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
+												<span class="text-[rgba(255,255,255,0.9)] truncate">{vm.call_logs.caller_name}</span>
+											{:else if vm.call_logs?.caller_name}
+												<span class="text-[rgba(255,255,255,0.7)] truncate">{vm.call_logs.caller_name}</span>
+												<span class="text-[9px] uppercase tracking-wider px-1 py-px rounded bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.3)] leading-none shrink-0">CID</span>
 											{:else}
-												{formatPhone(vm.from_number)}
+												<span>{formatPhone(vm.from_number)}</span>
 											{/if}
 										</p>
 										<p class="text-xs text-muted-foreground">

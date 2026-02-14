@@ -213,8 +213,15 @@
 					>
 						<div class="flex items-start justify-between gap-2">
 							<div class="min-w-0 flex-1">
-								<p class="text-sm font-medium text-[rgba(255,255,255,0.85)] truncate">
-									{convo.display_name || formatPhone(convo.phone_number)}
+								<p class="text-sm font-medium truncate flex items-center gap-1.5">
+									{#if convo.contact_id && convo.display_name}
+										<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
+										<span class="text-[rgba(255,255,255,0.9)] truncate">{convo.display_name}</span>
+									{:else if convo.display_name}
+										<span class="text-[rgba(255,255,255,0.7)] truncate">{convo.display_name}</span>
+									{:else}
+										<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(convo.phone_number)}</span>
+									{/if}
 								</p>
 								{#if convo.display_name}
 									<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(convo.phone_number)}</p>
@@ -249,8 +256,15 @@
 					<ArrowLeft class="h-5 w-5 text-[rgba(255,255,255,0.6)]" />
 				</button>
 				<div class="flex-1 min-w-0">
-					<p class="text-sm font-medium text-[rgba(255,255,255,0.85)] truncate">
-						{selectedConvo.display_name || formatPhone(selectedConvo.phone_number)}
+					<p class="text-sm font-medium truncate flex items-center gap-1.5">
+						{#if selectedConvo.contact_id && selectedConvo.display_name}
+							<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
+							<span class="text-[rgba(255,255,255,0.9)] truncate">{selectedConvo.display_name}</span>
+						{:else if selectedConvo.display_name}
+							<span class="text-[rgba(255,255,255,0.7)] truncate">{selectedConvo.display_name}</span>
+						{:else}
+							<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(selectedConvo.phone_number)}</span>
+						{/if}
 					</p>
 					{#if selectedConvo.display_name}
 						<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(selectedConvo.phone_number)}</p>
