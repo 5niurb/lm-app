@@ -1,0 +1,17 @@
+# Package managers
+node_modules
+api/node_modules
+package-lock.json
+
+# Build output
+.svelte-kit
+build
+dist
+.wrangler
+.cloudflare
+
+# shadcn-svelte generated components
+src/lib/components/ui/
+
+# Other
+*.md

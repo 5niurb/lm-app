@@ -33,8 +33,8 @@ npm-debug.log*
 # Local database
 *.db
 
-# Claude Code
-.claude/
+# Claude Code — track shared settings, skills, hooks, rules; ignore local settings
+.claude/settings.local.json
 
 # Audio assets (hosted on Twilio, not in git)
 twilio/assets/
