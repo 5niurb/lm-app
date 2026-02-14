@@ -1,5 +1,40 @@
+## Session — 2026-02-14 (Session 19)
+**Focus:** Contacts page UI polish + combined Phone Log page
+
+**Accomplished:**
+- **Contact name font enlarged** — now `text-2xl tracking-wide` with Playfair Display (matches page header)
+- **Contact avatar slightly larger** — `h-10 w-10` (was `h-9 w-9`)
+- **Colored action icons** — phone icon has green outline/border, message icon has blue outline/border
+  - Icons always visible (removed opacity-0 hover-only gate)
+  - Border + icon color at 40-60% opacity, hover brightens to full
+- **Combined Call Log + Voicemail into single "Phone Log" page** at `/calls`:
+  - Segmented toggle (Calls | Voicemails) with gold active state
+  - Voicemails tab shows unheard badge count
+  - Each view retains its own filters, search, pagination
+  - URL param `?view=voicemails` supported for deep linking
+  - Stops audio playback when switching away from voicemails
+- **Sidebar updated** — removed separate "Voicemails" entry, renamed "Calls" → "Phone Log"
+- **Old `/voicemails` route** → redirects to `/calls?view=voicemails` (preserves old links)
+- **Dashboard** "Quick Access" voicemail link updated to point to `/calls?view=voicemails`
+
+**Deployed:**
+- ✅ Frontend deployed to Cloudflare Pages
+- ✅ Build passes clean
+
+**Current State:**
+- Sidebar has 8 items: Dashboard, Softphone, Phone Log, Messages, Contacts, Services, Automation, Settings
+- Phone Log page merges calls + voicemails with tab toggle
+- Contacts page has large Playfair Display names + green phone / blue message icons
+
+**Next Steps:**
+1. Test end-to-end: call test number, press 1, verify message appears in messages chat
+2. Update production Studio flow (FW839cc419ccdd08f5199da5606f463f87) when test flow verified
+3. Continue Phase 1A/1B development
+
+---
+
 ## Session — 2026-02-14 (Session 18)
-**Focus:** IVR SMS routing through messages pipeline
+**Focus:** IVR SMS routing through messages pipeline + contact name source indicators
 
 **Accomplished:**
 - **IVR-initiated SMS now routes through our API** — messages appear in the messages chat:
@@ -14,15 +49,24 @@
   - Removed `fcn_NewSMSEmailNotify` (old Twilio Function for legacy email notifications)
   - Made `play_MsgSentGoodbye` terminal (no longer chains to removed function)
 - **Script**: `scripts/wire-studio-sms.mjs` for flow JSON modification
+- **Contact name source indicators across all pages**:
+  - Gold ◆ diamond = known contact from our contacts database
+  - Dim "CID" badge = name from Twilio Caller ID (CNAM lookup)
+  - No indicator = phone number only (no name available)
+  - Updated: Call Log, Dashboard, Voicemails, Messages (conversation list + thread header)
+  - Voicemails API now includes `contact_id` + `metadata` in call_logs join
 
 **Deployed:**
 - ✅ Studio flow revision 55 published (test flow)
-- ✅ API deployed to Render (commit 3c3818d)
-- ✅ New endpoint verified: returns proper 400 on empty body
+- ✅ API deployed to Render (commits 3c3818d, aa6c659)
+- ✅ Frontend deployed to Cloudflare Pages
+- ✅ New studio-send endpoint verified: returns proper 400 on empty body
+- ✅ Build passes clean
 
 **Current State:**
 - **IVR press-1-to-text flow**: Now creates conversation + message in our DB → visible in messages chat
 - **Studio flow**: 16 states, all SMS goes through our API
+- **Name display**: All pages show name source (DB contact vs Caller ID vs phone-only)
 - **API**: `/api/webhooks/sms/studio-send` live on Render
 
 **Next Steps:**
