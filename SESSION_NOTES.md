@@ -1,3 +1,55 @@
+## Session — 2026-02-13 (Session 15)
+**Focus:** Call log outbound filter, deployment, answers to user questions
+
+**Accomplished:**
+- **Added Inbound/Outbound filter buttons** to Call Log page with PhoneIncoming/PhoneOutgoing icons
+- Wired `direction=outbound` and `direction=inbound` query params to API (already supported)
+- Filter bar now wraps on mobile (`flex-wrap`)
+- Built + deployed to Cloudflare Pages
+- Answered: GitHub "Create PR" is just default UI — all code is on main, no PR needed
+- Answered: Testing from hosted site (lm-app.pages.dev) is recommended over localhost
+
+**Current State:**
+- **Frontend**: Live at https://lm-app.pages.dev (Cloudflare Pages)
+- **API**: Live at https://lm-app-api.onrender.com (Render)
+- Call log filters: All | Inbound | Outbound | Answered | Missed | Voicemail
+
+**Next Steps:**
+1. Ensure TWILIO_TEST1_PHONE_NUMBER is set on Render (for outbound SMS fix)
+2. Test softphone end-to-end (open softphone page, call test number, press 0)
+3. Update production Studio flow when test flow is verified
+4. Continue Phase 1A: call logging completeness, voicemail playback
+
+---
+
+## Session — 2026-02-13 (Session 14)
+**Focus:** RCS Sender registration completion, RCS brand assets creation
+
+**Accomplished:**
+- **RCS Sender registration submitted** in Twilio Console — awaiting approval (2-4 weeks)
+- **Created new RCS brand assets** from official banner PDF:
+  - `rcs-banner-logo-1140x448.png` — full banner with LM monogram + text (72KB)
+  - `rcs-banner-text-1140x448.png` — text-only banner (44KB)
+  - `rcs-logo-black-224x224.png` — black background LM monogram (11KB)
+- **Recorded opt-in flow video** via Playwright — `rcs-optin-flow-video.webm` (2.5MB)
+  - Shows contact form, SMS consent checkboxes, STOP disclosure, TOS link
+- **Filled all RCS registration fields:**
+  - Agent access instructions, opt-in/out descriptions, messaging triggers, use case description
+  - Notification email: accounts@lemedspa.com
+- **Installed Playwright** as dev dependency (for video recording capability)
+
+**Current State:**
+- RCS registration: **Submitted, pending approval**
+- All RCS assets in `docs/rcs-assets/` (6 image files + 1 video)
+- US A2P 10DLC registration still pending (separate task)
+
+**Next Steps:**
+1. Wait for RCS approval email at accounts@lemedspa.com
+2. Complete US A2P 10DLC registration when ready
+3. Continue lm-app development (softphone testing, messaging, production Studio flow)
+
+---
+
 ## Session — 2026-02-13 (Session 13)
 **Focus:** Cloudflare Pages deployment, Render verification, session 12 commit
 

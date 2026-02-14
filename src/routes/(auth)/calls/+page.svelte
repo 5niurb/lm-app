@@ -28,6 +28,10 @@
 			});
 
 			if (search) params.set('search', search);
+			// Direction filters
+			if (filter === 'outbound') params.set('direction', 'outbound');
+			if (filter === 'inbound') params.set('direction', 'inbound');
+			// Disposition filters
 			if (filter === 'missed') params.set('disposition', 'missed');
 			if (filter === 'voicemail') params.set('disposition', 'voicemail');
 			if (filter === 'answered') params.set('disposition', 'answered');
@@ -102,8 +106,14 @@
 						bind:value={search}
 					/>
 				</form>
-				<div class="flex gap-1">
+				<div class="flex flex-wrap gap-1">
 					<Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('all')}>All</Button>
+					<Button variant={filter === 'inbound' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('inbound')}>
+						<PhoneIncoming class="h-3.5 w-3.5 mr-1" />Inbound
+					</Button>
+					<Button variant={filter === 'outbound' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('outbound')}>
+						<PhoneOutgoing class="h-3.5 w-3.5 mr-1" />Outbound
+					</Button>
 					<Button variant={filter === 'answered' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('answered')}>Answered</Button>
 					<Button variant={filter === 'missed' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('missed')}>Missed</Button>
 					<Button variant={filter === 'voicemail' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('voicemail')}>Voicemail</Button>
