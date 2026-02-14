@@ -1,3 +1,90 @@
+## Session — 2026-02-14 (Session 23)
+**Focus:** Full Claude Code automation suite — skills, hooks, rules, testing, CI
+
+**Accomplished:**
+- **4 Custom Skills** (slash commands):
+  - `/deploy` — Build + deploy to CF Pages with automatic retry (up to 3 attempts on network failure), correct `PUBLIC_API_URL`, and post-deploy verification
+  - `/verify` — Comprehensive production health check: API health, CORS, frontend, Supabase, public endpoints, webhook endpoints — results in table format
+  - `/commit` — Standardized git commit following `[area] Description` format with Co-Authored-By, staged file selection, and auto-push
+  - `/migrate` — Supabase migration helper with SQL review, `apply_migration`/`execute_sql`, verification, and advisory checks
+- **4 Lifecycle Hooks:**
+  - `SessionStart` — Auto-loads latest 2 SESSION_NOTES.md entries + git status as context on startup
+  - `PreToolUse (Bash)` — Build guard: blocks `vite build` or `npm run build` without `PUBLIC_API_URL` set to production URL (exit code 2 = block)
+  - `PostToolUse (Write|Edit)` — Async build check: runs `vite build` after editing frontend files, reports errors as context without blocking
+  - `Stop` — Pre-stop warnings: checks for uncommitted changes, stale SESSION_NOTES.md (>30 min), unpushed commits — feeds into TextMe SMS hook
+- **3 Conditional Code Rules** (`.claude/rules/`):
+  - `api.md` — Express conventions: supabaseAdmin for server-side, webhook mount order, error/audit patterns
+  - `frontend.md` — Svelte 5 runes mandate, shadcn hands-off, dark+gold theme colors, api() wrapper
+  - `database.md` — Supabase schema conventions: RLS required, snake_case naming, E.164 phone format
+- **Clean Project Settings** (`.claude/settings.json`):
+  - Curated permission allow/deny lists replacing 35+ organically accumulated entries
+  - All hooks wired via `$CLAUDE_PROJECT_DIR` for portability
+  - `.gitignore` updated: `.claude/` tracked in git, `settings.local.json` excluded
+- **ESLint + Prettier:**
+  - ESLint 9 with `eslint-plugin-svelte`, `eslint-config-prettier`, `globals`
+  - Prettier with tabs, Svelte plugin, 100-char line width
+  - Custom rules: warn (not error) for `no-unused-vars`, `goto()` without `resolve()`, `{#each}` keys
+  - 102 warnings + 3 errors in pre-existing code (all new files clean)
+- **Vitest + Tests:**
+  - 20 unit tests passing: phone formatting (5), phone normalization (5), duration formatting (4), build guard hook (5), stop-check hook (1)
+  - API integration test suite (Node.js built-in runner): health, CORS, public endpoints
+  - Cross-platform stdin helper for hook testing (`spawnSync` with `input` parameter)
+- **GitHub Actions CI:**
+  - `.github/workflows/ci.yml` — runs on push to main and PRs
+  - Steps: install deps → lint → format check → type check → build → unit tests → API integration tests
+
+**Files Created (25):**
+- `.claude/settings.json` — Project-level shared settings with hooks
+- `.claude/hooks/build-guard.js` — PreToolUse build guard
+- `.claude/hooks/check-build.js` — PostToolUse async build check
+- `.claude/hooks/session-start.js` — SessionStart context loader
+- `.claude/hooks/stop-check.js` — Stop pre-check warnings
+- `.claude/hooks/read-stdin.js` — Cross-platform stdin helper
+- `.claude/hooks/package.json` — ES module flag for hooks
+- `.claude/skills/deploy/SKILL.md` — /deploy skill
+- `.claude/skills/verify/SKILL.md` — /verify skill
+- `.claude/skills/commit/SKILL.md` — /commit skill
+- `.claude/skills/migrate/SKILL.md` — /migrate skill
+- `.claude/rules/api.md` — API code rules
+- `.claude/rules/frontend.md` — Frontend code rules
+- `.claude/rules/database.md` — Database rules
+- `.github/workflows/ci.yml` — GitHub Actions CI
+- `eslint.config.js` — ESLint flat config
+- `.prettierrc` — Prettier config
+- `.prettierignore` — Prettier ignore patterns
+- `tests/utils.test.js` — Utility function tests
+- `tests/hooks.test.js` — Hook script tests
+- `api/tests/health.test.js` — API integration tests
+
+**Files Modified:**
+- `package.json` — Added lint/format/test scripts + devDeps (ESLint, Prettier, Vitest)
+- `vite.config.js` — Added Vitest test config
+- `.gitignore` — Track `.claude/` except `settings.local.json`
+- `.claude/settings.local.json` — Cleaned to minimal local overrides
+
+**Deployed:**
+- ✅ Frontend deployed to Cloudflare Pages (commit 976f32b)
+- ✅ 20/20 tests passing
+- ✅ Build passes clean
+- ✅ Pushed to GitHub
+
+**Current State:**
+- Claude Code automation fully configured — skills, hooks, rules, settings all wired
+- ESLint + Prettier installed and configured (102 warnings in pre-existing code, fixable over time)
+- Vitest with 20 passing tests
+- GitHub Actions CI will run on next push/PR
+- All 4 skills available as `/deploy`, `/verify`, `/commit`, `/migrate`
+
+**Next Steps:**
+1. Test consent form end-to-end: sign and submit from phone, verify in DB
+2. Wire consent forms into automation sequences (consent_request template type)
+3. Set up pg_cron for automation processing (`/api/automation/process`)
+4. Add content for remaining services (IV Therapy, Bioidentical Hormones, Body Contouring)
+5. Build admin view for consent submissions (view signatures, responses, status)
+6. Gradually fix ESLint warnings across codebase
+
+---
+
 ## Session — 2026-02-14 (Session 22)
 **Focus:** Consent form public pages with digital signature capture
 
