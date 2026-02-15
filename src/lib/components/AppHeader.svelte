@@ -9,6 +9,7 @@
 	import * as Avatar from '$lib/components/ui/avatar/index.ts';
 	import { LogOut, Phone, Clock, Bell, Search, Command } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
+	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
 	let clinicOpen = $state(null);
 	let nextChange = $state('');
@@ -256,6 +257,9 @@
 			{/if}
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>
+
+	<!-- Theme switcher -->
+	<ThemeSwitcher />
 
 	<Separator orientation="vertical" class="h-6" />
 
