@@ -209,23 +209,36 @@
 				</div>
 			{:else}
 				{#each conversations as convo}
-					<div class="group relative border-b border-[rgba(197,165,90,0.06)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id === convo.id ? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]' : ''}">
+					<div class="group border-b border-[rgba(197,165,90,0.06)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id === convo.id ? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]' : ''}">
 						<button
 							class="w-full text-left px-4 py-3"
 							onclick={() => selectConversation(convo)}
 						>
 							<div class="flex items-start justify-between gap-2">
 								<div class="min-w-0 flex-1">
-									<p class="text-sm font-medium truncate flex items-center gap-1.5">
-										{#if convo.contact_id && convo.display_name}
-											<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
-											<span class="text-[rgba(255,255,255,0.9)] truncate">{convo.display_name}</span>
-										{:else if convo.display_name}
-											<span class="text-[rgba(255,255,255,0.7)] truncate">{convo.display_name}</span>
-										{:else}
-											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(convo.phone_number)}</span>
+									<div class="flex items-center gap-1.5">
+										<p class="text-sm font-medium truncate flex items-center gap-1.5">
+											{#if convo.contact_id && convo.display_name}
+												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
+												<span class="text-[rgba(255,255,255,0.9)] truncate">{convo.display_name}</span>
+											{:else if convo.display_name}
+												<span class="text-[rgba(255,255,255,0.7)] truncate">{convo.display_name}</span>
+											{:else}
+												<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(convo.phone_number)}</span>
+											{/if}
+										</p>
+										<!-- Quick call action — right next to name, visible on hover -->
+										{#if convo.phone_number}
+											<a
+												href="/softphone?call={encodeURIComponent(convo.phone_number)}"
+												class="shrink-0 opacity-0 group-hover:opacity-100 inline-flex items-center justify-center h-6 w-6 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+												title="Call {convo.display_name || formatPhone(convo.phone_number)}"
+												onclick={(e) => e.stopPropagation()}
+											>
+												<PhoneOutgoing class="h-3 w-3" />
+											</a>
 										{/if}
-									</p>
+									</div>
 									{#if convo.display_name}
 										<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(convo.phone_number)}</p>
 									{/if}
@@ -245,17 +258,6 @@
 								</div>
 							</div>
 						</button>
-						<!-- Quick call action — visible on hover -->
-						{#if convo.phone_number}
-							<a
-								href="/softphone?call={encodeURIComponent(convo.phone_number)}"
-								class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all z-10"
-								title="Call {convo.display_name || formatPhone(convo.phone_number)}"
-								onclick={(e) => e.stopPropagation()}
-							>
-								<PhoneOutgoing class="h-3.5 w-3.5" />
-							</a>
-						{/if}
 					</div>
 				{/each}
 			{/if}
@@ -270,7 +272,7 @@
 				<button class="sm:hidden" onclick={goBack}>
 					<ArrowLeft class="h-5 w-5 text-[rgba(255,255,255,0.6)]" />
 				</button>
-				<div class="flex-1 min-w-0">
+				<div class="min-w-0">
 					<p class="text-sm font-medium truncate flex items-center gap-1.5">
 						{#if selectedConvo.contact_id && selectedConvo.display_name}
 							<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
@@ -285,7 +287,7 @@
 						<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(selectedConvo.phone_number)}</p>
 					{/if}
 				</div>
-				<div class="flex items-center gap-1.5">
+				<div class="flex items-center gap-1.5 shrink-0">
 					<a
 						href="/softphone?call={encodeURIComponent(selectedConvo.phone_number)}"
 						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
