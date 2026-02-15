@@ -33,6 +33,7 @@
 	let expandedContact = $state(null);
 	let addingTag = $state(null); // contact id currently adding tag to
 	let newTagInput = $state('');
+	let drawerOpen = $state(false);
 
 	const tagConfig = {
 		patient: {
@@ -101,20 +102,33 @@
 	}
 
 	async function toggleExpand(id) {
-		if (expandedId === id) {
-			expandedId = null;
-			expandedContact = null;
-			addingTag = null;
+		if (expandedId === id && drawerOpen) {
+			// Already showing this contact — close the drawer
+			closeDrawer();
 			return;
 		}
 		expandedId = id;
+		expandedContact = null;
 		addingTag = null;
+		drawerOpen = true;
 		try {
 			const res = await api(`/api/contacts/${id}`);
 			expandedContact = res.data;
 		} catch (e) {
 			console.error('Failed to load contact details:', e);
 		}
+	}
+
+	function closeDrawer() {
+		drawerOpen = false;
+		// Delay clearing data so the slide-out animation can play
+		setTimeout(() => {
+			if (!drawerOpen) {
+				expandedId = null;
+				expandedContact = null;
+				addingTag = null;
+			}
+		}, 220);
 	}
 
 	async function removeTag(contactId, tag) {
@@ -296,10 +310,10 @@
 					</div>
 				</div>
 			{:else}
-				<div class="space-y-1">
+				<div class="space-y-1 list-enter">
 					{#each contacts as contact}
 						<div
-							class="group rounded-md border border-transparent transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)]"
+							class="group rounded-md border transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)] {expandedId === contact.id && drawerOpen ? 'border-[rgba(197,165,90,0.2)] bg-[rgba(197,165,90,0.04)]' : 'border-transparent'}"
 						>
 							<button
 								class="flex w-full items-center justify-between p-3 text-left"
@@ -317,21 +331,15 @@
 										).toUpperCase()}
 									</div>
 									<p
-										class="font-medium text-[rgba(255,255,255,0.85)] truncate transition-all duration-200 {expandedId ===
-										contact.id
-											? 'text-lg tracking-wide'
-											: 'text-sm group-hover:text-base group-hover:tracking-wide'}"
+										class="font-medium text-[rgba(255,255,255,0.85)] truncate text-sm group-hover:text-base group-hover:tracking-wide transition-all duration-200"
 										style="font-family: 'Playfair Display', serif;"
 									>
 										{contact.full_name || (contact.phone ? formatPhone(contact.phone) : 'Unknown')}
 									</p>
-									<!-- Quick actions — visible on hover or when expanded -->
+									<!-- Quick actions — visible on hover -->
 									{#if contact.phone}
 										<div
-											class="flex items-center gap-1.5 shrink-0 transition-opacity duration-200 {expandedId ===
-											contact.id
-												? 'opacity-100'
-												: 'opacity-0 group-hover:opacity-100'}"
+											class="flex items-center gap-1.5 shrink-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100"
 										>
 											<a
 												href="/softphone?call={encodeURIComponent(contact.phone)}"
@@ -368,252 +376,6 @@
 									{/if}
 								</div>
 							</button>
-
-							{#if expandedId === contact.id && expandedContact}
-								<div class="border-t border-[rgba(197,165,90,0.08)] px-3 py-3 space-y-4">
-									<!-- Tags section with edit -->
-									<div>
-										<p
-											class="text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2 flex items-center gap-1"
-										>
-											<Tag class="h-3 w-3" /> Tags
-										</p>
-										<div class="flex flex-wrap items-center gap-1.5">
-											{#each expandedContact.tags || [] as tag}
-												<span
-													class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium {getTagClasses(
-														tag
-													)}"
-												>
-													{getTagLabel(tag)}
-													<button
-														class="ml-1 hover:opacity-70"
-														onclick={(e) => {
-															e.stopPropagation();
-															removeTag(contact.id, tag);
-														}}
-														title="Remove tag"
-													>
-														<X class="h-3 w-3" />
-													</button>
-												</span>
-											{/each}
-											{#if addingTag === contact.id}
-												<form
-													class="flex items-center gap-1"
-													onsubmit={(e) => {
-														e.preventDefault();
-														addTag(contact.id);
-													}}
-												>
-													<input
-														type="text"
-														class="h-6 w-24 rounded-md border border-[rgba(197,165,90,0.2)] bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#C5A55A]"
-														placeholder="tag name"
-														bind:value={newTagInput}
-														autofocus
-													/>
-													<button type="submit" class="text-xs text-[#C5A55A] hover:underline"
-														>Add</button
-													>
-													<button
-														type="button"
-														class="text-xs text-muted-foreground hover:underline"
-														onclick={() => {
-															addingTag = null;
-															newTagInput = '';
-														}}>Cancel</button
-													>
-												</form>
-											{:else}
-												<button
-													class="inline-flex items-center gap-0.5 rounded-full border border-dashed border-[rgba(197,165,90,0.2)] px-2 py-0.5 text-xs text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A] hover:border-[rgba(197,165,90,0.4)] transition-colors"
-													onclick={(e) => {
-														e.stopPropagation();
-														addingTag = contact.id;
-														newTagInput = '';
-													}}
-												>
-													<Plus class="h-3 w-3" /> Add tag
-												</button>
-											{/if}
-										</div>
-									</div>
-
-									<!-- Contact details grid -->
-									<div class="grid gap-3 sm:grid-cols-2">
-										<div>
-											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Full Name</p>
-											<p class="text-sm text-[rgba(255,255,255,0.85)]">
-												{expandedContact.full_name || '—'}
-											</p>
-										</div>
-										<div>
-											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Email</p>
-											<p class="text-sm text-[rgba(255,255,255,0.85)]">
-												{expandedContact.email || '—'}
-											</p>
-										</div>
-										<div>
-											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Phone</p>
-											<p class="text-sm text-[rgba(255,255,255,0.85)]">
-												{expandedContact.phone ? formatPhone(expandedContact.phone) : '—'}
-											</p>
-										</div>
-										<div>
-											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Source</p>
-											<p class="text-sm text-[rgba(255,255,255,0.85)]">
-												{sourceLabels[expandedContact.source] || expandedContact.source}
-											</p>
-										</div>
-										{#if expandedContact.patient_status}
-											<div>
-												<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">
-													Patient Status
-												</p>
-												<p class="text-sm capitalize text-[rgba(255,255,255,0.85)]">
-													{expandedContact.patient_status}
-												</p>
-											</div>
-										{/if}
-										{#if expandedContact.source_id}
-											<div>
-												<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Source ID</p>
-												<p class="text-sm font-mono text-xs text-[rgba(255,255,255,0.6)]">
-													{expandedContact.source_id}
-												</p>
-											</div>
-										{/if}
-										{#if expandedContact.lists && expandedContact.lists.length > 0}
-											<div>
-												<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Lists</p>
-												<div class="flex flex-wrap gap-1 mt-0.5">
-													{#each expandedContact.lists as list}
-														<span
-															class="inline-flex items-center rounded-md border border-[rgba(197,165,90,0.15)] bg-[rgba(197,165,90,0.05)] px-1.5 py-0.5 text-xs"
-															>{list}</span
-														>
-													{/each}
-												</div>
-											</div>
-										{/if}
-										<div>
-											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)]">Last Synced</p>
-											<p class="text-sm text-[rgba(255,255,255,0.85)]">
-												{expandedContact.last_synced_at
-													? formatRelativeDate(expandedContact.last_synced_at)
-													: '—'}
-											</p>
-										</div>
-									</div>
-
-									<!-- Recent calls -->
-									{#if expandedContact.recent_calls && expandedContact.recent_calls.length > 0}
-										<div>
-											<p class="text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2">
-												Recent Calls
-											</p>
-											<div class="space-y-1">
-												{#each expandedContact.recent_calls.slice(0, 5) as call}
-													<div
-														class="flex items-center justify-between text-sm bg-[rgba(197,165,90,0.04)] rounded-md px-2 py-1.5 border border-[rgba(197,165,90,0.08)]"
-													>
-														<div class="flex items-center gap-2">
-															<Badge variant="outline" class="text-xs">
-																{call.direction === 'inbound' ? 'In' : 'Out'}
-															</Badge>
-															<span class="text-[rgba(255,255,255,0.7)]"
-																>{call.disposition || call.status}</span
-															>
-														</div>
-														<span class="text-xs text-[rgba(255,255,255,0.35)]">
-															{formatRelativeDate(call.started_at)}
-														</span>
-													</div>
-												{/each}
-											</div>
-										</div>
-									{:else}
-										<p class="text-sm text-[rgba(255,255,255,0.3)] italic">No call history yet.</p>
-									{/if}
-
-									<!-- Form submissions -->
-									{#if expandedContact.form_submissions && expandedContact.form_submissions.length > 0}
-										<div>
-											<p
-												class="text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2 flex items-center gap-1"
-											>
-												<FileText class="h-3 w-3" /> Website Inquiries
-											</p>
-											<div class="space-y-2">
-												{#each expandedContact.form_submissions as sub}
-													<div
-														class="bg-[rgba(197,165,90,0.04)] rounded-md px-3 py-2 border border-[rgba(197,165,90,0.08)]"
-													>
-														<div class="flex items-center justify-between mb-1">
-															<div class="flex items-center gap-2">
-																{#if sub.interested_in}
-																	<Badge variant="outline" class="text-xs"
-																		>{sub.interested_in}</Badge
-																	>
-																{/if}
-																<Badge
-																	variant={sub.status === 'new' ? 'default' : 'secondary'}
-																	class="text-xs">{sub.status}</Badge
-																>
-															</div>
-															<span class="text-xs text-[rgba(255,255,255,0.35)]"
-																>{formatRelativeDate(sub.created_at)}</span
-															>
-														</div>
-														{#if sub.message}
-															<p class="text-sm text-[rgba(255,255,255,0.7)] leading-relaxed mt-1">
-																{sub.message}
-															</p>
-														{/if}
-														{#if sub.preferred_contact || sub.referral_source}
-															<div class="flex gap-3 mt-1 text-xs text-[rgba(255,255,255,0.35)]">
-																{#if sub.preferred_contact}
-																	<span>Prefers: {sub.preferred_contact}</span>
-																{/if}
-																{#if sub.referral_source}
-																	<span>Found via: {sub.referral_source}</span>
-																{/if}
-															</div>
-														{/if}
-													</div>
-												{/each}
-											</div>
-										</div>
-									{/if}
-
-									<!-- Metadata -->
-									{#if expandedContact.metadata && Object.keys(expandedContact.metadata).length > 0}
-										<details>
-											<summary
-												class="text-xs font-medium text-[rgba(255,255,255,0.4)] cursor-pointer hover:text-[#C5A55A] transition-colors"
-											>
-												Additional Info ({Object.keys(expandedContact.metadata).length} fields)
-											</summary>
-											<div
-												class="grid gap-1 text-xs bg-[rgba(197,165,90,0.04)] rounded-md p-2 mt-1 border border-[rgba(197,165,90,0.08)]"
-											>
-												{#each Object.entries(expandedContact.metadata) as [key, val]}
-													<div class="flex gap-2">
-														<span
-															class="font-medium capitalize whitespace-nowrap text-[rgba(255,255,255,0.6)]"
-															>{key.replace(/_/g, ' ')}:</span
-														>
-														<span class="text-[rgba(255,255,255,0.35)] break-all"
-															>{typeof val === 'object' ? JSON.stringify(val) : val}</span
-														>
-													</div>
-												{/each}
-											</div>
-										</details>
-									{/if}
-								</div>
-							{/if}
 						</div>
 					{/each}
 				</div>
@@ -640,3 +402,334 @@
 		</div>
 	</div>
 </div>
+
+<!-- Contact Detail Slide-over Drawer -->
+{#if expandedId !== null}
+	<!-- Backdrop -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-40 transition-opacity duration-200 {drawerOpen ? 'bg-black/60 opacity-100' : 'opacity-0 pointer-events-none'}"
+		onclick={closeDrawer}
+	></div>
+
+	<!-- Panel -->
+	<div
+		class="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-[rgba(197,165,90,0.15)] bg-[#0e0e10] shadow-2xl transform transition-transform duration-200 ease-out overflow-y-auto {drawerOpen ? 'translate-x-0' : 'translate-x-full'}"
+	>
+		<!-- Drawer header -->
+		<div class="sticky top-0 z-10 bg-[#0e0e10] border-b border-[rgba(197,165,90,0.1)] px-5 py-4">
+			<div class="flex items-start justify-between gap-3">
+				<div class="flex items-center gap-4 min-w-0">
+					<!-- Large avatar -->
+					<div
+						class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[rgba(197,165,90,0.12)] text-xl font-medium text-[#C5A55A] border border-[rgba(197,165,90,0.2)]"
+						style="font-family: 'Playfair Display', serif;"
+					>
+						{#if expandedContact}
+							{(
+								expandedContact.first_name?.[0] ||
+								expandedContact.full_name?.[0] ||
+								(expandedContact.phone ? '#' : '?')
+							).toUpperCase()}
+						{:else}
+							&middot;
+						{/if}
+					</div>
+					<div class="min-w-0">
+						<h2
+							class="text-xl font-medium text-[rgba(255,255,255,0.9)] truncate tracking-wide"
+							style="font-family: 'Playfair Display', serif;"
+						>
+							{#if expandedContact}
+								{expandedContact.full_name || (expandedContact.phone ? formatPhone(expandedContact.phone) : 'Unknown')}
+							{:else}
+								Loading...
+							{/if}
+						</h2>
+						{#if expandedContact?.email}
+							<p class="text-sm text-[rgba(255,255,255,0.4)] truncate">{expandedContact.email}</p>
+						{/if}
+					</div>
+				</div>
+				<button
+					class="shrink-0 flex items-center justify-center h-8 w-8 rounded-lg border border-[rgba(197,165,90,0.15)] text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.8)] hover:border-[rgba(197,165,90,0.3)] hover:bg-[rgba(197,165,90,0.06)] transition-all"
+					onclick={closeDrawer}
+					title="Close"
+				>
+					<X class="h-4 w-4" />
+				</button>
+			</div>
+
+			<!-- Quick action buttons -->
+			{#if expandedContact?.phone}
+				<div class="flex items-center gap-2 mt-3">
+					<a
+						href="/softphone?call={encodeURIComponent(expandedContact.phone)}"
+						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 transition-all text-sm font-medium"
+					>
+						<PhoneOutgoing class="h-4 w-4" />
+						Call
+					</a>
+					<a
+						href="/messages?phone={encodeURIComponent(expandedContact.phone)}{expandedContact.full_name
+							? '&name=' + encodeURIComponent(expandedContact.full_name)
+							: ''}&new=true"
+						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-blue-500/40 text-blue-400 hover:bg-blue-500/15 hover:border-blue-400 transition-all text-sm font-medium"
+					>
+						<MessageSquare class="h-4 w-4" />
+						Message
+					</a>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Drawer body -->
+		{#if expandedContact}
+			<div class="px-5 py-5 space-y-5">
+				<!-- Tags section -->
+				<div class="card-elevated rounded-lg p-4">
+					<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]">
+						<Tag class="h-3.5 w-3.5" /> Tags
+					</p>
+					<div class="flex flex-wrap items-center gap-1.5">
+						{#each expandedContact.tags || [] as tag}
+							<span
+								class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium {getTagClasses(tag)}"
+							>
+								{getTagLabel(tag)}
+								<button
+									class="ml-1.5 hover:opacity-70 transition-opacity"
+									onclick={() => removeTag(expandedContact.id, tag)}
+									title="Remove tag"
+								>
+									<X class="h-3 w-3" />
+								</button>
+							</span>
+						{/each}
+						{#if addingTag === expandedContact.id}
+							<form
+								class="flex items-center gap-1"
+								onsubmit={(e) => {
+									e.preventDefault();
+									addTag(expandedContact.id);
+								}}
+							>
+								<input
+									type="text"
+									class="h-7 w-28 rounded-md border border-[rgba(197,165,90,0.2)] bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#C5A55A]"
+									placeholder="tag name"
+									bind:value={newTagInput}
+									autofocus
+								/>
+								<button type="submit" class="text-xs text-[#C5A55A] hover:underline">Add</button>
+								<button
+									type="button"
+									class="text-xs text-muted-foreground hover:underline"
+									onclick={() => {
+										addingTag = null;
+										newTagInput = '';
+									}}>Cancel</button
+								>
+							</form>
+						{:else}
+							<button
+								class="inline-flex items-center gap-0.5 rounded-full border border-dashed border-[rgba(197,165,90,0.2)] px-2.5 py-1 text-xs text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A] hover:border-[rgba(197,165,90,0.4)] transition-colors"
+								onclick={() => {
+									addingTag = expandedContact.id;
+									newTagInput = '';
+								}}
+							>
+								<Plus class="h-3 w-3" /> Add tag
+							</button>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Contact details -->
+				<div class="card-elevated rounded-lg p-4">
+					<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-3 uppercase tracking-[0.1em]">
+						Contact Details
+					</p>
+					<div class="grid gap-3 grid-cols-2">
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Full Name</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{expandedContact.full_name || '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Email</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)] break-all">
+								{expandedContact.email || '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Phone</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{expandedContact.phone ? formatPhone(expandedContact.phone) : '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Source</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{sourceLabels[expandedContact.source] || expandedContact.source}
+							</p>
+						</div>
+						{#if expandedContact.patient_status}
+							<div>
+								<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Patient Status</p>
+								<p class="text-sm capitalize text-[rgba(255,255,255,0.85)]">
+									{expandedContact.patient_status}
+								</p>
+							</div>
+						{/if}
+						{#if expandedContact.source_id}
+							<div>
+								<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Source ID</p>
+								<p class="text-sm font-mono text-xs text-[rgba(255,255,255,0.6)]">
+									{expandedContact.source_id}
+								</p>
+							</div>
+						{/if}
+						{#if expandedContact.lists && expandedContact.lists.length > 0}
+							<div class="col-span-2">
+								<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Lists</p>
+								<div class="flex flex-wrap gap-1 mt-0.5">
+									{#each expandedContact.lists as list}
+										<span
+											class="inline-flex items-center rounded-md border border-[rgba(197,165,90,0.15)] bg-[rgba(197,165,90,0.05)] px-1.5 py-0.5 text-xs"
+											>{list}</span
+										>
+									{/each}
+								</div>
+							</div>
+						{/if}
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Last Synced</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{expandedContact.last_synced_at
+									? formatRelativeDate(expandedContact.last_synced_at)
+									: '—'}
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Recent calls -->
+				<div class="card-elevated rounded-lg p-4">
+					<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]">
+						<Phone class="h-3.5 w-3.5" /> Recent Calls
+					</p>
+					{#if expandedContact.recent_calls && expandedContact.recent_calls.length > 0}
+						<div class="space-y-1.5">
+							{#each expandedContact.recent_calls.slice(0, 5) as call}
+								<div
+									class="flex items-center justify-between text-sm bg-[rgba(197,165,90,0.04)] rounded-md px-3 py-2 border border-[rgba(197,165,90,0.08)]"
+								>
+									<div class="flex items-center gap-2">
+										<Badge variant="outline" class="text-xs">
+											{call.direction === 'inbound' ? 'In' : 'Out'}
+										</Badge>
+										<span class="text-[rgba(255,255,255,0.7)]"
+											>{call.disposition || call.status}</span
+										>
+									</div>
+									<span class="text-xs text-[rgba(255,255,255,0.35)]">
+										{formatRelativeDate(call.started_at)}
+									</span>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<p class="text-sm text-[rgba(255,255,255,0.3)] italic">No call history yet.</p>
+					{/if}
+				</div>
+
+				<!-- Form submissions -->
+				{#if expandedContact.form_submissions && expandedContact.form_submissions.length > 0}
+					<div class="card-elevated rounded-lg p-4">
+						<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]">
+							<FileText class="h-3.5 w-3.5" /> Website Inquiries
+						</p>
+						<div class="space-y-2">
+							{#each expandedContact.form_submissions as sub}
+								<div
+									class="bg-[rgba(197,165,90,0.04)] rounded-md px-3 py-2.5 border border-[rgba(197,165,90,0.08)]"
+								>
+									<div class="flex items-center justify-between mb-1">
+										<div class="flex items-center gap-2">
+											{#if sub.interested_in}
+												<Badge variant="outline" class="text-xs"
+													>{sub.interested_in}</Badge
+												>
+											{/if}
+											<Badge
+												variant={sub.status === 'new' ? 'default' : 'secondary'}
+												class="text-xs">{sub.status}</Badge
+											>
+										</div>
+										<span class="text-xs text-[rgba(255,255,255,0.35)]"
+											>{formatRelativeDate(sub.created_at)}</span
+										>
+									</div>
+									{#if sub.message}
+										<p class="text-sm text-[rgba(255,255,255,0.7)] leading-relaxed mt-1">
+											{sub.message}
+										</p>
+									{/if}
+									{#if sub.preferred_contact || sub.referral_source}
+										<div class="flex gap-3 mt-1 text-xs text-[rgba(255,255,255,0.35)]">
+											{#if sub.preferred_contact}
+												<span>Prefers: {sub.preferred_contact}</span>
+											{/if}
+											{#if sub.referral_source}
+												<span>Found via: {sub.referral_source}</span>
+											{/if}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Metadata -->
+				{#if expandedContact.metadata && Object.keys(expandedContact.metadata).length > 0}
+					<div class="card-elevated rounded-lg p-4">
+						<details>
+							<summary
+								class="text-xs font-medium text-[rgba(255,255,255,0.4)] cursor-pointer hover:text-[#C5A55A] transition-colors uppercase tracking-[0.1em]"
+							>
+								Additional Info ({Object.keys(expandedContact.metadata).length} fields)
+							</summary>
+							<div
+								class="grid gap-1.5 text-xs bg-[rgba(197,165,90,0.04)] rounded-md p-3 mt-2 border border-[rgba(197,165,90,0.08)]"
+							>
+								{#each Object.entries(expandedContact.metadata) as [key, val]}
+									<div class="flex gap-2">
+										<span
+											class="font-medium capitalize whitespace-nowrap text-[rgba(255,255,255,0.6)]"
+											>{key.replace(/_/g, ' ')}:</span
+										>
+										<span class="text-[rgba(255,255,255,0.35)] break-all"
+											>{typeof val === 'object' ? JSON.stringify(val) : val}</span
+										>
+									</div>
+								{/each}
+							</div>
+						</details>
+					</div>
+				{/if}
+			</div>
+		{:else}
+			<!-- Loading state in drawer -->
+			<div class="px-5 py-5 space-y-4">
+				<Skeleton class="h-8 w-3/4" />
+				<Skeleton class="h-24 w-full" />
+				<Skeleton class="h-32 w-full" />
+				<Skeleton class="h-20 w-full" />
+			</div>
+		{/if}
+	</div>
+{/if}
