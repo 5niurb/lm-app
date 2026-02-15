@@ -310,13 +310,13 @@
 					</div>
 				</div>
 			{:else}
-				<div class="space-y-1 list-enter">
-					{#each contacts as contact}
+				<div class="list-enter">
+					{#each contacts as contact, i}
 						<div
 							class="group rounded-md border transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)] {expandedId ===
 								contact.id && drawerOpen
 								? 'border-[rgba(197,165,90,0.2)] bg-[rgba(197,165,90,0.04)]'
-								: 'border-transparent'}"
+								: 'border-transparent'} {i > 0 ? 'border-t border-t-[rgba(255,255,255,0.06)]' : ''}"
 						>
 							<button
 								class="flex w-full items-center justify-between p-3 text-left"
@@ -575,15 +575,58 @@
 							</p>
 						</div>
 						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Phone</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{expandedContact.phone ? formatPhone(expandedContact.phone) : '—'}
+							</p>
+						</div>
+						<div class="col-span-2">
 							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Email</p>
 							<p class="text-sm text-[rgba(255,255,255,0.85)] break-all">
 								{expandedContact.email || '—'}
 							</p>
 						</div>
 						<div>
-							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Phone</p>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">City</p>
 							<p class="text-sm text-[rgba(255,255,255,0.85)]">
-								{expandedContact.phone ? formatPhone(expandedContact.phone) : '—'}
+								{expandedContact.metadata?.city || '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">State</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{expandedContact.metadata?.state || '—'}
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Patient / Business Info -->
+				<div class="card-elevated rounded-lg p-4">
+					<p
+						class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-3 uppercase tracking-[0.1em]"
+					>
+						Patient Info
+					</p>
+					<div class="grid gap-3 grid-cols-2">
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">AR ID</p>
+							<p class="text-sm font-mono text-[rgba(255,255,255,0.7)]">
+								{expandedContact.metadata?.ar_id || expandedContact.source_id || '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Last Visited</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{expandedContact.metadata?.last_visited || '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Total Sales</p>
+							<p class="text-sm text-[rgba(255,255,255,0.85)]">
+								{expandedContact.metadata?.total_sales
+									? `$${expandedContact.metadata.total_sales}`
+									: '—'}
 							</p>
 						</div>
 						<div>
@@ -592,35 +635,6 @@
 								{sourceLabels[expandedContact.source] || expandedContact.source}
 							</p>
 						</div>
-						{#if expandedContact.patient_status}
-							<div>
-								<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Patient Status</p>
-								<p class="text-sm capitalize text-[rgba(255,255,255,0.85)]">
-									{expandedContact.patient_status}
-								</p>
-							</div>
-						{/if}
-						{#if expandedContact.source_id}
-							<div>
-								<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Source ID</p>
-								<p class="text-sm font-mono text-xs text-[rgba(255,255,255,0.6)]">
-									{expandedContact.source_id}
-								</p>
-							</div>
-						{/if}
-						{#if expandedContact.lists && expandedContact.lists.length > 0}
-							<div class="col-span-2">
-								<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Lists</p>
-								<div class="flex flex-wrap gap-1 mt-0.5">
-									{#each expandedContact.lists as list}
-										<span
-											class="inline-flex items-center rounded-md border border-[rgba(197,165,90,0.15)] bg-[rgba(197,165,90,0.05)] px-1.5 py-0.5 text-xs"
-											>{list}</span
-										>
-									{/each}
-								</div>
-							</div>
-						{/if}
 						<div>
 							<p class="text-xs text-[rgba(255,255,255,0.35)] mb-0.5">Last Synced</p>
 							<p class="text-sm text-[rgba(255,255,255,0.85)]">

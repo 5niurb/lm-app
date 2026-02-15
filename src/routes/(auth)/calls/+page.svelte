@@ -371,12 +371,12 @@
 					</div>
 				</div>
 			{:else}
-				<div class="space-y-0.5">
-					{#each calls as call}
+				<div>
+					{#each calls as call, i}
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
-							class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]"
+							class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)] {i > 0 ? 'border-t border-t-[rgba(255,255,255,0.06)]' : ''}"
 						>
 							<!-- Direction icon -->
 							<div class="mt-0.5 shrink-0">

@@ -191,11 +191,68 @@ router.post('/textmagic', async (req, res) => {
 			}
 		}
 
+		// Auto-tag contacts with AR ID as 'patient'
+		const { data: arContacts } = await supabaseAdmin
+			.from('contacts')
+			.select('id, tags, metadata')
+			.not('metadata->ar_id', 'is', null);
+
+		let arTagged = 0;
+		if (arContacts) {
+			for (const c of arContacts) {
+				const tags = c.tags || [];
+				if (!tags.includes('patient')) {
+					const newTags = [...new Set([...tags.filter((t) => t !== 'lead'), 'patient'])];
+					await supabaseAdmin.from('contacts').update({ tags: newTags }).eq('id', c.id);
+					arTagged++;
+				}
+			}
+		}
+
+		// Refresh conversation display_names from contacts table
+		// This keeps chat names in sync when contacts are updated
+		const { data: staleConvos } = await supabaseAdmin
+			.from('conversations')
+			.select('id, phone_number, display_name, contact_id');
+
+		let namesRefreshed = 0;
+		if (staleConvos) {
+			for (const convo of staleConvos) {
+				// Find matching contact by phone
+				const phoneDigits = convo.phone_number?.replace(/\D/g, '');
+				if (!phoneDigits) continue;
+
+				const { data: contact } = await supabaseAdmin
+					.from('contacts')
+					.select('id, full_name')
+					.eq('phone_normalized', phoneDigits)
+					.limit(1)
+					.maybeSingle();
+
+				if (contact && contact.full_name && contact.full_name !== convo.display_name) {
+					await supabaseAdmin
+						.from('conversations')
+						.update({
+							display_name: contact.full_name,
+							contact_id: contact.id
+						})
+						.eq('id', convo.id);
+					namesRefreshed++;
+				} else if (contact && !convo.contact_id) {
+					// Link contact even if name hasn't changed
+					await supabaseAdmin
+						.from('conversations')
+						.update({ contact_id: contact.id })
+						.eq('id', convo.id);
+				}
+			}
+		}
+
 		const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
 		// Log the sync result
 		console.log(
-			`[sync] TextMagic: ${allContacts.length} contacts — ${inserted} new, ${updated} updated, ${skipped} skipped, ${errors} errors (${duration}s)`
+			`[sync] TextMagic: ${allContacts.length} contacts — ${inserted} new, ${updated} updated, ${skipped} skipped, ${errors} errors, ${arTagged} AR-tagged, ${namesRefreshed} names refreshed (${duration}s)`
 		);
 
 		res.json({
@@ -205,6 +262,8 @@ router.post('/textmagic', async (req, res) => {
 			updated,
 			skipped,
 			errors,
+			arTagged,
+			namesRefreshed,
 			duration: `${duration}s`
 		});
 	} catch (err) {

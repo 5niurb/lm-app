@@ -427,7 +427,7 @@
 			<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
 				<h2 class="text-base tracking-wide">Quick Access</h2>
 			</div>
-			<div class="p-3 space-y-1">
+			<div class="p-3 divide-y divide-[rgba(255,255,255,0.06)]">
 				<a
 					href="/calls?filter=voicemail"
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group"
@@ -584,12 +584,12 @@
 					</div>
 				</div>
 			{:else}
-				<div class="space-y-0.5">
-					{#each recentCalls as call}
+				<div>
+					{#each recentCalls as call, i}
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
-							class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]"
+							class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)] {i > 0 ? 'border-t border-t-[rgba(255,255,255,0.06)]' : ''}"
 						>
 							<div class="mt-0.5 shrink-0">
 								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
