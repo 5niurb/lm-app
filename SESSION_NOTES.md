@@ -1,3 +1,76 @@
+## Session — 2026-02-15 (Session 30)
+**Focus:** Multi-theme system — Midnight, Dusk, Champagne + auto mode
+
+**Accomplished:**
+- **Three ambient themes** inspired by spa lighting conditions:
+  - **Midnight** (default): Dark + gold evening ambiance — existing signature look
+  - **Dusk**: Warm twilight golden hour — `#2a2626` bg, warm `#d4a847` gold, cream-white text
+  - **Champagne**: Luxury cream morning light — `#f7f3ec` bg, `#b8962e` deeper gold, charcoal text
+  - **Auto**: Follows system `prefers-color-scheme` (dark → Midnight, light → Champagne)
+- **Theme store** (`src/lib/stores/theme.js`): localStorage persistence, system detection, meta theme-color updates
+- **CSS design system** upgraded: 40+ variables per theme, semantic tokens (`--text-primary/secondary/tertiary`, `--surface-subtle/raised`, `--border-subtle/default`, `--shadow-card`), smooth 300ms transitions
+- **ThemeSwitcher component**: Dropdown with preview orbs, Moon/Sunset/Sun icons, "Ambiance" label
+- **Component styles upgraded** to use semantic tokens (card-elevated, sidebar active, scrollbar, input focus, section labels)
+- **Build passes clean**, deployed to Cloudflare Pages (commit 5eec055)
+
+**Files Created (2):**
+- `src/lib/stores/theme.js` — Theme state management + persistence
+- `src/lib/components/ThemeSwitcher.svelte` — Ambient theme picker UI
+
+**Files Modified (3):**
+- `src/app.css` — 3 theme variable sets, semantic tokens, transitions (+441 lines)
+- `src/lib/components/AppHeader.svelte` — ThemeSwitcher placement
+- `src/routes/+layout.svelte` — Theme application effect
+
+**Current State:**
+- 3 themes + auto mode functional and deployed
+- ~417 hardcoded rgba values remain in page components (progressive cleanup needed)
+- Login/public pages still hardcoded dark
+
+**Next Steps:**
+- Progressive cleanup: replace hardcoded `rgba(255,255,255,...)` with `var(--text-*)` across pages
+- Login page theme support
+- Visual verification of all 3 themes on production
+
+---
+
+## Session — 2026-02-15 (Session 29, continued)
+**Focus:** Contact detail redesign, auto-tagging, name sync, divider lines
+
+**Accomplished:**
+- **Contact detail card redesigned** — New layout with two cards:
+  - Contact Details: Full Name, Phone, Email, City, State (from metadata)
+  - Patient Info: AR ID, Last Visited, Total Sales, Source, Last Synced
+- **Auto-tag contacts with AR ID as 'patient'** — Sync post-step removes 'lead' and adds 'patient' for contacts with `metadata->ar_id`
+- **Conversation display_name refresh** — Sync post-step updates `conversations.display_name` from `contacts.full_name`, also links `contact_id` — 14 conversations updated on first run
+- **Faint divider lines added throughout the app**:
+  - Contacts list: `border-t border-t-[rgba(255,255,255,0.06)]` between each contact
+  - Calls list: same divider between each call
+  - Dashboard recent calls: same divider between each call
+  - Dashboard quick access: `divide-y divide-[rgba(255,255,255,0.06)]` on link container
+- **Built, deployed, committed, pushed** (commit 0717e96)
+- **Triggered sync** — new code live on Render, 534 contacts synced, 14 conversation names refreshed
+
+**Files Changed (4 files, +115/-42):**
+- `api/routes/sync.js` — Post-sync: auto-tag AR contacts as patient, refresh conversation display_names
+- `src/routes/(auth)/contacts/+page.svelte` — Contact detail card redesign, divider lines between contacts
+- `src/routes/(auth)/calls/+page.svelte` — Divider lines between call items
+- `src/routes/(auth)/dashboard/+page.svelte` — Divider lines between recent calls + quick access links
+
+**Current State:**
+- All changes deployed to https://lm-app.pages.dev
+- API sync endpoint live at https://lm-app-api.onrender.com/api/sync/textmagic
+- pg_cron runs sync every 15 minutes (auto-updates names + tags)
+- 14 conversations now show contact names instead of phone numbers
+
+**Next Steps:**
+- Visual verification on production (check divider lines, contact detail card)
+- Wire up Cmd+K command palette
+- Phase 1A functional work
+- Deploy Studio flow to Twilio for after-hours IVR
+
+---
+
 ## Session — 2026-02-15 (Session 28)
 **Focus:** Restore Wave 1 design changes lost to linter reversion
 
