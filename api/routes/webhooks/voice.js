@@ -8,6 +8,44 @@ const router = Router();
 router.use(express.urlencoded({ extended: false }));
 
 /**
+ * GET /api/webhooks/voice/hours-check
+ * Returns whether the business is currently open or closed.
+ * Called by Twilio Studio to route press-0 to operator (open) or
+ * closed greeting (after hours).
+ *
+ * Le Med Spa hours (America/Los_Angeles):
+ *   Mon–Fri: 10:00 AM – 6:00 PM
+ *   Sat:     10:00 AM – 4:00 PM
+ *   Sun:     Closed
+ */
+router.get('/hours-check', (req, res) => {
+  // Get current time in LA timezone
+  const now = new Date();
+  const laTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  const day = laTime.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const hour = laTime.getHours();
+  const minute = laTime.getMinutes();
+  const timeDecimal = hour + minute / 60;
+
+  let status = 'closed';
+
+  if (day >= 1 && day <= 5) {
+    // Mon–Fri: 10:00 AM – 6:00 PM
+    if (timeDecimal >= 10 && timeDecimal < 18) {
+      status = 'open';
+    }
+  } else if (day === 6) {
+    // Sat: 10:00 AM – 4:00 PM
+    if (timeDecimal >= 10 && timeDecimal < 16) {
+      status = 'open';
+    }
+  }
+  // Sun: always closed
+
+  return res.json({ status, day, hour: Math.floor(timeDecimal), timezone: 'America/Los_Angeles' });
+});
+
+/**
  * POST /api/webhooks/voice/incoming
  * Twilio Studio sends this at flow start via HTTP Request widget.
  * Just log the call — Studio handles the IVR.

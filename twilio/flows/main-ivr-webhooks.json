@@ -1,5 +1,5 @@
 {
-  "description": "LeMed Main IVR — with lm-app webhook logging",
+  "description": "LeMed Main IVR — with lm-app webhook logging + after-hours routing",
   "flags": {
     "allow_concurrent_calls": true
   },
@@ -92,7 +92,7 @@
             }
           ],
           "event": "match",
-          "next": "log_event_timeout"
+          "next": "check_business_hours"
         },
         {
           "conditions": [
@@ -164,6 +164,211 @@
         }
       ],
       "type": "split-based-on"
+    },
+    {
+      "name": "check_business_hours",
+      "type": "make-http-request",
+      "properties": {
+        "content_type": "application/json",
+        "method": "GET",
+        "offset": {
+          "x": 1340,
+          "y": 200
+        },
+        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/hours-check"
+      },
+      "transitions": [
+        {
+          "event": "success",
+          "next": "split_hours_result"
+        },
+        {
+          "event": "failed",
+          "next": "connect_call_HighLevel"
+        }
+      ]
+    },
+    {
+      "name": "split_hours_result",
+      "properties": {
+        "input": "{{widgets.check_business_hours.parsed.status}}",
+        "offset": {
+          "x": 1540,
+          "y": 400
+        }
+      },
+      "transitions": [
+        {
+          "event": "noMatch",
+          "next": "connect_call_HighLevel"
+        },
+        {
+          "conditions": [
+            {
+              "arguments": [
+                "{{widgets.check_business_hours.parsed.status}}"
+              ],
+              "friendly_name": "open",
+              "type": "equal_to",
+              "value": "open"
+            }
+          ],
+          "event": "match",
+          "next": "log_event_press0_open"
+        },
+        {
+          "conditions": [
+            {
+              "arguments": [
+                "{{widgets.check_business_hours.parsed.status}}"
+              ],
+              "friendly_name": "closed",
+              "type": "equal_to",
+              "value": "closed"
+            }
+          ],
+          "event": "match",
+          "next": "log_event_press0_closed"
+        }
+      ],
+      "type": "split-based-on"
+    },
+    {
+      "name": "log_event_press0_open",
+      "type": "make-http-request",
+      "properties": {
+        "body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=main&digit=0&action=forward_to_operator&hours=open",
+        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
+        "method": "POST",
+        "offset": {
+          "x": 1700,
+          "y": 550
+        },
+        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+      },
+      "transitions": [
+        {
+          "event": "success",
+          "next": "connect_call_HighLevel"
+        },
+        {
+          "event": "failed",
+          "next": "connect_call_HighLevel"
+        }
+      ]
+    },
+    {
+      "name": "log_event_press0_closed",
+      "type": "make-http-request",
+      "properties": {
+        "body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=main&digit=0&action=closed_greeting&hours=closed",
+        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
+        "method": "POST",
+        "offset": {
+          "x": 1900,
+          "y": 750
+        },
+        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+      },
+      "transitions": [
+        {
+          "event": "success",
+          "next": "x0a-ClosedGreetingMenu"
+        },
+        {
+          "event": "failed",
+          "next": "x0a-ClosedGreetingMenu"
+        }
+      ]
+    },
+    {
+      "name": "x0a-ClosedGreetingMenu",
+      "properties": {
+        "gather_language": "en-US",
+        "loop": 1,
+        "number_of_digits": 1,
+        "offset": {
+          "x": 1900,
+          "y": 950
+        },
+        "play": "https://lm-ivr-assets-2112.twil.io/assets/Closed-text-us-wav.wav",
+        "profanity_filter": "false",
+        "speech_model": "default",
+        "speech_timeout": "10",
+        "stop_gather": true,
+        "timeout": 8
+      },
+      "transitions": [
+        {
+          "event": "keypress",
+          "next": "split_closed_digits"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout",
+          "next": "record_voicemail_closed"
+        }
+      ],
+      "type": "gather-input-on-call"
+    },
+    {
+      "name": "split_closed_digits",
+      "properties": {
+        "input": "{{widgets.x0a-ClosedGreetingMenu.Digits}}",
+        "offset": {
+          "x": 2200,
+          "y": 1150
+        }
+      },
+      "transitions": [
+        {
+          "event": "noMatch",
+          "next": "record_voicemail_closed"
+        },
+        {
+          "conditions": [
+            {
+              "arguments": [
+                "{{widgets.x0a-ClosedGreetingMenu.Digits}}"
+              ],
+              "friendly_name": "1",
+              "type": "equal_to",
+              "value": "1"
+            }
+          ],
+          "event": "match",
+          "next": "send_message_accounts"
+        }
+      ],
+      "type": "split-based-on"
+    },
+    {
+      "name": "record_voicemail_closed",
+      "properties": {
+        "max_length": 3600,
+        "offset": {
+          "x": 1900,
+          "y": 1350
+        },
+        "play_beep": "true",
+        "timeout": 5,
+        "transcribe": true,
+        "trim": "trim-silence"
+      },
+      "transitions": [
+        {
+          "event": "recordingComplete"
+        },
+        {
+          "event": "noAudio"
+        },
+        {
+          "event": "hangup"
+        }
+      ],
+      "type": "record-voicemail"
     },
     {
       "name": "x2a-Hours_Location",

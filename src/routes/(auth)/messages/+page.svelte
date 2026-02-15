@@ -27,16 +27,60 @@
 	let newConvoPhone = $state('');
 	let showNewConvo = $state(false);
 
+	/** @type {string} Display name for new conversation (from contact lookup) */
+	let newConvoDisplayName = $state('');
+
 	/** @type {number|null} Auto-refresh interval */
 	let refreshInterval = null;
 
 	// Check URL params for ?phone=xxx&new=true (from contacts page quick action)
-	onMount(() => {
+	onMount(async () => {
 		const params = new URLSearchParams(window.location.search);
 		const phoneParam = params.get('phone');
+		const nameParam = params.get('name');
+
 		if (phoneParam) {
-			showNewConvo = true;
-			newConvoPhone = phoneParam;
+			// Clean URL params
+			const url = new URL(window.location.href);
+			url.searchParams.delete('phone');
+			url.searchParams.delete('new');
+			url.searchParams.delete('name');
+			window.history.replaceState({}, '', url.pathname);
+
+			try {
+				// Look up existing conversation or contact
+				const lookup = await api(`/api/messages/lookup?phone=${encodeURIComponent(phoneParam)}`);
+
+				if (lookup.conversation) {
+					// Existing conversation found — load conversations first, then select it
+					await loadConversations();
+					const convo = conversations?.find((c) => c.id === lookup.conversation.id);
+					if (convo) {
+						selectConversation(convo);
+						return;
+					}
+					// If not in the loaded list (e.g. archived), select from lookup directly
+					selectConversation(lookup.conversation);
+					return;
+				}
+
+				// No existing conversation — open new compose
+				showNewConvo = true;
+				newConvoPhone = phoneParam;
+
+				// Use contact name from lookup, URL param, or leave blank
+				if (lookup.contact?.full_name) {
+					newConvoDisplayName = lookup.contact.full_name;
+				} else if (nameParam) {
+					newConvoDisplayName = decodeURIComponent(nameParam);
+				}
+			} catch (e) {
+				// Fallback: just open new compose with the phone number
+				console.error('Lookup failed:', e);
+				showNewConvo = true;
+				newConvoPhone = phoneParam;
+				if (nameParam) newConvoDisplayName = decodeURIComponent(nameParam);
+			}
 		}
 	});
 
@@ -361,13 +405,20 @@
 			<!-- New conversation compose view -->
 			<div class="flex-1 flex flex-col items-center justify-center p-8">
 				<MessageSquare class="h-12 w-12 text-[rgba(197,165,90,0.3)] mb-4" />
-				<p class="text-sm text-[rgba(255,255,255,0.5)] mb-6">Enter a phone number and message to start a new conversation.</p>
+				{#if newConvoDisplayName}
+					<p class="text-base font-medium text-[rgba(255,255,255,0.85)] mb-1" style="font-family: 'Playfair Display', serif;">{newConvoDisplayName}</p>
+					<p class="text-xs text-[rgba(255,255,255,0.4)] mb-6">{formatPhone(newConvoPhone)}</p>
+				{:else}
+					<p class="text-sm text-[rgba(255,255,255,0.5)] mb-6">Enter a phone number and message to start a new conversation.</p>
+				{/if}
 				<div class="w-full max-w-md space-y-3">
-					<Input
-						placeholder="Phone number (e.g. 8184633772)..."
-						class="text-center font-mono"
-						bind:value={newConvoPhone}
-					/>
+					{#if !newConvoDisplayName}
+						<Input
+							placeholder="Phone number (e.g. 8184633772)..."
+							class="text-center font-mono"
+							bind:value={newConvoPhone}
+						/>
+					{/if}
 					<form class="flex gap-2" onsubmit={(e) => { e.preventDefault(); sendMessage(); }}>
 						<Input
 							placeholder="Type a message..."

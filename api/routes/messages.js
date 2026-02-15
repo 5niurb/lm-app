@@ -102,6 +102,63 @@ router.get('/stats', logAction('messages.stats'), async (req, res) => {
 });
 
 /**
+ * GET /api/messages/lookup
+ * Look up an existing conversation and/or contact by phone number.
+ * Used by the messages page when navigating from quick action icons
+ * to decide whether to open an existing thread or new compose view.
+ *
+ * Query: phone (required)
+ * Returns: { conversation?, contact? }
+ */
+router.get('/lookup', logAction('messages.lookup'), async (req, res) => {
+  const phone = req.query.phone;
+  if (!phone) {
+    return res.status(400).json({ error: 'Phone number is required' });
+  }
+
+  // Normalize phone number variants for matching
+  let normalized = phone.replace(/[^\d+]/g, '');
+  if (normalized.length === 10) normalized = '+1' + normalized;
+  if (!normalized.startsWith('+') && normalized.length === 11) normalized = '+' + normalized;
+
+  // Also build variant without + for matching
+  const digits = normalized.replace(/\D/g, '');
+  const variants = [normalized, digits];
+  if (digits.length === 11 && digits.startsWith('1')) variants.push(digits.slice(1));
+  if (digits.length === 10) variants.push('+1' + digits, '1' + digits);
+
+  // Look for existing conversation
+  let conversation = null;
+  for (const v of variants) {
+    const { data } = await supabaseAdmin
+      .from('conversations')
+      .select('*')
+      .eq('phone_number', v)
+      .maybeSingle();
+    if (data) {
+      conversation = data;
+      break;
+    }
+  }
+
+  // Look for contact
+  let contact = null;
+  const orFilter = variants.map(v => `phone_normalized.eq.${v},phone.eq.${v}`).join(',');
+  const { data: contactData } = await supabaseAdmin
+    .from('contacts')
+    .select('id, full_name, first_name, last_name, phone, tags')
+    .or(orFilter)
+    .limit(1)
+    .maybeSingle();
+
+  if (contactData) {
+    contact = contactData;
+  }
+
+  return res.json({ conversation, contact });
+});
+
+/**
  * POST /api/messages/send
  * Send an SMS/RCS message from the app.
  *

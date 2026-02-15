@@ -162,6 +162,14 @@ SMS notifications are configured **globally** — see workspace `lmdev/CLAUDE.md
 The Stop hook fires for ALL projects, not just lm-app.
 Script: `C:/Users/LMOperations/.claude/scripts/textme.mjs`
 
+## Requirements Capture
+
+When implementing features or design changes based on user instructions, **always update the relevant requirement file** in `docs/requirements/`. See `docs/requirements/README.md` for the format.
+
+Key rule: Capture the **user's exact words** in the "User's Original Words" section so requirements can be traced back to the original instruction.
+
+Files: `calls.md`, `messages.md`, `contacts.md`, `dashboard.md`, `softphone.md`, `ivr-flow.md`
+
 ## Important Notes
 
 - Webhook routes (`/api/webhooks/*`) are mounted BEFORE `express.json()` because Twilio sends URL-encoded data.
