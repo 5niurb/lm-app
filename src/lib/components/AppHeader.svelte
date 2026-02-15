@@ -7,17 +7,73 @@
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.ts';
 	import * as Avatar from '$lib/components/ui/avatar/index.ts';
-	import { LogOut, Phone, Clock } from '@lucide/svelte';
+	import { LogOut, Phone, Clock, Bell, Search, Command } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 
 	let clinicOpen = $state(null);
 	let nextChange = $state('');
 
+	// Notification state
+	/** @type {Array<{ id: string, type: string, title: string, time: string, read: boolean }>} */
+	let notifications = $state([]);
+	let notifOpen = $state(false);
+
+	let unreadCount = $derived(notifications.filter((n) => !n.read).length);
+
 	$effect(() => {
 		loadClinicStatus();
-		const interval = setInterval(loadClinicStatus, 60000); // Check every minute
-		return () => clearInterval(interval);
+		loadNotifications();
+		const statusInterval = setInterval(loadClinicStatus, 60000);
+		const notifInterval = setInterval(loadNotifications, 30000);
+		return () => {
+			clearInterval(statusInterval);
+			clearInterval(notifInterval);
+		};
 	});
+
+	async function loadNotifications() {
+		try {
+			// Pull recent missed calls and unread voicemails as notifications
+			const [callsRes, vmRes] = await Promise.all([
+				api('/api/calls?direction=inbound&disposition=missed&pageSize=5').catch(() => ({
+					data: []
+				})),
+				api('/api/voicemails?status=new&pageSize=5').catch(() => ({ data: [] }))
+			]);
+
+			/** @type {Array<{ id: string, type: string, title: string, time: string, read: boolean }>} */
+			const items = [];
+
+			if (callsRes.data) {
+				for (const call of callsRes.data) {
+					items.push({
+						id: `call-${call.id}`,
+						type: 'missed_call',
+						title: `Missed call from ${call.caller_name || call.from_number || 'Unknown'}`,
+						time: call.created_at,
+						read: false
+					});
+				}
+			}
+			if (vmRes.data) {
+				for (const vm of vmRes.data) {
+					items.push({
+						id: `vm-${vm.id}`,
+						type: 'voicemail',
+						title: `New voicemail from ${vm.caller_name || vm.from_number || 'Unknown'}`,
+						time: vm.created_at,
+						read: false
+					});
+				}
+			}
+
+			// Sort by time descending
+			items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+			notifications = items.slice(0, 8);
+		} catch {
+			// Non-critical
+		}
+	}
 
 	async function loadClinicStatus() {
 		try {
@@ -35,7 +91,6 @@
 
 			if (!todayHours || todayHours.closed) {
 				clinicOpen = false;
-				// Find next open day
 				for (let i = 1; i <= 7; i++) {
 					const nextDay = days[(now.getDay() + i) % 7];
 					const nextHours = hours[nextDay];
@@ -61,7 +116,6 @@
 					nextChange = `Opens ${todayHours.open}`;
 				} else {
 					clinicOpen = false;
-					// Find next open day
 					for (let i = 1; i <= 7; i++) {
 						const nextDay = days[(now.getDay() + i) % 7];
 						const nextHours = hours[nextDay];
@@ -81,6 +135,21 @@
 	async function handleLogout() {
 		await supabase.auth.signOut();
 		goto('/login');
+	}
+
+	/**
+	 * Format relative time for notifications
+	 * @param {string} dateStr
+	 */
+	function timeAgo(dateStr) {
+		if (!dateStr) return '';
+		const diff = Date.now() - new Date(dateStr).getTime();
+		const mins = Math.floor(diff / 60000);
+		if (mins < 1) return 'just now';
+		if (mins < 60) return `${mins}m ago`;
+		const hours = Math.floor(mins / 60);
+		if (hours < 24) return `${hours}h ago`;
+		return `${Math.floor(hours / 24)}d ago`;
 	}
 </script>
 
@@ -113,6 +182,24 @@
 
 	<div class="flex-1"></div>
 
+	<!-- Cmd+K search trigger -->
+	<Button
+		variant="ghost"
+		size="sm"
+		class="h-8 gap-1.5 text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.6)] hidden sm:flex"
+		onclick={() => {
+			/* TODO: wire up global search modal */
+		}}
+	>
+		<Search class="h-3.5 w-3.5" />
+		<span class="text-xs">Search</span>
+		<kbd
+			class="ml-1 inline-flex h-5 items-center gap-0.5 rounded border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-1.5 text-[10px] text-[rgba(255,255,255,0.25)]"
+		>
+			<Command class="h-2.5 w-2.5" />K
+		</kbd>
+	</Button>
+
 	<!-- Quick dial -->
 	<Button
 		variant="ghost"
@@ -123,6 +210,52 @@
 		<Phone class="h-3.5 w-3.5" />
 		<span class="text-xs hidden sm:inline">Dial</span>
 	</Button>
+
+	<!-- Notification bell -->
+	<DropdownMenu.Root bind:open={notifOpen}>
+		<DropdownMenu.Trigger>
+			{#snippet child({ props })}
+				<Button
+					variant="ghost"
+					size="sm"
+					class="relative h-8 w-8 text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]"
+					{...props}
+				>
+					<Bell class="h-4 w-4" />
+					{#if unreadCount > 0}
+						<span
+							class="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C5A55A] px-1 text-[9px] font-bold text-[#1A1A1A]"
+						>
+							{unreadCount > 9 ? '9+' : unreadCount}
+						</span>
+					{/if}
+				</Button>
+			{/snippet}
+		</DropdownMenu.Trigger>
+
+		<DropdownMenu.Content align="end" class="w-80">
+			<DropdownMenu.Label>
+				<span class="text-sm font-medium">Notifications</span>
+			</DropdownMenu.Label>
+			<DropdownMenu.Separator />
+			{#if notifications.length === 0}
+				<div class="py-6 text-center text-xs text-muted-foreground">No new notifications</div>
+			{:else}
+				{#each notifications as notif}
+					<DropdownMenu.Item
+						class="flex flex-col items-start gap-0.5 py-2.5"
+						onclick={() => {
+							if (notif.type === 'missed_call') goto('/calls');
+							else if (notif.type === 'voicemail') goto('/calls');
+						}}
+					>
+						<span class="text-xs leading-snug">{notif.title}</span>
+						<span class="text-[10px] text-muted-foreground">{timeAgo(notif.time)}</span>
+					</DropdownMenu.Item>
+				{/each}
+			{/if}
+		</DropdownMenu.Content>
+	</DropdownMenu.Root>
 
 	<Separator orientation="vertical" class="h-6" />
 

@@ -13,15 +13,28 @@
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 
-	const navItems = [
-		{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-		{ href: '/softphone', label: 'Softphone', icon: Headset },
-		{ href: '/calls', label: 'Phone Log', icon: Phone, badgeKey: 'unheardVoicemails' },
-		{ href: '/messages', label: 'Messages', icon: MessageSquare, badgeKey: 'unreadMessages' },
-		{ href: '/contacts', label: 'Contacts', icon: Users },
-		{ href: '/services', label: 'Services', icon: Sparkles },
-		{ href: '/automation', label: 'Automation', icon: Zap },
-		{ href: '/settings', label: 'Settings', icon: Settings }
+	/** @type {Array<{ label: string, items: Array<{ href: string, label: string, icon: any, badgeKey?: string }> }>} */
+	const navGroups = [
+		{
+			label: 'Communications',
+			items: [
+				{ href: '/softphone', label: 'Softphone', icon: Headset },
+				{ href: '/calls', label: 'Phone Log', icon: Phone, badgeKey: 'unheardVoicemails' },
+				{ href: '/messages', label: 'Messages', icon: MessageSquare, badgeKey: 'unreadMessages' }
+			]
+		},
+		{
+			label: 'Operations',
+			items: [
+				{ href: '/contacts', label: 'Contacts', icon: Users },
+				{ href: '/services', label: 'Services', icon: Sparkles },
+				{ href: '/automation', label: 'Automation', icon: Zap }
+			]
+		},
+		{
+			label: 'System',
+			items: [{ href: '/settings', label: 'Settings', icon: Settings }]
+		}
 	];
 
 	/** @type {{ unreadMessages: number, unheardVoicemails: number }} */
@@ -45,7 +58,7 @@
 
 	$effect(() => {
 		loadBadges();
-		badgeInterval = setInterval(loadBadges, 15000); // Refresh badges every 15s
+		badgeInterval = setInterval(loadBadges, 15000);
 		return () => {
 			if (badgeInterval) clearInterval(badgeInterval);
 		};
@@ -74,36 +87,60 @@
 	</Sidebar.Header>
 
 	<Sidebar.Content>
+		<!-- Dashboard — standalone at top -->
 		<Sidebar.Group>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					{#each navItems as item}
-						<Sidebar.MenuItem>
-							<Sidebar.MenuButton isActive={page.url.pathname.startsWith(item.href)}>
-								{#snippet child({ props })}
-									<a href={item.href} {...props} class="flex items-center justify-between w-full">
-										<span class="flex items-center gap-2">
-											<item.icon class="h-4 w-4" />
-											<span>{item.label}</span>
-										</span>
-										{#if item.badgeKey && badges[item.badgeKey] > 0}
-											<span
-												class="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold {item.badgeKey ===
-												'unheardVoicemails'
-													? 'bg-red-500/80 text-white'
-													: 'bg-[#C5A55A] text-[#1A1A1A]'}"
-											>
-												{badges[item.badgeKey]}
-											</span>
-										{/if}
-									</a>
-								{/snippet}
-							</Sidebar.MenuButton>
-						</Sidebar.MenuItem>
-					{/each}
+					<Sidebar.MenuItem>
+						<Sidebar.MenuButton isActive={page.url.pathname === '/dashboard'}>
+							{#snippet child({ props })}
+								<a href="/dashboard" {...props} class="flex items-center gap-2 w-full">
+									<LayoutDashboard class="h-4 w-4" />
+									<span>Dashboard</span>
+								</a>
+							{/snippet}
+						</Sidebar.MenuButton>
+					</Sidebar.MenuItem>
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
+
+		<!-- Grouped navigation sections -->
+		{#each navGroups as group}
+			<Sidebar.Group>
+				<Sidebar.GroupLabel class="section-label-gold px-3 pb-1 pt-3">
+					{group.label}
+				</Sidebar.GroupLabel>
+				<Sidebar.GroupContent>
+					<Sidebar.Menu>
+						{#each group.items as item}
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton isActive={page.url.pathname.startsWith(item.href)}>
+									{#snippet child({ props })}
+										<a href={item.href} {...props} class="flex items-center justify-between w-full">
+											<span class="flex items-center gap-2">
+												<item.icon class="h-4 w-4" />
+												<span>{item.label}</span>
+											</span>
+											{#if item.badgeKey && badges[item.badgeKey] > 0}
+												<span
+													class="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold {item.badgeKey ===
+													'unheardVoicemails'
+														? 'bg-red-500/80 text-white'
+														: 'bg-[#C5A55A] text-[#1A1A1A]'}"
+												>
+													{badges[item.badgeKey]}
+												</span>
+											{/if}
+										</a>
+									{/snippet}
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						{/each}
+					</Sidebar.Menu>
+				</Sidebar.GroupContent>
+			</Sidebar.Group>
+		{/each}
 	</Sidebar.Content>
 
 	<Sidebar.Footer>
