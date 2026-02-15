@@ -13,10 +13,11 @@ const router = Router();
  * Returns content with service info for rendering care instruction pages.
  */
 router.get('/:slug', async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('service_content')
-      .select(`
+	try {
+		const { data, error } = await supabaseAdmin
+			.from('service_content')
+			.select(
+				`
         id,
         content_type,
         title,
@@ -26,20 +27,21 @@ router.get('/:slug', async (req, res) => {
         is_active,
         version,
         service:services(id, name, slug, category, description)
-      `)
-      .eq('page_slug', req.params.slug)
-      .eq('is_active', true)
-      .single();
+      `
+			)
+			.eq('page_slug', req.params.slug)
+			.eq('is_active', true)
+			.single();
 
-    if (error || !data) {
-      return res.status(404).json({ error: 'Content not found' });
-    }
+		if (error || !data) {
+			return res.status(404).json({ error: 'Content not found' });
+		}
 
-    res.json({ data });
-  } catch (err) {
-    console.error('Public content fetch error:', err.message);
-    res.status(500).json({ error: 'Failed to load content' });
-  }
+		res.json({ data });
+	} catch (err) {
+		console.error('Public content fetch error:', err.message);
+		res.status(500).json({ error: 'Failed to load content' });
+	}
 });
 
 /**
@@ -47,25 +49,27 @@ router.get('/:slug', async (req, res) => {
  * List all active content slugs (for sitemap/index).
  */
 router.get('/', async (req, res) => {
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('service_content')
-      .select(`
+	try {
+		const { data, error } = await supabaseAdmin
+			.from('service_content')
+			.select(
+				`
         page_slug,
         title,
         content_type,
         service:services(name, slug)
-      `)
-      .eq('is_active', true)
-      .order('page_slug');
+      `
+			)
+			.eq('is_active', true)
+			.order('page_slug');
 
-    if (error) throw error;
+		if (error) throw error;
 
-    res.json({ data: data || [] });
-  } catch (err) {
-    console.error('Public content list error:', err.message);
-    res.status(500).json({ error: 'Failed to list content' });
-  }
+		res.json({ data: data || [] });
+	} catch (err) {
+		console.error('Public content list error:', err.message);
+		res.status(500).json({ error: 'Failed to list content' });
+	}
 });
 
 export default router;

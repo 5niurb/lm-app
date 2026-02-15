@@ -5,7 +5,6 @@
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Label } from '$lib/components/ui/label/index.ts';
-	import * as Card from '$lib/components/ui/card/index.ts';
 
 	let email = $state('');
 	let password = $state('');
@@ -59,58 +58,198 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-muted p-4">
-	<Card.Root class="w-full max-w-sm">
-		<Card.Header class="text-center">
-			<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground text-lg font-bold">
-				LM
-			</div>
-			<Card.Title class="text-2xl">
-				{step === 'credentials' ? 'Sign in' : 'Verify identity'}
-			</Card.Title>
-			<Card.Description>
-				{step === 'credentials'
-					? 'Enter your credentials to access the dashboard'
-					: 'Enter the verification code sent to your email'}
-			</Card.Description>
-		</Card.Header>
+<div class="relative flex min-h-screen">
+	<!-- Left panel — Brand / Visual -->
+	<div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0a0a0c]">
+		<!-- Decorative gradient background -->
+		<div
+			class="absolute inset-0 bg-gradient-to-br from-[rgba(197,165,90,0.08)] via-transparent to-[rgba(197,165,90,0.04)]"
+		></div>
+		<!-- Subtle noise overlay -->
+		<div
+			class="absolute inset-0 opacity-[0.03]"
+			style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E');"
+		></div>
+		<!-- Gold accent lines -->
+		<div
+			class="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-[rgba(197,165,90,0.2)] to-transparent"
+		></div>
+		<div
+			class="absolute top-1/4 left-16 w-24 h-px bg-gradient-to-r from-[rgba(197,165,90,0.3)] to-transparent"
+		></div>
+		<div
+			class="absolute top-2/3 left-24 w-16 h-px bg-gradient-to-r from-[rgba(197,165,90,0.2)] to-transparent"
+		></div>
 
-		<Card.Content>
+		<!-- Content -->
+		<div class="relative z-10 flex flex-col justify-between p-12 w-full">
+			<div>
+				<!-- Logo mark -->
+				<div class="flex items-center gap-4 mb-20">
+					<div
+						class="flex h-12 w-12 items-center justify-center rounded bg-[#C5A55A] text-[#1A1A1A] text-lg font-semibold tracking-wider"
+						style="font-family: 'Playfair Display', serif;"
+					>
+						LM
+					</div>
+					<div class="flex flex-col">
+						<span
+							class="text-base font-medium tracking-wide text-[rgba(255,255,255,0.85)]"
+							style="font-family: 'Playfair Display', serif;">Le Med Spa</span
+						>
+						<span class="text-[10px] uppercase tracking-[0.25em] text-[rgba(197,165,90,0.5)]"
+							>Operations</span
+						>
+					</div>
+				</div>
+
+				<!-- Tagline -->
+				<div class="max-w-sm">
+					<h1
+						class="text-4xl font-light text-[rgba(255,255,255,0.9)] leading-tight mb-6"
+						style="font-family: 'Playfair Display', serif;"
+					>
+						Private. Intimate.<br />
+						<span class="text-[#C5A55A]">Exclusive.</span>
+					</h1>
+					<p class="text-sm leading-relaxed text-[rgba(255,255,255,0.35)]">
+						Your command center for patient communications, scheduling, and clinic management.
+					</p>
+				</div>
+			</div>
+
+			<div>
+				<!-- Decorative gold ornament -->
+				<div class="flex items-center gap-3 mb-6">
+					<div
+						class="h-px flex-1 bg-gradient-to-r from-[rgba(197,165,90,0.2)] to-transparent"
+					></div>
+					<div class="h-1.5 w-1.5 rotate-45 bg-[rgba(197,165,90,0.3)]"></div>
+					<div class="h-px w-8 bg-[rgba(197,165,90,0.2)]"></div>
+					<div class="h-1.5 w-1.5 rotate-45 bg-[rgba(197,165,90,0.3)]"></div>
+					<div
+						class="h-px flex-1 bg-gradient-to-l from-[rgba(197,165,90,0.2)] to-transparent"
+					></div>
+				</div>
+
+				<p class="text-[10px] uppercase tracking-[0.2em] text-[rgba(255,255,255,0.15)] text-center">
+					LEMEDSPA<span class="text-[rgba(197,165,90,0.3)]">&reg;</span> &middot; 17414 Ventura Blvd &middot;
+					Encino, CA
+				</p>
+			</div>
+		</div>
+	</div>
+
+	<!-- Right panel — Login form -->
+	<div class="flex-1 flex items-center justify-center bg-[#1b1f22] p-6 relative">
+		<!-- Subtle radial glow -->
+		<div
+			class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(197,165,90,0.04)_0%,_transparent_70%)]"
+		></div>
+		<!-- Noise texture -->
+		<div
+			class="absolute inset-0 opacity-[0.02]"
+			style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E');"
+		></div>
+
+		<div class="relative z-10 w-full max-w-sm">
+			<!-- Mobile logo (hidden on lg+) -->
+			<div class="flex items-center justify-center gap-3 mb-10 lg:hidden">
+				<div
+					class="flex h-10 w-10 items-center justify-center rounded bg-[#C5A55A] text-[#1A1A1A] text-base font-semibold tracking-wider"
+					style="font-family: 'Playfair Display', serif;"
+				>
+					LM
+				</div>
+				<div class="flex flex-col">
+					<span
+						class="text-sm font-medium tracking-wide text-[rgba(255,255,255,0.85)]"
+						style="font-family: 'Playfair Display', serif;">Le Med Spa</span
+					>
+					<span class="text-[9px] uppercase tracking-[0.2em] text-[rgba(197,165,90,0.5)]"
+						>Operations</span
+					>
+				</div>
+			</div>
+
+			<div class="mb-8">
+				<h2
+					class="text-2xl font-light text-[rgba(255,255,255,0.9)] mb-1"
+					style="font-family: 'Playfair Display', serif;"
+				>
+					{step === 'credentials' ? 'Welcome back' : 'Verify identity'}
+				</h2>
+				<p class="text-sm text-[rgba(255,255,255,0.35)]">
+					{step === 'credentials'
+						? 'Sign in to your operations dashboard'
+						: 'Enter the verification code sent to your email'}
+				</p>
+			</div>
+
 			{#if error}
-				<div class="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+				<div
+					class="mb-5 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400"
+				>
 					{error}
 				</div>
 			{/if}
 
 			{#if step === 'credentials'}
-				<form onsubmit={(e) => { e.preventDefault(); handleLogin(); }} class="space-y-4">
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleLogin();
+					}}
+					class="space-y-5"
+				>
 					<div class="space-y-2">
-						<Label for="email">Email</Label>
+						<Label
+							for="email"
+							class="text-xs uppercase tracking-[0.1em] text-[rgba(255,255,255,0.4)]">Email</Label
+						>
 						<Input
 							id="email"
 							type="email"
 							placeholder="you@lemedspa.com"
 							bind:value={email}
 							required
+							class="h-11 bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)] focus:border-[#C5A55A] transition-colors"
 						/>
 					</div>
 					<div class="space-y-2">
-						<Label for="password">Password</Label>
+						<Label
+							for="password"
+							class="text-xs uppercase tracking-[0.1em] text-[rgba(255,255,255,0.4)]"
+							>Password</Label
+						>
 						<Input
 							id="password"
 							type="password"
 							bind:value={password}
 							required
+							class="h-11 bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)] focus:border-[#C5A55A] transition-colors"
 						/>
 					</div>
-					<Button type="submit" class="w-full" disabled={submitting}>
+					<Button
+						type="submit"
+						class="w-full h-11 bg-[#C5A55A] hover:bg-[#d4af37] text-[#1A1A1A] font-medium tracking-wide transition-all duration-200 hover:shadow-lg hover:shadow-[rgba(197,165,90,0.15)]"
+						disabled={submitting}
+					>
 						{submitting ? 'Signing in...' : 'Sign in'}
 					</Button>
 				</form>
 			{:else}
-				<form onsubmit={(e) => { e.preventDefault(); handleOtp(); }} class="space-y-4">
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleOtp();
+					}}
+					class="space-y-5"
+				>
 					<div class="space-y-2">
-						<Label for="otp">Verification code</Label>
+						<Label for="otp" class="text-xs uppercase tracking-[0.1em] text-[rgba(255,255,255,0.4)]"
+							>Verification code</Label
+						>
 						<Input
 							id="otp"
 							type="text"
@@ -119,21 +258,41 @@
 							placeholder="000000"
 							bind:value={otp}
 							required
+							class="h-11 text-center text-xl tracking-[0.5em] font-mono bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
 						/>
 					</div>
-					<Button type="submit" class="w-full" disabled={submitting}>
+					<Button
+						type="submit"
+						class="w-full h-11 bg-[#C5A55A] hover:bg-[#d4af37] text-[#1A1A1A] font-medium tracking-wide"
+						disabled={submitting}
+					>
 						{submitting ? 'Verifying...' : 'Verify'}
 					</Button>
 					<Button
 						type="button"
 						variant="ghost"
-						class="w-full"
-						onclick={() => { step = 'credentials'; error = ''; }}
+						class="w-full text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]"
+						onclick={() => {
+							step = 'credentials';
+							error = '';
+						}}
 					>
 						Back to sign in
 					</Button>
 				</form>
 			{/if}
-		</Card.Content>
-	</Card.Root>
+
+			<!-- Bottom ornament -->
+			<div class="mt-12 flex items-center gap-3">
+				<div class="h-px flex-1 bg-gradient-to-r from-transparent to-[rgba(197,165,90,0.12)]"></div>
+				<div class="h-1 w-1 rotate-45 bg-[rgba(197,165,90,0.2)]"></div>
+				<div class="h-px flex-1 bg-gradient-to-l from-transparent to-[rgba(197,165,90,0.12)]"></div>
+			</div>
+			<p
+				class="mt-4 text-center text-[10px] text-[rgba(255,255,255,0.15)] uppercase tracking-[0.15em]"
+			>
+				Secure access &middot; Staff only
+			</p>
+		</div>
+	</div>
 </div>

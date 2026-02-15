@@ -15,60 +15,56 @@ const flow = JSON.parse(readFileSync(flowPath, 'utf8'));
 const RENDER_URL = 'https://lm-app-api.onrender.com/api/twilio/connect-operator';
 
 // 1. Replace connect_call_HighLevel with TwiML Redirect
-const idx = flow.states.findIndex(s => s.name === 'connect_call_HighLevel');
+const idx = flow.states.findIndex((s) => s.name === 'connect_call_HighLevel');
 if (idx !== -1) {
-  flow.states[idx] = {
-    name: 'connect_call_HighLevel',
-    type: 'add-twiml-redirect',
-    properties: {
-      url: RENDER_URL,
-      method: 'POST',
-      offset: {
-        x: 1340,
-        y: 550
-      }
-    },
-    transitions: [
-      { event: 'return' },
-      { event: 'timeout' },
-      { event: 'fail' }
-    ]
-  };
-  console.log('✓ Replaced connect_call_HighLevel with TwiML Redirect to:', RENDER_URL);
+	flow.states[idx] = {
+		name: 'connect_call_HighLevel',
+		type: 'add-twiml-redirect',
+		properties: {
+			url: RENDER_URL,
+			method: 'POST',
+			offset: {
+				x: 1340,
+				y: 550
+			}
+		},
+		transitions: [{ event: 'return' }, { event: 'timeout' }, { event: 'fail' }]
+	};
+	console.log('✓ Replaced connect_call_HighLevel with TwiML Redirect to:', RENDER_URL);
 } else {
-  console.log('✗ connect_call_HighLevel not found!');
+	console.log('✗ connect_call_HighLevel not found!');
 }
 
 // 2. Check all gather/split states for digit-0 dead ends
 for (const state of flow.states) {
-  for (const t of state.transitions || []) {
-    if (t.conditions) {
-      const zeroCondition = t.conditions.find(c => c.value === '0');
-      if (zeroCondition) {
-        if (!t.next) {
-          console.log(`  ⚠ Dead-end digit-0 in: ${state.name} — routing to connect_call_HighLevel`);
-          t.next = 'connect_call_HighLevel';
-        } else {
-          console.log(`  ✓ Digit-0 in ${state.name} → ${t.next}`);
-        }
-      }
-    }
-  }
+	for (const t of state.transitions || []) {
+		if (t.conditions) {
+			const zeroCondition = t.conditions.find((c) => c.value === '0');
+			if (zeroCondition) {
+				if (!t.next) {
+					console.log(`  ⚠ Dead-end digit-0 in: ${state.name} — routing to connect_call_HighLevel`);
+					t.next = 'connect_call_HighLevel';
+				} else {
+					console.log(`  ✓ Digit-0 in ${state.name} → ${t.next}`);
+				}
+			}
+		}
+	}
 }
 
 // 3. Check the main menu timeout (no input) — should also go to operator
 for (const state of flow.states) {
-  if (state.name === 'x0a-MainGreetingMenu_Open') {
-    for (const t of state.transitions || []) {
-      if (t.event === 'timeout') {
-        if (t.next === 'connect_call_HighLevel') {
-          console.log('  ✓ Main menu timeout → connect_call_HighLevel (now TwiML Redirect)');
-        } else {
-          console.log(`  ⚠ Main menu timeout → ${t.next} (should be connect_call_HighLevel)`);
-        }
-      }
-    }
-  }
+	if (state.name === 'x0a-MainGreetingMenu_Open') {
+		for (const t of state.transitions || []) {
+			if (t.event === 'timeout') {
+				if (t.next === 'connect_call_HighLevel') {
+					console.log('  ✓ Main menu timeout → connect_call_HighLevel (now TwiML Redirect)');
+				} else {
+					console.log(`  ⚠ Main menu timeout → ${t.next} (should be connect_call_HighLevel)`);
+				}
+			}
+		}
+	}
 }
 
 // Save updated flow

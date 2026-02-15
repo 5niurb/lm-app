@@ -1,765 +1,934 @@
 {
-  "description": "LeMed Main IVR — with lm-app webhook logging",
-  "flags": {
-    "allow_concurrent_calls": true
-  },
-  "initial_state": "Trigger",
-  "states": [
-    {
-      "name": "Trigger",
-      "properties": {
-        "offset": {
-          "x": 180,
-          "y": -140
-        }
-      },
-      "transitions": [
-        {
-          "event": "incomingMessage",
-          "next": "log_call_incoming"
-        },
-        {
-          "event": "incomingCall",
-          "next": "log_call_incoming"
-        },
-        {
-          "event": "incomingConversationMessage"
-        },
-        {
-          "event": "incomingRequest"
-        },
-        {
-          "event": "incomingParent",
-          "next": "log_call_incoming"
-        }
-      ],
-      "type": "trigger"
-    },
-    {
-      "name": "x0a-MainGreetingMenu_Open",
-      "properties": {
-        "gather_language": "en-US",
-        "loop": 1,
-        "number_of_digits": 1,
-        "offset": {
-          "x": 310,
-          "y": 80
-        },
-        "play": "https://lm-ivr-assets-2112.twil.io/assets/0a-Main-Elise.wav",
-        "profanity_filter": "false",
-        "speech_model": "default",
-        "speech_timeout": "10",
-        "stop_gather": true,
-        "timeout": 5
-      },
-      "transitions": [
-        {
-          "event": "keypress",
-          "next": "log_event_main_menu"
-        },
-        {
-          "event": "speech"
-        },
-        {
-          "event": "timeout",
-          "next": "log_event_timeout"
-        }
-      ],
-      "type": "gather-input-on-call"
-    },
-    {
-      "name": "split_digits_GreetingMenu",
-      "properties": {
-        "input": "{{widgets.x0a-MainGreetingMenu_Open.Digits}}",
-        "offset": {
-          "x": 660,
-          "y": 360
-        }
-      },
-      "transitions": [
-        {
-          "event": "noMatch"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "0",
-              "type": "equal_to",
-              "value": "0"
-            }
-          ],
-          "event": "match",
-          "next": "log_event_timeout"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "1",
-              "type": "equal_to",
-              "value": "1"
-            }
-          ],
-          "event": "match",
-          "next": "send_message_accounts"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "2",
-              "type": "equal_to",
-              "value": "2"
-            }
-          ],
-          "event": "match",
-          "next": "x2a-Hours_Location"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "3",
-              "type": "equal_to",
-              "value": "3"
-            }
-          ],
-          "event": "match",
-          "next": "x2b-Company_Directory"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "4",
-              "type": "equal_to",
-              "value": "4"
-            }
-          ],
-          "event": "match"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x0a-MainGreetingMenu_Open.Digits}}"
-              ],
-              "friendly_name": "9",
-              "type": "equal_to",
-              "value": "9"
-            }
-          ],
-          "event": "match"
-        }
-      ],
-      "type": "split-based-on"
-    },
-    {
-      "name": "x2a-Hours_Location",
-      "properties": {
-        "finish_on_key": "#",
-        "gather_language": "en-US",
-        "loop": 1,
-        "number_of_digits": 1,
-        "offset": {
-          "x": -40,
-          "y": 600
-        },
-        "play": "https://lm-ivr-assets-2112.twil.io/assets/Hours-Location-Elise-wav.wav",
-        "profanity_filter": "true",
-        "speech_model": "default",
-        "speech_timeout": "10",
-        "stop_gather": true,
-        "timeout": 5
-      },
-      "transitions": [
-        {
-          "event": "keypress",
-          "next": "split_hours"
-        },
-        {
-          "event": "speech"
-        },
-        {
-          "event": "timeout"
-        }
-      ],
-      "type": "gather-input-on-call"
-    },
-    {
-      "name": "split_hours",
-      "properties": {
-        "input": "{{widgets.x2a-Hours_Location.Digits}}",
-        "offset": {
-          "x": -230,
-          "y": 900
-        }
-      },
-      "transitions": [
-        {
-          "event": "noMatch",
-          "next": "x0a-MainGreetingMenu_Open"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x2a-Hours_Location.Digits}}"
-              ],
-              "friendly_name": "If value equal_to 9",
-              "type": "equal_to",
-              "value": "9"
-            }
-          ],
-          "event": "match",
-          "next": "x2a-Hours_Location"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x2a-Hours_Location.Digits}}"
-              ],
-              "friendly_name": "If value equal_to 0",
-              "type": "equal_to",
-              "value": "0"
-            }
-          ],
-          "event": "match"
-        }
-      ],
-      "type": "split-based-on"
-    },
-    {
-      "name": "x2b-Company_Directory",
-      "properties": {
-        "finish_on_key": "#",
-        "gather_language": "English (United States)",
-        "loop": 1,
-        "offset": {
-          "x": 370,
-          "y": 760
-        },
-        "play": "https://periwinkle-partridge-9538.twil.io/assets/2b-CompanyDirectory.wav",
-        "speech_model": "default",
-        "speech_timeout": "auto",
-        "stop_gather": true,
-        "timeout": 5
-      },
-      "transitions": [
-        {
-          "event": "keypress",
-          "next": "log_event_directory"
-        },
-        {
-          "event": "speech"
-        },
-        {
-          "event": "timeout"
-        }
-      ],
-      "type": "gather-input-on-call"
-    },
-    {
-      "name": "split_companyDir",
-      "properties": {
-        "input": "{{widgets.x2b-Company_Directory.Digits}}",
-        "offset": {
-          "x": 1060,
-          "y": 820
-        }
-      },
-      "transitions": [
-        {
-          "event": "noMatch",
-          "next": "x2b-Company_Directory"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x2b-Company_Directory.Digits}}"
-              ],
-              "friendly_name": "1",
-              "type": "equal_to",
-              "value": "1"
-            }
-          ],
-          "event": "match",
-          "next": "Lea_voicemail"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x2b-Company_Directory.Digits}}"
-              ],
-              "friendly_name": "2",
-              "type": "equal_to",
-              "value": "2"
-            }
-          ],
-          "event": "match",
-          "next": "ClinicalMD_Vmail"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x2b-Company_Directory.Digits}}"
-              ],
-              "friendly_name": "3",
-              "type": "equal_to",
-              "value": "3"
-            }
-          ],
-          "event": "match",
-          "next": "x3c-AccountsOps_Menu"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x2b-Company_Directory.Digits}}"
-              ],
-              "friendly_name": "0",
-              "type": "equal_to",
-              "value": "0"
-            }
-          ],
-          "event": "match"
-        }
-      ],
-      "type": "split-based-on"
-    },
-    {
-      "name": "Lea_voicemail",
-      "properties": {
-        "max_length": 3600,
-        "offset": {
-          "x": 320,
-          "y": 1370
-        },
-        "play_beep": "true",
-        "timeout": 5,
-        "transcribe": true,
-        "trim": "trim-silence"
-      },
-      "transitions": [
-        {
-          "event": "recordingComplete"
-        },
-        {
-          "event": "noAudio"
-        },
-        {
-          "event": "hangup"
-        }
-      ],
-      "type": "record-voicemail"
-    },
-    {
-      "name": "ClinicalMD_Vmail",
-      "properties": {
-        "max_length": 3600,
-        "offset": {
-          "x": 990,
-          "y": 1120
-        },
-        "play_beep": "true",
-        "timeout": 5,
-        "transcribe": true,
-        "trim": "trim-silence"
-      },
-      "transitions": [
-        {
-          "event": "recordingComplete"
-        },
-        {
-          "event": "noAudio"
-        },
-        {
-          "event": "hangup"
-        }
-      ],
-      "type": "record-voicemail"
-    },
-    {
-      "name": "x3c-AccountsOps_Menu",
-      "properties": {
-        "finish_on_key": "#",
-        "gather_language": "English (United States)",
-        "loop": 1,
-        "offset": {
-          "x": 1380,
-          "y": 1110
-        },
-        "play": "https://periwinkle-partridge-9538.twil.io/assets/3c-Accounts%20Greeting%20Menu%20(Elabs%20Will).mp3",
-        "speech_timeout": "auto",
-        "stop_gather": true,
-        "timeout": 5
-      },
-      "transitions": [
-        {
-          "event": "keypress",
-          "next": "log_event_accounts"
-        },
-        {
-          "event": "speech"
-        },
-        {
-          "event": "timeout"
-        }
-      ],
-      "type": "gather-input-on-call"
-    },
-    {
-      "name": "split_accountsmenu_digits",
-      "properties": {
-        "input": "{{widgets.x3c-AccountsOps_Menu.Digits}}",
-        "offset": {
-          "x": 1120,
-          "y": 1390
-        }
-      },
-      "transitions": [
-        {
-          "event": "noMatch"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x3c-AccountsOps_Menu.Digits}}"
-              ],
-              "friendly_name": "1",
-              "type": "equal_to",
-              "value": "1"
-            }
-          ],
-          "event": "match",
-          "next": "send_message_accounts"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x3c-AccountsOps_Menu.Digits}}"
-              ],
-              "friendly_name": "2",
-              "type": "equal_to",
-              "value": "2"
-            }
-          ],
-          "event": "match",
-          "next": "record_voicemail_accounts"
-        },
-        {
-          "conditions": [
-            {
-              "arguments": [
-                "{{widgets.x3c-AccountsOps_Menu.Digits}}"
-              ],
-              "friendly_name": "3",
-              "type": "equal_to",
-              "value": "3"
-            }
-          ],
-          "event": "match",
-          "next": "connect_call_accounts"
-        }
-      ],
-      "type": "split-based-on"
-    },
-    {
-      "name": "send_message_accounts",
-      "properties": {
-        "body": "(LeMedSpa) Thank you for reaching out. How can we help you?",
-        "channel": "{{trigger.message.ChannelSid}}",
-        "from": "{{flow.channel.address}}",
-        "message_type": "custom",
-        "offset": {
-          "x": 670,
-          "y": 1570
-        },
-        "service": "{{trigger.message.InstanceSid}}",
-        "to": "{{contact.channel.address}}"
-      },
-      "transitions": [
-        {
-          "event": "sent",
-          "next": "play_MsgSentGoodbye"
-        },
-        {
-          "event": "failed"
-        }
-      ],
-      "type": "send-message"
-    },
-    {
-      "name": "record_voicemail_accounts",
-      "properties": {
-        "max_length": 3600,
-        "offset": {
-          "x": 1020,
-          "y": 1680
-        },
-        "play_beep": "true",
-        "timeout": 5,
-        "transcribe": true,
-        "trim": "trim-silence"
-      },
-      "transitions": [
-        {
-          "event": "recordingComplete"
-        },
-        {
-          "event": "noAudio"
-        },
-        {
-          "event": "hangup"
-        }
-      ],
-      "type": "record-voicemail"
-    },
-    {
-      "name": "connect_call_accounts",
-      "properties": {
-        "caller_id": "{{contact.channel.address}}",
-        "noun": "number",
-        "offset": {
-          "x": 1390,
-          "y": 1640
-        },
-        "timeout": 30,
-        "to": "+12134442242"
-      },
-      "transitions": [
-        {
-          "event": "callCompleted"
-        },
-        {
-          "event": "hangup"
-        }
-      ],
-      "type": "connect-call-to"
-    },
-    {
-      "name": "play_MsgSentGoodbye",
-      "properties": {
-        "loop": 1,
-        "offset": {
-          "x": 400,
-          "y": 1820
-        },
-        "play": "https://periwinkle-partridge-9538.twil.io/assets/1a1-messageSentGoodbye.wav"
-      },
-      "transitions": [
-        {
-          "event": "audioComplete",
-          "next": "fcn_NewSMSEmailNotify"
-        }
-      ],
-      "type": "say-play"
-    },
-    {
-      "name": "redirect_FlexSIP",
-      "properties": {
-        "method": "GET",
-        "offset": {
-          "x": 2160,
-          "y": -160
-        },
-        "timeout": "14400",
-        "url": "https://handler.twilio.com/twiml/EH6dfadeabe0337c465b8b9b36c8082bea"
-      },
-      "transitions": [
-        {
-          "event": "return"
-        },
-        {
-          "event": "timeout"
-        },
-        {
-          "event": "fail"
-        }
-      ],
-      "type": "add-twiml-redirect"
-    },
-    {
-      "name": "fcn_NewSMSEmailNotify",
-      "properties": {
-        "environment_sid": "ZE32489791a328b811b2e45667533353f3",
-        "function_sid": "ZH3376f7c025608bfc73d292d78badb026",
-        "offset": {
-          "x": 790,
-          "y": 2060
-        },
-        "service_sid": "ZS3a9508ce8846c9ac327f9968608b8004",
-        "url": "https://lmflex-1608.twil.io/NewSMSEmailNotify"
-      },
-      "transitions": [
-        {
-          "event": "success"
-        },
-        {
-          "event": "fail"
-        }
-      ],
-      "type": "run-function"
-    },
-    {
-      "name": "connect_call_HighLevel",
-      "properties": {
-        "caller_id": "{{contact.channel.address}}",
-        "noun": "number",
-        "offset": {
-          "x": 1340,
-          "y": 550
-        },
-        "timeout": 30,
-        "to": "+18184632211"
-      },
-      "transitions": [
-        {
-          "event": "callCompleted"
-        },
-        {
-          "event": "hangup"
-        }
-      ],
-      "type": "connect-call-to"
-    },
-    {
-      "name": "log_call_incoming",
-      "type": "make-http-request",
-      "properties": {
-        "body": "CallSid={{trigger.call.CallSid}}&From={{trigger.call.From}}&To={{trigger.call.To}}&CallStatus={{trigger.call.CallStatus}}&CallerName={{trigger.call.CallerName}}&CallerCity={{trigger.call.CallerCity}}&CallerState={{trigger.call.CallerState}}&CallerCountry={{trigger.call.CallerCountry}}&CallerZip={{trigger.call.CallerZip}}",
-        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
-        "method": "POST",
-        "offset": {
-          "x": -200,
-          "y": -140
-        },
-        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/incoming"
-      },
-      "transitions": [
-        {
-          "event": "success",
-          "next": "x0a-MainGreetingMenu_Open"
-        },
-        {
-          "event": "failed",
-          "next": "x0a-MainGreetingMenu_Open"
-        }
-      ]
-    },
-    {
-      "name": "log_event_main_menu",
-      "type": "make-http-request",
-      "properties": {
-        "body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=main&digit={{widgets.x0a-MainGreetingMenu_Open.Digits}}",
-        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
-        "method": "POST",
-        "offset": {
-          "x": 460,
-          "y": 200
-        },
-        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
-      },
-      "transitions": [
-        {
-          "event": "success",
-          "next": "split_digits_GreetingMenu"
-        },
-        {
-          "event": "failed",
-          "next": "split_digits_GreetingMenu"
-        }
-      ]
-    },
-    {
-      "name": "log_event_directory",
-      "type": "make-http-request",
-      "properties": {
-        "body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=directory&digit={{widgets.x2b-Company_Directory.Digits}}",
-        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
-        "method": "POST",
-        "offset": {
-          "x": 860,
-          "y": 690
-        },
-        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
-      },
-      "transitions": [
-        {
-          "event": "success",
-          "next": "split_companyDir"
-        },
-        {
-          "event": "failed",
-          "next": "split_companyDir"
-        }
-      ]
-    },
-    {
-      "name": "log_event_accounts",
-      "type": "make-http-request",
-      "properties": {
-        "body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=accounts&digit={{widgets.x3c-AccountsOps_Menu.Digits}}",
-        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
-        "method": "POST",
-        "offset": {
-          "x": 1250,
-          "y": 1260
-        },
-        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
-      },
-      "transitions": [
-        {
-          "event": "success",
-          "next": "split_accountsmenu_digits"
-        },
-        {
-          "event": "failed",
-          "next": "split_accountsmenu_digits"
-        }
-      ]
-    },
-    {
-      "name": "log_event_timeout",
-      "type": "make-http-request",
-      "properties": {
-        "body": "CallSid={{trigger.call.CallSid}}&event_type=timeout&menu=main&action=forward_to_operator",
-        "content_type": "application/x-www-form-urlencoded;charset=utf-8",
-        "method": "POST",
-        "offset": {
-          "x": 1140,
-          "y": 80
-        },
-        "url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
-      },
-      "transitions": [
-        {
-          "event": "success",
-          "next": "connect_call_HighLevel"
-        },
-        {
-          "event": "failed",
-          "next": "connect_call_HighLevel"
-        }
-      ]
-    }
-  ]
+	"description": "LeMed Main IVR — with lm-app webhook logging + after-hours routing",
+	"flags": {
+		"allow_concurrent_calls": true
+	},
+	"initial_state": "Trigger",
+	"states": [
+		{
+			"name": "Trigger",
+			"properties": {
+				"offset": {
+					"x": 180,
+					"y": -140
+				}
+			},
+			"transitions": [
+				{
+					"event": "incomingMessage",
+					"next": "log_call_incoming"
+				},
+				{
+					"event": "incomingCall",
+					"next": "log_call_incoming"
+				},
+				{
+					"event": "incomingConversationMessage"
+				},
+				{
+					"event": "incomingRequest"
+				},
+				{
+					"event": "incomingParent",
+					"next": "log_call_incoming"
+				}
+			],
+			"type": "trigger"
+		},
+		{
+			"name": "x0a-MainGreetingMenu_Open",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 310,
+					"y": 80
+				},
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/0a-Main-Elise.wav",
+				"profanity_filter": "false",
+				"speech_model": "default",
+				"speech_timeout": "10",
+				"stop_gather": true,
+				"timeout": 5
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "log_event_main_menu"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "log_event_timeout"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "split_digits_GreetingMenu",
+			"properties": {
+				"input": "{{widgets.x0a-MainGreetingMenu_Open.Digits}}",
+				"offset": {
+					"x": 660,
+					"y": 360
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "0",
+							"type": "equal_to",
+							"value": "0"
+						}
+					],
+					"event": "match",
+					"next": "check_business_hours"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "1",
+							"type": "equal_to",
+							"value": "1"
+						}
+					],
+					"event": "match",
+					"next": "send_message_accounts"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "2",
+							"type": "equal_to",
+							"value": "2"
+						}
+					],
+					"event": "match",
+					"next": "x2a-Hours_Location"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "3",
+							"type": "equal_to",
+							"value": "3"
+						}
+					],
+					"event": "match",
+					"next": "x2b-Company_Directory"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "4",
+							"type": "equal_to",
+							"value": "4"
+						}
+					],
+					"event": "match"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "9",
+							"type": "equal_to",
+							"value": "9"
+						}
+					],
+					"event": "match"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "check_business_hours",
+			"type": "make-http-request",
+			"properties": {
+				"content_type": "application/json",
+				"method": "GET",
+				"offset": {
+					"x": 1340,
+					"y": 200
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/hours-check"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "split_hours_result"
+				},
+				{
+					"event": "failed",
+					"next": "connect_call_HighLevel"
+				}
+			]
+		},
+		{
+			"name": "split_hours_result",
+			"properties": {
+				"input": "{{widgets.check_business_hours.parsed.status}}",
+				"offset": {
+					"x": 1540,
+					"y": 400
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch",
+					"next": "connect_call_HighLevel"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.check_business_hours.parsed.status}}"],
+							"friendly_name": "open",
+							"type": "equal_to",
+							"value": "open"
+						}
+					],
+					"event": "match",
+					"next": "log_event_press0_open"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.check_business_hours.parsed.status}}"],
+							"friendly_name": "closed",
+							"type": "equal_to",
+							"value": "closed"
+						}
+					],
+					"event": "match",
+					"next": "log_event_press0_closed"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "log_event_press0_open",
+			"type": "make-http-request",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=main&digit=0&action=forward_to_operator&hours=open",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 1700,
+					"y": 550
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "connect_call_HighLevel"
+				},
+				{
+					"event": "failed",
+					"next": "connect_call_HighLevel"
+				}
+			]
+		},
+		{
+			"name": "log_event_press0_closed",
+			"type": "make-http-request",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=main&digit=0&action=closed_greeting&hours=closed",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 1900,
+					"y": 750
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "x0a-ClosedGreetingMenu"
+				},
+				{
+					"event": "failed",
+					"next": "x0a-ClosedGreetingMenu"
+				}
+			]
+		},
+		{
+			"name": "x0a-ClosedGreetingMenu",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 1900,
+					"y": 950
+				},
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/Closed-text-us-wav.wav",
+				"profanity_filter": "false",
+				"speech_model": "default",
+				"speech_timeout": "10",
+				"stop_gather": true,
+				"timeout": 8
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "split_closed_digits"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_voicemail_closed"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "split_closed_digits",
+			"properties": {
+				"input": "{{widgets.x0a-ClosedGreetingMenu.Digits}}",
+				"offset": {
+					"x": 2200,
+					"y": 1150
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch",
+					"next": "record_voicemail_closed"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-ClosedGreetingMenu.Digits}}"],
+							"friendly_name": "1",
+							"type": "equal_to",
+							"value": "1"
+						}
+					],
+					"event": "match",
+					"next": "send_message_accounts"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "record_voicemail_closed",
+			"properties": {
+				"max_length": 3600,
+				"offset": {
+					"x": 1900,
+					"y": 1350
+				},
+				"play_beep": "true",
+				"timeout": 5,
+				"transcribe": true,
+				"trim": "trim-silence"
+			},
+			"transitions": [
+				{
+					"event": "recordingComplete"
+				},
+				{
+					"event": "noAudio"
+				},
+				{
+					"event": "hangup"
+				}
+			],
+			"type": "record-voicemail"
+		},
+		{
+			"name": "x2a-Hours_Location",
+			"properties": {
+				"finish_on_key": "#",
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": -40,
+					"y": 600
+				},
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/Hours-Location-Elise-wav.wav",
+				"profanity_filter": "true",
+				"speech_model": "default",
+				"speech_timeout": "10",
+				"stop_gather": true,
+				"timeout": 5
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "split_hours"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "split_hours",
+			"properties": {
+				"input": "{{widgets.x2a-Hours_Location.Digits}}",
+				"offset": {
+					"x": -230,
+					"y": 900
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch",
+					"next": "x0a-MainGreetingMenu_Open"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x2a-Hours_Location.Digits}}"],
+							"friendly_name": "If value equal_to 9",
+							"type": "equal_to",
+							"value": "9"
+						}
+					],
+					"event": "match",
+					"next": "x2a-Hours_Location"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x2a-Hours_Location.Digits}}"],
+							"friendly_name": "If value equal_to 0",
+							"type": "equal_to",
+							"value": "0"
+						}
+					],
+					"event": "match"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "x2b-Company_Directory",
+			"properties": {
+				"finish_on_key": "#",
+				"gather_language": "English (United States)",
+				"loop": 1,
+				"offset": {
+					"x": 370,
+					"y": 760
+				},
+				"play": "https://periwinkle-partridge-9538.twil.io/assets/2b-CompanyDirectory.wav",
+				"speech_model": "default",
+				"speech_timeout": "auto",
+				"stop_gather": true,
+				"timeout": 5
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "log_event_directory"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "split_companyDir",
+			"properties": {
+				"input": "{{widgets.x2b-Company_Directory.Digits}}",
+				"offset": {
+					"x": 1060,
+					"y": 820
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch",
+					"next": "x2b-Company_Directory"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x2b-Company_Directory.Digits}}"],
+							"friendly_name": "1",
+							"type": "equal_to",
+							"value": "1"
+						}
+					],
+					"event": "match",
+					"next": "Lea_voicemail"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x2b-Company_Directory.Digits}}"],
+							"friendly_name": "2",
+							"type": "equal_to",
+							"value": "2"
+						}
+					],
+					"event": "match",
+					"next": "ClinicalMD_Vmail"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x2b-Company_Directory.Digits}}"],
+							"friendly_name": "3",
+							"type": "equal_to",
+							"value": "3"
+						}
+					],
+					"event": "match",
+					"next": "x3c-AccountsOps_Menu"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x2b-Company_Directory.Digits}}"],
+							"friendly_name": "0",
+							"type": "equal_to",
+							"value": "0"
+						}
+					],
+					"event": "match"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "Lea_voicemail",
+			"properties": {
+				"max_length": 3600,
+				"offset": {
+					"x": 320,
+					"y": 1370
+				},
+				"play_beep": "true",
+				"timeout": 5,
+				"transcribe": true,
+				"trim": "trim-silence"
+			},
+			"transitions": [
+				{
+					"event": "recordingComplete"
+				},
+				{
+					"event": "noAudio"
+				},
+				{
+					"event": "hangup"
+				}
+			],
+			"type": "record-voicemail"
+		},
+		{
+			"name": "ClinicalMD_Vmail",
+			"properties": {
+				"max_length": 3600,
+				"offset": {
+					"x": 990,
+					"y": 1120
+				},
+				"play_beep": "true",
+				"timeout": 5,
+				"transcribe": true,
+				"trim": "trim-silence"
+			},
+			"transitions": [
+				{
+					"event": "recordingComplete"
+				},
+				{
+					"event": "noAudio"
+				},
+				{
+					"event": "hangup"
+				}
+			],
+			"type": "record-voicemail"
+		},
+		{
+			"name": "x3c-AccountsOps_Menu",
+			"properties": {
+				"finish_on_key": "#",
+				"gather_language": "English (United States)",
+				"loop": 1,
+				"offset": {
+					"x": 1380,
+					"y": 1110
+				},
+				"play": "https://periwinkle-partridge-9538.twil.io/assets/3c-Accounts%20Greeting%20Menu%20(Elabs%20Will).mp3",
+				"speech_timeout": "auto",
+				"stop_gather": true,
+				"timeout": 5
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "log_event_accounts"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "split_accountsmenu_digits",
+			"properties": {
+				"input": "{{widgets.x3c-AccountsOps_Menu.Digits}}",
+				"offset": {
+					"x": 1120,
+					"y": 1390
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x3c-AccountsOps_Menu.Digits}}"],
+							"friendly_name": "1",
+							"type": "equal_to",
+							"value": "1"
+						}
+					],
+					"event": "match",
+					"next": "send_message_accounts"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x3c-AccountsOps_Menu.Digits}}"],
+							"friendly_name": "2",
+							"type": "equal_to",
+							"value": "2"
+						}
+					],
+					"event": "match",
+					"next": "record_voicemail_accounts"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x3c-AccountsOps_Menu.Digits}}"],
+							"friendly_name": "3",
+							"type": "equal_to",
+							"value": "3"
+						}
+					],
+					"event": "match",
+					"next": "connect_call_accounts"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "send_message_accounts",
+			"properties": {
+				"body": "(LeMedSpa) Thank you for reaching out. How can we help you?",
+				"channel": "{{trigger.message.ChannelSid}}",
+				"from": "{{flow.channel.address}}",
+				"message_type": "custom",
+				"offset": {
+					"x": 670,
+					"y": 1570
+				},
+				"service": "{{trigger.message.InstanceSid}}",
+				"to": "{{contact.channel.address}}"
+			},
+			"transitions": [
+				{
+					"event": "sent",
+					"next": "play_MsgSentGoodbye"
+				},
+				{
+					"event": "failed"
+				}
+			],
+			"type": "send-message"
+		},
+		{
+			"name": "record_voicemail_accounts",
+			"properties": {
+				"max_length": 3600,
+				"offset": {
+					"x": 1020,
+					"y": 1680
+				},
+				"play_beep": "true",
+				"timeout": 5,
+				"transcribe": true,
+				"trim": "trim-silence"
+			},
+			"transitions": [
+				{
+					"event": "recordingComplete"
+				},
+				{
+					"event": "noAudio"
+				},
+				{
+					"event": "hangup"
+				}
+			],
+			"type": "record-voicemail"
+		},
+		{
+			"name": "connect_call_accounts",
+			"properties": {
+				"caller_id": "{{contact.channel.address}}",
+				"noun": "number",
+				"offset": {
+					"x": 1390,
+					"y": 1640
+				},
+				"timeout": 30,
+				"to": "+12134442242"
+			},
+			"transitions": [
+				{
+					"event": "callCompleted"
+				},
+				{
+					"event": "hangup"
+				}
+			],
+			"type": "connect-call-to"
+		},
+		{
+			"name": "play_MsgSentGoodbye",
+			"properties": {
+				"loop": 1,
+				"offset": {
+					"x": 400,
+					"y": 1820
+				},
+				"play": "https://periwinkle-partridge-9538.twil.io/assets/1a1-messageSentGoodbye.wav"
+			},
+			"transitions": [
+				{
+					"event": "audioComplete",
+					"next": "fcn_NewSMSEmailNotify"
+				}
+			],
+			"type": "say-play"
+		},
+		{
+			"name": "redirect_FlexSIP",
+			"properties": {
+				"method": "GET",
+				"offset": {
+					"x": 2160,
+					"y": -160
+				},
+				"timeout": "14400",
+				"url": "https://handler.twilio.com/twiml/EH6dfadeabe0337c465b8b9b36c8082bea"
+			},
+			"transitions": [
+				{
+					"event": "return"
+				},
+				{
+					"event": "timeout"
+				},
+				{
+					"event": "fail"
+				}
+			],
+			"type": "add-twiml-redirect"
+		},
+		{
+			"name": "fcn_NewSMSEmailNotify",
+			"properties": {
+				"environment_sid": "ZE32489791a328b811b2e45667533353f3",
+				"function_sid": "ZH3376f7c025608bfc73d292d78badb026",
+				"offset": {
+					"x": 790,
+					"y": 2060
+				},
+				"service_sid": "ZS3a9508ce8846c9ac327f9968608b8004",
+				"url": "https://lmflex-1608.twil.io/NewSMSEmailNotify"
+			},
+			"transitions": [
+				{
+					"event": "success"
+				},
+				{
+					"event": "fail"
+				}
+			],
+			"type": "run-function"
+		},
+		{
+			"name": "connect_call_HighLevel",
+			"properties": {
+				"caller_id": "{{contact.channel.address}}",
+				"noun": "number",
+				"offset": {
+					"x": 1340,
+					"y": 550
+				},
+				"timeout": 30,
+				"to": "+18184632211"
+			},
+			"transitions": [
+				{
+					"event": "callCompleted"
+				},
+				{
+					"event": "hangup"
+				}
+			],
+			"type": "connect-call-to"
+		},
+		{
+			"name": "log_call_incoming",
+			"type": "make-http-request",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&From={{trigger.call.From}}&To={{trigger.call.To}}&CallStatus={{trigger.call.CallStatus}}&CallerName={{trigger.call.CallerName}}&CallerCity={{trigger.call.CallerCity}}&CallerState={{trigger.call.CallerState}}&CallerCountry={{trigger.call.CallerCountry}}&CallerZip={{trigger.call.CallerZip}}",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": -200,
+					"y": -140
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/incoming"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "x0a-MainGreetingMenu_Open"
+				},
+				{
+					"event": "failed",
+					"next": "x0a-MainGreetingMenu_Open"
+				}
+			]
+		},
+		{
+			"name": "log_event_main_menu",
+			"type": "make-http-request",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=main&digit={{widgets.x0a-MainGreetingMenu_Open.Digits}}",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 460,
+					"y": 200
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "split_digits_GreetingMenu"
+				},
+				{
+					"event": "failed",
+					"next": "split_digits_GreetingMenu"
+				}
+			]
+		},
+		{
+			"name": "log_event_directory",
+			"type": "make-http-request",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=directory&digit={{widgets.x2b-Company_Directory.Digits}}",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 860,
+					"y": 690
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "split_companyDir"
+				},
+				{
+					"event": "failed",
+					"next": "split_companyDir"
+				}
+			]
+		},
+		{
+			"name": "log_event_accounts",
+			"type": "make-http-request",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&event_type=menu_selection&menu=accounts&digit={{widgets.x3c-AccountsOps_Menu.Digits}}",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 1250,
+					"y": 1260
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "split_accountsmenu_digits"
+				},
+				{
+					"event": "failed",
+					"next": "split_accountsmenu_digits"
+				}
+			]
+		},
+		{
+			"name": "log_event_timeout",
+			"type": "make-http-request",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&event_type=timeout&menu=main&action=forward_to_operator",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 1140,
+					"y": 80
+				},
+				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "connect_call_HighLevel"
+				},
+				{
+					"event": "failed",
+					"next": "connect_call_HighLevel"
+				}
+			]
+		}
+	]
 }

@@ -27,142 +27,150 @@ const FROM_EMAIL = 'Le Med Spa <noreply@updates.lemedspa.com>';
  * @returns {Promise<{success: boolean, twilioSid?: string, conversationId?: string, error?: string}>}
  */
 export async function sendSms({ to, body, clientId, clientName, metadata }) {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  const fromNumber = process.env.TWILIO_SMS_FROM_NUMBER
-    || process.env.TWILIO_TEST1_PHONE_NUMBER
-    || process.env.TWILIO_PHONE_NUMBER
-    || process.env.TWILIO_MAIN_PHONE_NUMBER;
+	const accountSid = process.env.TWILIO_ACCOUNT_SID;
+	const authToken = process.env.TWILIO_AUTH_TOKEN;
+	const fromNumber =
+		process.env.TWILIO_SMS_FROM_NUMBER ||
+		process.env.TWILIO_TEST1_PHONE_NUMBER ||
+		process.env.TWILIO_PHONE_NUMBER ||
+		process.env.TWILIO_MAIN_PHONE_NUMBER;
 
-  if (!accountSid || !authToken) {
-    return { success: false, error: 'Twilio credentials not configured' };
-  }
-  if (!fromNumber) {
-    return { success: false, error: 'No Twilio phone number configured' };
-  }
+	if (!accountSid || !authToken) {
+		return { success: false, error: 'Twilio credentials not configured' };
+	}
+	if (!fromNumber) {
+		return { success: false, error: 'No Twilio phone number configured' };
+	}
 
-  // Normalize phone number
-  let toNumber = to.replace(/[^\d+]/g, '');
-  if (toNumber.length === 10) toNumber = '+1' + toNumber;
-  if (!toNumber.startsWith('+')) toNumber = '+' + toNumber;
+	// Normalize phone number
+	let toNumber = to.replace(/[^\d+]/g, '');
+	if (toNumber.length === 10) toNumber = '+1' + toNumber;
+	if (!toNumber.startsWith('+')) toNumber = '+' + toNumber;
 
-  try {
-    const client = new Twilio.Twilio(accountSid, authToken);
-    const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
-    const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+	try {
+		const client = new Twilio.Twilio(accountSid, authToken);
+		const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
+		const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
 
-    const twilioMsg = await client.messages.create({
-      to: toNumber,
-      from: fromNumber,
-      body,
-      ...(statusCallback && { statusCallback })
-    });
+		const twilioMsg = await client.messages.create({
+			to: toNumber,
+			from: fromNumber,
+			body,
+			...(statusCallback && { statusCallback })
+		});
 
-    // Record in conversations/messages so it appears in the Messages page
-    const conversationId = await recordOutboundMessage({
-      toNumber,
-      fromNumber,
-      body,
-      twilioSid: twilioMsg.sid,
-      status: twilioMsg.status || 'sent',
-      clientId,
-      clientName,
-      metadata
-    });
+		// Record in conversations/messages so it appears in the Messages page
+		const conversationId = await recordOutboundMessage({
+			toNumber,
+			fromNumber,
+			body,
+			twilioSid: twilioMsg.sid,
+			status: twilioMsg.status || 'sent',
+			clientId,
+			clientName,
+			metadata
+		});
 
-    return {
-      success: true,
-      twilioSid: twilioMsg.sid,
-      conversationId
-    };
-  } catch (err) {
-    console.error('Automation SMS send error:', err.message);
-    return { success: false, error: err.message };
-  }
+		return {
+			success: true,
+			twilioSid: twilioMsg.sid,
+			conversationId
+		};
+	} catch (err) {
+		console.error('Automation SMS send error:', err.message);
+		return { success: false, error: err.message };
+	}
 }
 
 /**
  * Record an outbound message in conversations + messages tables.
  * Finds or creates a conversation for the phone number.
  */
-async function recordOutboundMessage({ toNumber, fromNumber, body, twilioSid, status, clientId, clientName, metadata }) {
-  try {
-    // Find existing conversation by phone number
-    const { data: existing } = await supabaseAdmin
-      .from('conversations')
-      .select('id')
-      .eq('phone_number', toNumber)
-      .maybeSingle();
+async function recordOutboundMessage({
+	toNumber,
+	fromNumber,
+	body,
+	twilioSid,
+	status,
+	clientId,
+	clientName,
+	metadata
+}) {
+	try {
+		// Find existing conversation by phone number
+		const { data: existing } = await supabaseAdmin
+			.from('conversations')
+			.select('id')
+			.eq('phone_number', toNumber)
+			.maybeSingle();
 
-    let convId;
-    if (existing) {
-      convId = existing.id;
-    } else {
-      // Look up contact if clientId not provided
-      let contactId = clientId;
-      let displayName = clientName;
+		let convId;
+		if (existing) {
+			convId = existing.id;
+		} else {
+			// Look up contact if clientId not provided
+			let contactId = clientId;
+			let displayName = clientName;
 
-      if (!contactId) {
-        const phoneDigits = toNumber.replace(/\D/g, '');
-        const { data: contact } = await supabaseAdmin
-          .from('contacts')
-          .select('id, full_name')
-          .or(`phone_normalized.eq.${phoneDigits},phone.eq.${toNumber}`)
-          .limit(1)
-          .maybeSingle();
+			if (!contactId) {
+				const phoneDigits = toNumber.replace(/\D/g, '');
+				const { data: contact } = await supabaseAdmin
+					.from('contacts')
+					.select('id, full_name')
+					.or(`phone_normalized.eq.${phoneDigits},phone.eq.${toNumber}`)
+					.limit(1)
+					.maybeSingle();
 
-        if (contact) {
-          contactId = contact.id;
-          displayName = displayName || contact.full_name;
-        }
-      }
+				if (contact) {
+					contactId = contact.id;
+					displayName = displayName || contact.full_name;
+				}
+			}
 
-      const { data: newConv } = await supabaseAdmin
-        .from('conversations')
-        .insert({
-          phone_number: toNumber,
-          display_name: displayName || null,
-          contact_id: contactId || null,
-          last_message: body,
-          last_at: new Date().toISOString()
-        })
-        .select('id')
-        .single();
+			const { data: newConv } = await supabaseAdmin
+				.from('conversations')
+				.insert({
+					phone_number: toNumber,
+					display_name: displayName || null,
+					contact_id: contactId || null,
+					last_message: body,
+					last_at: new Date().toISOString()
+				})
+				.select('id')
+				.single();
 
-      convId = newConv?.id;
-    }
+			convId = newConv?.id;
+		}
 
-    if (!convId) return null;
+		if (!convId) return null;
 
-    // Insert message
-    await supabaseAdmin
-      .from('messages')
-      .insert({
-        conversation_id: convId,
-        direction: 'outbound',
-        body,
-        from_number: fromNumber,
-        to_number: toNumber,
-        twilio_sid: twilioSid,
-        status,
-        metadata: metadata || { source: 'automation' }
-      });
+		// Insert message
+		await supabaseAdmin.from('messages').insert({
+			conversation_id: convId,
+			direction: 'outbound',
+			body,
+			from_number: fromNumber,
+			to_number: toNumber,
+			twilio_sid: twilioSid,
+			status,
+			metadata: metadata || { source: 'automation' }
+		});
 
-    // Update conversation last_message
-    await supabaseAdmin
-      .from('conversations')
-      .update({
-        last_message: body,
-        last_at: new Date().toISOString(),
-        status: 'active'
-      })
-      .eq('id', convId);
+		// Update conversation last_message
+		await supabaseAdmin
+			.from('conversations')
+			.update({
+				last_message: body,
+				last_at: new Date().toISOString(),
+				status: 'active'
+			})
+			.eq('id', convId);
 
-    return convId;
-  } catch (err) {
-    console.error('Failed to record outbound message:', err.message);
-    return null;
-  }
+		return convId;
+	} catch (err) {
+		console.error('Failed to record outbound message:', err.message);
+		return null;
+	}
 }
 
 // ============================================================================
@@ -180,39 +188,39 @@ async function recordOutboundMessage({ toNumber, fromNumber, body, twilioSid, st
  * @returns {Promise<{success: boolean, resendId?: string, error?: string}>}
  */
 export async function sendEmail({ to, subject, html, text }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return { success: false, error: 'RESEND_API_KEY not configured' };
-  }
+	const apiKey = process.env.RESEND_API_KEY;
+	if (!apiKey) {
+		return { success: false, error: 'RESEND_API_KEY not configured' };
+	}
 
-  try {
-    const response = await fetch(RESEND_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [to],
-        subject,
-        html,
-        ...(text && { text })
-      })
-    });
+	try {
+		const response = await fetch(RESEND_API_URL, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				from: FROM_EMAIL,
+				to: [to],
+				subject,
+				html,
+				...(text && { text })
+			})
+		});
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('Resend API error:', response.status, errorBody);
-      return { success: false, error: `Email send failed: ${response.status}` };
-    }
+		if (!response.ok) {
+			const errorBody = await response.text();
+			console.error('Resend API error:', response.status, errorBody);
+			return { success: false, error: `Email send failed: ${response.status}` };
+		}
 
-    const data = await response.json();
-    return { success: true, resendId: data.id };
-  } catch (err) {
-    console.error('Automation email send error:', err.message);
-    return { success: false, error: err.message };
-  }
+		const data = await response.json();
+		return { success: true, resendId: data.id };
+	} catch (err) {
+		console.error('Automation email send error:', err.message);
+		return { success: false, error: err.message };
+	}
 }
 
 // ============================================================================
@@ -228,21 +236,19 @@ export async function sendEmail({ to, subject, html, text }) {
  * 3. Generic fallback with sequence name
  */
 function buildSmsBody(sequence, content, client) {
-  const name = client.full_name?.split(' ')[0] || 'there';
+	const name = client.full_name?.split(' ')[0] || 'there';
 
-  if (sequence.message_body) {
-    return sequence.message_body
-      .replace(/\{name\}/gi, name)
-      .replace(/\{first_name\}/gi, name);
-  }
+	if (sequence.message_body) {
+		return sequence.message_body.replace(/\{name\}/gi, name).replace(/\{first_name\}/gi, name);
+	}
 
-  if (content?.summary) {
-    return `Hi ${name}, ${content.summary}`;
-  }
+	if (content?.summary) {
+		return `Hi ${name}, ${content.summary}`;
+	}
 
-  // Generic fallback
-  const label = sequence.name || 'your upcoming appointment';
-  return `Hi ${name}, this is Le Med Spa with important information about ${label}. Questions? Call us at 818-4MEDSPA.`;
+	// Generic fallback
+	const label = sequence.name || 'your upcoming appointment';
+	return `Hi ${name}, this is Le Med Spa with important information about ${label}. Questions? Call us at 818-4MEDSPA.`;
 }
 
 /**
@@ -252,18 +258,20 @@ function buildSmsBody(sequence, content, client) {
  * Otherwise falls back to a simple text email.
  */
 function buildEmailHtml(sequence, content, client) {
-  const name = client.full_name?.split(' ')[0] || 'there';
-  const sections = content?.content_json || [];
+	const name = client.full_name?.split(' ')[0] || 'there';
+	const sections = content?.content_json || [];
 
-  // Gold color palette matching the app
-  const gold = '#c5a55a';
-  const darkBg = '#0a0a0c';
-  const lightText = '#e8e0d0';
+	// Gold color palette matching the app
+	const gold = '#c5a55a';
+	const darkBg = '#0a0a0c';
+	const lightText = '#e8e0d0';
 
-  let sectionsHtml = '';
+	let sectionsHtml = '';
 
-  if (sections.length > 0) {
-    sectionsHtml = sections.map(s => `
+	if (sections.length > 0) {
+		sectionsHtml = sections
+			.map(
+				(s) => `
       <div style="margin-bottom: 24px;">
         <h3 style="color: ${gold}; font-family: 'Georgia', serif; font-size: 16px; margin-bottom: 8px; font-weight: normal;">
           ${s.heading}
@@ -272,20 +280,22 @@ function buildEmailHtml(sequence, content, client) {
           ${s.body}
         </p>
       </div>
-    `).join('');
-  } else if (sequence.message_body) {
-    sectionsHtml = `
+    `
+			)
+			.join('');
+	} else if (sequence.message_body) {
+		sectionsHtml = `
       <div style="margin-bottom: 24px;">
         <p style="color: ${lightText}; font-size: 14px; line-height: 1.7; margin: 0;">
           ${sequence.message_body.replace(/\{name\}/gi, name).replace(/\{first_name\}/gi, name)}
         </p>
       </div>
     `;
-  }
+	}
 
-  const title = content?.title || sequence.subject_line || sequence.name;
+	const title = content?.title || sequence.subject_line || sequence.name;
 
-  return `
+	return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -343,9 +353,9 @@ function buildEmailHtml(sequence, content, client) {
  * Build email subject line from a sequence + optional content block.
  */
 function buildEmailSubject(sequence, content) {
-  if (sequence.subject_line) return sequence.subject_line;
-  if (content?.title) return `Le Med Spa — ${content.title}`;
-  return `Le Med Spa — ${sequence.name}`;
+	if (sequence.subject_line) return sequence.subject_line;
+	if (content?.title) return `Le Med Spa — ${content.title}`;
+	return `Le Med Spa — ${sequence.name}`;
 }
 
 // ============================================================================
@@ -364,131 +374,133 @@ function buildEmailSubject(sequence, content) {
  * @returns {Promise<{smsResult?: object, emailResult?: object, logEntries: object[]}>}
  */
 export async function executeSequence({ sequence, client, content, triggeredBy, manual = false }) {
-  const results = { logEntries: [] };
+	const results = { logEntries: [] };
 
-  // Determine which channels to send on
-  const channels = [];
-  if (sequence.channel === 'sms' || sequence.channel === 'both') {
-    if (client.phone) channels.push('sms');
-  }
-  if (sequence.channel === 'email' || sequence.channel === 'both') {
-    if (client.email) channels.push('email');
-  }
+	// Determine which channels to send on
+	const channels = [];
+	if (sequence.channel === 'sms' || sequence.channel === 'both') {
+		if (client.phone) channels.push('sms');
+	}
+	if (sequence.channel === 'email' || sequence.channel === 'both') {
+		if (client.email) channels.push('email');
+	}
 
-  if (channels.length === 0) {
-    console.warn(`executeSequence: No valid channels for client ${client.id} (phone: ${!!client.phone}, email: ${!!client.email})`);
-    // Log as failed — no valid contact method
-    const { data: logEntry } = await supabaseAdmin
-      .from('automation_log')
-      .insert({
-        client_id: client.id,
-        sequence_id: sequence.id,
-        channel: sequence.channel === 'both' ? 'sms' : sequence.channel,
-        status: 'failed',
-        scheduled_at: new Date().toISOString(),
-        sent_at: new Date().toISOString(),
-        metadata: {
-          triggered_by: triggeredBy,
-          manual,
-          error: 'No valid contact method (missing phone/email)',
-          client_name: client.full_name,
-          sequence_name: sequence.name
-        }
-      })
-      .select()
-      .single();
+	if (channels.length === 0) {
+		console.warn(
+			`executeSequence: No valid channels for client ${client.id} (phone: ${!!client.phone}, email: ${!!client.email})`
+		);
+		// Log as failed — no valid contact method
+		const { data: logEntry } = await supabaseAdmin
+			.from('automation_log')
+			.insert({
+				client_id: client.id,
+				sequence_id: sequence.id,
+				channel: sequence.channel === 'both' ? 'sms' : sequence.channel,
+				status: 'failed',
+				scheduled_at: new Date().toISOString(),
+				sent_at: new Date().toISOString(),
+				metadata: {
+					triggered_by: triggeredBy,
+					manual,
+					error: 'No valid contact method (missing phone/email)',
+					client_name: client.full_name,
+					sequence_name: sequence.name
+				}
+			})
+			.select()
+			.single();
 
-    if (logEntry) results.logEntries.push(logEntry);
-    return results;
-  }
+		if (logEntry) results.logEntries.push(logEntry);
+		return results;
+	}
 
-  // Send SMS
-  if (channels.includes('sms')) {
-    const smsBody = buildSmsBody(sequence, content, client);
+	// Send SMS
+	if (channels.includes('sms')) {
+		const smsBody = buildSmsBody(sequence, content, client);
 
-    const smsResult = await sendSms({
-      to: client.phone,
-      body: smsBody,
-      clientId: client.id,
-      clientName: client.full_name,
-      metadata: {
-        source: 'automation',
-        sequence_id: sequence.id,
-        sequence_name: sequence.name,
-        content_ref: sequence.content_ref || null,
-        manual
-      }
-    });
+		const smsResult = await sendSms({
+			to: client.phone,
+			body: smsBody,
+			clientId: client.id,
+			clientName: client.full_name,
+			metadata: {
+				source: 'automation',
+				sequence_id: sequence.id,
+				sequence_name: sequence.name,
+				content_ref: sequence.content_ref || null,
+				manual
+			}
+		});
 
-    results.smsResult = smsResult;
+		results.smsResult = smsResult;
 
-    // Log
-    const { data: logEntry } = await supabaseAdmin
-      .from('automation_log')
-      .insert({
-        client_id: client.id,
-        sequence_id: sequence.id,
-        channel: 'sms',
-        status: smsResult.success ? 'sent' : 'failed',
-        scheduled_at: new Date().toISOString(),
-        sent_at: smsResult.success ? new Date().toISOString() : null,
-        metadata: {
-          triggered_by: triggeredBy,
-          manual,
-          twilio_sid: smsResult.twilioSid || null,
-          conversation_id: smsResult.conversationId || null,
-          error: smsResult.error || null,
-          client_name: client.full_name,
-          sequence_name: sequence.name,
-          sms_body_preview: smsBody.slice(0, 100)
-        }
-      })
-      .select()
-      .single();
+		// Log
+		const { data: logEntry } = await supabaseAdmin
+			.from('automation_log')
+			.insert({
+				client_id: client.id,
+				sequence_id: sequence.id,
+				channel: 'sms',
+				status: smsResult.success ? 'sent' : 'failed',
+				scheduled_at: new Date().toISOString(),
+				sent_at: smsResult.success ? new Date().toISOString() : null,
+				metadata: {
+					triggered_by: triggeredBy,
+					manual,
+					twilio_sid: smsResult.twilioSid || null,
+					conversation_id: smsResult.conversationId || null,
+					error: smsResult.error || null,
+					client_name: client.full_name,
+					sequence_name: sequence.name,
+					sms_body_preview: smsBody.slice(0, 100)
+				}
+			})
+			.select()
+			.single();
 
-    if (logEntry) results.logEntries.push(logEntry);
-  }
+		if (logEntry) results.logEntries.push(logEntry);
+	}
 
-  // Send Email
-  if (channels.includes('email')) {
-    const subject = buildEmailSubject(sequence, content);
-    const html = buildEmailHtml(sequence, content, client);
+	// Send Email
+	if (channels.includes('email')) {
+		const subject = buildEmailSubject(sequence, content);
+		const html = buildEmailHtml(sequence, content, client);
 
-    const emailResult = await sendEmail({
-      to: client.email,
-      subject,
-      html
-    });
+		const emailResult = await sendEmail({
+			to: client.email,
+			subject,
+			html
+		});
 
-    results.emailResult = emailResult;
+		results.emailResult = emailResult;
 
-    // Log
-    const { data: logEntry } = await supabaseAdmin
-      .from('automation_log')
-      .insert({
-        client_id: client.id,
-        sequence_id: sequence.id,
-        channel: 'email',
-        status: emailResult.success ? 'sent' : 'failed',
-        scheduled_at: new Date().toISOString(),
-        sent_at: emailResult.success ? new Date().toISOString() : null,
-        metadata: {
-          triggered_by: triggeredBy,
-          manual,
-          resend_id: emailResult.resendId || null,
-          error: emailResult.error || null,
-          client_name: client.full_name,
-          sequence_name: sequence.name,
-          email_subject: subject
-        }
-      })
-      .select()
-      .single();
+		// Log
+		const { data: logEntry } = await supabaseAdmin
+			.from('automation_log')
+			.insert({
+				client_id: client.id,
+				sequence_id: sequence.id,
+				channel: 'email',
+				status: emailResult.success ? 'sent' : 'failed',
+				scheduled_at: new Date().toISOString(),
+				sent_at: emailResult.success ? new Date().toISOString() : null,
+				metadata: {
+					triggered_by: triggeredBy,
+					manual,
+					resend_id: emailResult.resendId || null,
+					error: emailResult.error || null,
+					client_name: client.full_name,
+					sequence_name: sequence.name,
+					email_subject: subject
+				}
+			})
+			.select()
+			.single();
 
-    if (logEntry) results.logEntries.push(logEntry);
-  }
+		if (logEntry) results.logEntries.push(logEntry);
+	}
 
-  return results;
+	return results;
 }
 
 // ============================================================================
@@ -505,129 +517,129 @@ export async function executeSequence({ sequence, client, content, triggeredBy, 
  * @returns {Promise<{processed: number, sent: number, failed: number}>}
  */
 export async function processScheduledAutomation() {
-  const now = new Date().toISOString();
+	const now = new Date().toISOString();
 
-  // Get all scheduled entries that are due
-  const { data: pending, error } = await supabaseAdmin
-    .from('automation_log')
-    .select(`
+	// Get all scheduled entries that are due
+	const { data: pending, error } = await supabaseAdmin
+		.from('automation_log')
+		.select(
+			`
       *,
       sequence:automation_sequences(
         *,
         content:service_content(id, title, content_type, summary, content_json)
       )
-    `)
-    .eq('status', 'scheduled')
-    .lte('scheduled_at', now)
-    .order('scheduled_at', { ascending: true })
-    .limit(50); // Process in batches
+    `
+		)
+		.eq('status', 'scheduled')
+		.lte('scheduled_at', now)
+		.order('scheduled_at', { ascending: true })
+		.limit(50); // Process in batches
 
-  if (error || !pending || pending.length === 0) {
-    return { processed: 0, sent: 0, failed: 0 };
-  }
+	if (error || !pending || pending.length === 0) {
+		return { processed: 0, sent: 0, failed: 0 };
+	}
 
-  let sent = 0;
-  let failed = 0;
+	let sent = 0;
+	let failed = 0;
 
-  for (const entry of pending) {
-    // Get client
-    const { data: client } = await supabaseAdmin
-      .from('contacts')
-      .select('id, full_name, phone, email')
-      .eq('id', entry.client_id)
-      .single();
+	for (const entry of pending) {
+		// Get client
+		const { data: client } = await supabaseAdmin
+			.from('contacts')
+			.select('id, full_name, phone, email')
+			.eq('id', entry.client_id)
+			.single();
 
-    if (!client) {
-      // Mark as failed — client not found
-      await supabaseAdmin
-        .from('automation_log')
-        .update({
-          status: 'failed',
-          metadata: { ...entry.metadata, error: 'Client not found' }
-        })
-        .eq('id', entry.id);
-      failed++;
-      continue;
-    }
+		if (!client) {
+			// Mark as failed — client not found
+			await supabaseAdmin
+				.from('automation_log')
+				.update({
+					status: 'failed',
+					metadata: { ...entry.metadata, error: 'Client not found' }
+				})
+				.eq('id', entry.id);
+			failed++;
+			continue;
+		}
 
-    const sequence = entry.sequence;
-    if (!sequence) {
-      await supabaseAdmin
-        .from('automation_log')
-        .update({
-          status: 'failed',
-          metadata: { ...entry.metadata, error: 'Sequence not found' }
-        })
-        .eq('id', entry.id);
-      failed++;
-      continue;
-    }
+		const sequence = entry.sequence;
+		if (!sequence) {
+			await supabaseAdmin
+				.from('automation_log')
+				.update({
+					status: 'failed',
+					metadata: { ...entry.metadata, error: 'Sequence not found' }
+				})
+				.eq('id', entry.id);
+			failed++;
+			continue;
+		}
 
-    // Determine channel from original log entry
-    const channel = entry.channel;
-    let success = false;
+		// Determine channel from original log entry
+		const channel = entry.channel;
+		let success = false;
 
-    if (channel === 'sms' && client.phone) {
-      const smsBody = buildSmsBody(sequence, sequence.content, client);
-      const result = await sendSms({
-        to: client.phone,
-        body: smsBody,
-        clientId: client.id,
-        clientName: client.full_name,
-        metadata: {
-          source: 'automation',
-          sequence_id: sequence.id,
-          batch_processed: true
-        }
-      });
-      success = result.success;
+		if (channel === 'sms' && client.phone) {
+			const smsBody = buildSmsBody(sequence, sequence.content, client);
+			const result = await sendSms({
+				to: client.phone,
+				body: smsBody,
+				clientId: client.id,
+				clientName: client.full_name,
+				metadata: {
+					source: 'automation',
+					sequence_id: sequence.id,
+					batch_processed: true
+				}
+			});
+			success = result.success;
 
-      await supabaseAdmin
-        .from('automation_log')
-        .update({
-          status: success ? 'sent' : 'failed',
-          sent_at: success ? new Date().toISOString() : null,
-          metadata: {
-            ...entry.metadata,
-            twilio_sid: result.twilioSid || null,
-            conversation_id: result.conversationId || null,
-            error: result.error || null
-          }
-        })
-        .eq('id', entry.id);
+			await supabaseAdmin
+				.from('automation_log')
+				.update({
+					status: success ? 'sent' : 'failed',
+					sent_at: success ? new Date().toISOString() : null,
+					metadata: {
+						...entry.metadata,
+						twilio_sid: result.twilioSid || null,
+						conversation_id: result.conversationId || null,
+						error: result.error || null
+					}
+				})
+				.eq('id', entry.id);
+		} else if (channel === 'email' && client.email) {
+			const subject = buildEmailSubject(sequence, sequence.content);
+			const html = buildEmailHtml(sequence, sequence.content, client);
+			const result = await sendEmail({ to: client.email, subject, html });
+			success = result.success;
 
-    } else if (channel === 'email' && client.email) {
-      const subject = buildEmailSubject(sequence, sequence.content);
-      const html = buildEmailHtml(sequence, sequence.content, client);
-      const result = await sendEmail({ to: client.email, subject, html });
-      success = result.success;
+			await supabaseAdmin
+				.from('automation_log')
+				.update({
+					status: success ? 'sent' : 'failed',
+					sent_at: success ? new Date().toISOString() : null,
+					metadata: {
+						...entry.metadata,
+						resend_id: result.resendId || null,
+						error: result.error || null
+					}
+				})
+				.eq('id', entry.id);
+		} else {
+			await supabaseAdmin
+				.from('automation_log')
+				.update({
+					status: 'failed',
+					metadata: { ...entry.metadata, error: `No ${channel} contact method available` }
+				})
+				.eq('id', entry.id);
+		}
 
-      await supabaseAdmin
-        .from('automation_log')
-        .update({
-          status: success ? 'sent' : 'failed',
-          sent_at: success ? new Date().toISOString() : null,
-          metadata: {
-            ...entry.metadata,
-            resend_id: result.resendId || null,
-            error: result.error || null
-          }
-        })
-        .eq('id', entry.id);
+		if (success) sent++;
+		else failed++;
+	}
 
-    } else {
-      await supabaseAdmin
-        .from('automation_log')
-        .update({
-          status: 'failed',
-          metadata: { ...entry.metadata, error: `No ${channel} contact method available` }
-        })
-        .eq('id', entry.id);
-    }
-
-    if (success) sent++;
-    else failed++;
-  }
-
-  return { processed: pending.length, sent, failed };
+	return { processed: pending.length, sent, failed };
 }

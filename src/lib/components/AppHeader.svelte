@@ -23,7 +23,10 @@
 		try {
 			const res = await api('/api/settings');
 			const hours = res.data?.business_hours;
-			if (!hours) { clinicOpen = null; return; }
+			if (!hours) {
+				clinicOpen = null;
+				return;
+			}
 
 			const now = new Date();
 			const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -89,8 +92,16 @@
 	{#if clinicOpen !== null}
 		<div class="flex items-center gap-2 px-2">
 			<div class="flex items-center gap-1.5">
-				<div class="h-2 w-2 rounded-full {clinicOpen ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]' : 'bg-[rgba(255,255,255,0.15)]'}"></div>
-				<span class="text-[11px] font-medium {clinicOpen ? 'text-emerald-400/80' : 'text-[rgba(255,255,255,0.3)]'}">
+				<div
+					class="h-2 w-2 rounded-full {clinicOpen
+						? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]'
+						: 'bg-[rgba(255,255,255,0.15)]'}"
+				></div>
+				<span
+					class="text-[11px] font-medium {clinicOpen
+						? 'text-emerald-400/80'
+						: 'text-[rgba(255,255,255,0.3)]'}"
+				>
 					{clinicOpen ? 'Open' : 'Closed'}
 				</span>
 			</div>
@@ -103,7 +114,12 @@
 	<div class="flex-1"></div>
 
 	<!-- Quick dial -->
-	<Button variant="ghost" size="sm" class="h-8 gap-1.5 text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A]" onclick={() => goto('/softphone')}>
+	<Button
+		variant="ghost"
+		size="sm"
+		class="h-8 gap-1.5 text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A]"
+		onclick={() => goto('/softphone')}
+	>
 		<Phone class="h-3.5 w-3.5" />
 		<span class="text-xs hidden sm:inline">Dial</span>
 	</Button>

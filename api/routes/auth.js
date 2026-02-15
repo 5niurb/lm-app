@@ -10,27 +10,27 @@ const router = Router();
  * Body: { email: string, password: string }
  */
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+	const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
+	if (!email || !password) {
+		return res.status(400).json({ error: 'Email and password are required' });
+	}
 
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+	try {
+		const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      return res.status(401).json({ error: error.message });
-    }
+		if (error) {
+			return res.status(401).json({ error: error.message });
+		}
 
-    return res.json({
-      session: data.session,
-      user: data.user
-    });
-  } catch (err) {
-    console.error('Login error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+		return res.json({
+			session: data.session,
+			user: data.user
+		});
+	} catch (err) {
+		console.error('Login error:', err);
+		return res.status(500).json({ error: 'Internal server error' });
+	}
 });
 
 /**
@@ -40,23 +40,23 @@ router.post('/login', async (req, res) => {
  * Skeleton: currently accepts '000000' as valid OTP for development.
  */
 router.post('/verify-otp', async (req, res) => {
-  const { email, otp } = req.body;
+	const { email, otp } = req.body;
 
-  if (!email || !otp) {
-    return res.status(400).json({ error: 'Email and OTP are required' });
-  }
+	if (!email || !otp) {
+		return res.status(400).json({ error: 'Email and OTP are required' });
+	}
 
-  // Skeleton OTP verification — accepts '000000' for development
-  // TODO: Replace with real OTP verification (check against stored OTP + expiry)
-  if (otp !== '000000') {
-    return res.status(401).json({ error: 'Invalid or expired OTP' });
-  }
+	// Skeleton OTP verification — accepts '000000' for development
+	// TODO: Replace with real OTP verification (check against stored OTP + expiry)
+	if (otp !== '000000') {
+		return res.status(401).json({ error: 'Invalid or expired OTP' });
+	}
 
-  return res.json({
-    success: true,
-    message: 'OTP verified successfully',
-    email
-  });
+	return res.json({
+		success: true,
+		message: 'OTP verified successfully',
+		email
+	});
 });
 
 /**
@@ -64,19 +64,19 @@ router.post('/verify-otp', async (req, res) => {
  * Sign out the current user session.
  */
 router.post('/logout', async (req, res) => {
-  try {
-    const { error } = await supabase.auth.signOut();
+	try {
+		const { error } = await supabase.auth.signOut();
 
-    if (error) {
-      console.error('Logout error:', error.message);
-      return res.status(500).json({ error: 'Logout failed' });
-    }
+		if (error) {
+			console.error('Logout error:', error.message);
+			return res.status(500).json({ error: 'Logout failed' });
+		}
 
-    return res.json({ success: true, message: 'Logged out successfully' });
-  } catch (err) {
-    console.error('Logout error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+		return res.json({ success: true, message: 'Logged out successfully' });
+	} catch (err) {
+		console.error('Logout error:', err);
+		return res.status(500).json({ error: 'Internal server error' });
+	}
 });
 
 /**
@@ -85,9 +85,9 @@ router.post('/logout', async (req, res) => {
  * Requires valid Bearer token (verifyToken middleware).
  */
 router.get('/session', verifyToken, (req, res) => {
-  return res.json({
-    user: req.user
-  });
+	return res.json({
+		user: req.user
+	});
 });
 
 export default router;

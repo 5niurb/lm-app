@@ -46,12 +46,17 @@
 	};
 
 	function typeIcon(type) {
-		switch(type) {
-			case 'pre_instructions': return '📋';
-			case 'post_instructions': return '💛';
-			case 'faq': return '❓';
-			case 'consent_form': return '📝';
-			default: return '✨';
+		switch (type) {
+			case 'pre_instructions':
+				return '📋';
+			case 'post_instructions':
+				return '💛';
+			case 'faq':
+				return '❓';
+			case 'consent_form':
+				return '📝';
+			default:
+				return '✨';
 		}
 	}
 </script>
@@ -59,12 +64,18 @@
 <svelte:head>
 	{#if content}
 		<title>{content.title} — Le Med Spa</title>
-		<meta name="description" content={content.summary || `${content.title} at Le Med Spa, Encino CA`} />
+		<meta
+			name="description"
+			content={content.summary || `${content.title} at Le Med Spa, Encino CA`}
+		/>
 	{:else}
 		<title>Care Instructions — Le Med Spa</title>
 	{/if}
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link
+		href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap"
+		rel="stylesheet"
+	/>
 </svelte:head>
 
 <div class="care-page">
@@ -99,7 +110,9 @@
 		<!-- Content type badge -->
 		<div class="type-badge">
 			<span class="type-icon">{typeIcon(content.content_type)}</span>
-			<span class="type-label">{contentTypeLabel[content.content_type] || content.content_type}</span>
+			<span class="type-label"
+				>{contentTypeLabel[content.content_type] || content.content_type}</span
+			>
 		</div>
 
 		<!-- Title -->
@@ -160,7 +173,11 @@
 		min-height: 100vh;
 		background: #0a0a0c;
 		color: #e8e0d0;
-		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		font-family:
+			'Inter',
+			-apple-system,
+			BlinkMacSystemFont,
+			sans-serif;
 		padding: 0 16px;
 		max-width: 680px;
 		margin: 0 auto;
@@ -174,21 +191,23 @@
 		justify-content: center;
 		min-height: 60vh;
 		gap: 16px;
-		color: rgba(255,255,255,0.3);
+		color: rgba(255, 255, 255, 0.3);
 		font-size: 14px;
 	}
 
 	.loading-spinner {
 		width: 32px;
 		height: 32px;
-		border: 2px solid rgba(197,165,90,0.15);
+		border: 2px solid rgba(197, 165, 90, 0.15);
 		border-top-color: #c5a55a;
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	/* Error */
@@ -215,7 +234,7 @@
 	}
 
 	.error-container p {
-		color: rgba(255,255,255,0.4);
+		color: rgba(255, 255, 255, 0.4);
 		font-size: 14px;
 		max-width: 320px;
 	}
@@ -239,7 +258,7 @@
 	.care-header {
 		padding: 32px 0 24px;
 		text-align: center;
-		border-bottom: 1px solid rgba(197,165,90,0.12);
+		border-bottom: 1px solid rgba(197, 165, 90, 0.12);
 		margin-bottom: 32px;
 	}
 
@@ -261,7 +280,7 @@
 		display: block;
 		font-size: 9px;
 		letter-spacing: 3px;
-		color: rgba(255,255,255,0.25);
+		color: rgba(255, 255, 255, 0.25);
 		margin-top: 6px;
 	}
 
@@ -271,9 +290,9 @@
 		align-items: center;
 		gap: 8px;
 		padding: 6px 14px;
-		border: 1px solid rgba(197,165,90,0.15);
+		border: 1px solid rgba(197, 165, 90, 0.15);
 		border-radius: 20px;
-		background: rgba(197,165,90,0.04);
+		background: rgba(197, 165, 90, 0.04);
 		margin-bottom: 16px;
 	}
 
@@ -285,7 +304,7 @@
 		font-size: 11px;
 		letter-spacing: 1px;
 		text-transform: uppercase;
-		color: rgba(197,165,90,0.7);
+		color: rgba(197, 165, 90, 0.7);
 	}
 
 	/* Title */
@@ -300,7 +319,7 @@
 
 	.service-name {
 		font-size: 14px;
-		color: rgba(197,165,90,0.5);
+		color: rgba(197, 165, 90, 0.5);
 		margin: 0 0 32px;
 	}
 
@@ -315,13 +334,15 @@
 		display: flex;
 		gap: 16px;
 		padding: 24px 0;
-		border-bottom: 1px solid rgba(255,255,255,0.04);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 		animation: fadeIn 0.4s ease-out forwards;
 		opacity: 0;
 	}
 
 	@keyframes fadeIn {
-		to { opacity: 1; }
+		to {
+			opacity: 1;
+		}
 	}
 
 	.section:last-child {
@@ -333,8 +354,8 @@
 		width: 28px;
 		height: 28px;
 		border-radius: 50%;
-		background: rgba(197,165,90,0.08);
-		border: 1px solid rgba(197,165,90,0.15);
+		background: rgba(197, 165, 90, 0.08);
+		border: 1px solid rgba(197, 165, 90, 0.15);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -360,7 +381,7 @@
 	.section-body {
 		font-size: 14px;
 		line-height: 1.75;
-		color: rgba(255,255,255,0.65);
+		color: rgba(255, 255, 255, 0.65);
 		margin: 0;
 	}
 
@@ -368,13 +389,13 @@
 	.care-footer {
 		margin-top: 48px;
 		padding: 32px 0;
-		border-top: 1px solid rgba(197,165,90,0.12);
+		border-top: 1px solid rgba(197, 165, 90, 0.12);
 		text-align: center;
 	}
 
 	.contact-card {
-		background: rgba(197,165,90,0.04);
-		border: 1px solid rgba(197,165,90,0.12);
+		background: rgba(197, 165, 90, 0.04);
+		border: 1px solid rgba(197, 165, 90, 0.12);
 		border-radius: 12px;
 		padding: 24px;
 		margin-bottom: 24px;
@@ -382,7 +403,7 @@
 
 	.contact-label {
 		font-size: 13px;
-		color: rgba(255,255,255,0.4);
+		color: rgba(255, 255, 255, 0.4);
 		margin: 0 0 8px;
 	}
 
@@ -401,13 +422,13 @@
 
 	.phone-full {
 		font-size: 12px;
-		color: rgba(255,255,255,0.25);
+		color: rgba(255, 255, 255, 0.25);
 		margin: 0;
 	}
 
 	.address {
 		font-size: 13px;
-		color: rgba(255,255,255,0.3);
+		color: rgba(255, 255, 255, 0.3);
 		margin-bottom: 16px;
 		line-height: 1.6;
 	}
@@ -426,7 +447,7 @@
 
 	.footer-links a {
 		font-size: 12px;
-		color: rgba(197,165,90,0.5);
+		color: rgba(197, 165, 90, 0.5);
 		text-decoration: none;
 	}
 
@@ -435,13 +456,13 @@
 	}
 
 	.dot {
-		color: rgba(255,255,255,0.15);
+		color: rgba(255, 255, 255, 0.15);
 		font-size: 10px;
 	}
 
 	.trademark {
 		font-size: 10px;
-		color: rgba(255,255,255,0.15);
+		color: rgba(255, 255, 255, 0.15);
 		margin: 0;
 	}
 

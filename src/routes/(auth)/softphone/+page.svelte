@@ -5,8 +5,14 @@
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import {
-		Phone, PhoneOff, PhoneIncoming, PhoneOutgoing,
-		Mic, MicOff, Headset, Clock
+		Phone,
+		PhoneOff,
+		PhoneIncoming,
+		PhoneOutgoing,
+		Mic,
+		MicOff,
+		Headset,
+		Clock
 	} from '@lucide/svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { formatPhone } from '$lib/utils/formatters.js';
@@ -109,7 +115,22 @@
 		}
 	}
 
+	/** @type {string|null} Phone number from URL ?call= param — triggers auto-dial once device registers */
+	let pendingCall = $state(null);
+
 	onMount(() => {
+		// Check for ?call= URL parameter (from contacts/calls quick action)
+		const params = new URLSearchParams(window.location.search);
+		const callParam = params.get('call');
+		if (callParam) {
+			dialNumber = callParam;
+			pendingCall = callParam;
+			// Clean the URL so refresh doesn't re-trigger
+			const url = new URL(window.location.href);
+			url.searchParams.delete('call');
+			window.history.replaceState({}, '', url.pathname);
+		}
+
 		// Auto-connect to Twilio on page load — no manual "Connect" button needed.
 		// Registering with Twilio's signaling server costs nothing; bandwidth is only
 		// used when an actual call happens.
@@ -193,10 +214,13 @@
 				statusMessage = 'Requesting microphone access...';
 				const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 				// Release the stream — we just needed the permission
-				stream.getTracks().forEach(t => t.stop());
+				stream.getTracks().forEach((t) => t.stop());
 			} catch (micErr) {
 				if (micErr.name === 'NotAllowedError' || micErr.name === 'PermissionDeniedError') {
-					throw new Error('Microphone permission denied. Please allow microphone access in your browser settings.');
+					throw new Error(
+						'Microphone permission denied. Please allow microphone access in your browser settings.',
+						{ cause: micErr }
+					);
 				}
 				console.warn('Mic permission check:', micErr.message);
 			}
@@ -218,6 +242,13 @@
 				statusMessage = 'Ready — listening for calls';
 				isConnecting = false;
 				addToHistory('system', 'Connected to Twilio');
+
+				// Auto-dial if we arrived via ?call= parameter
+				if (pendingCall && dialNumber) {
+					pendingCall = null;
+					// Short delay so the UI can render the "Ready" state first
+					setTimeout(() => makeCall(), 300);
+				}
 			});
 
 			device.on('error', (error) => {
@@ -280,7 +311,6 @@
 
 			// Register the device with Twilio to start receiving calls
 			device.register();
-
 		} catch (err) {
 			console.error('Failed to connect:', err);
 			errorMessage = err.message;
@@ -326,7 +356,8 @@
 		} catch (err) {
 			console.error('Failed to answer call:', err);
 			if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-				errorMessage = 'Microphone permission denied. Please allow microphone access and try again.';
+				errorMessage =
+					'Microphone permission denied. Please allow microphone access and try again.';
 			} else {
 				errorMessage = `Failed to answer: ${err.message}`;
 			}
@@ -430,10 +461,14 @@
 
 	function statusColor(status) {
 		switch (status) {
-			case 'registered': return 'bg-emerald-500';
-			case 'registering': return 'bg-yellow-500 animate-pulse';
-			case 'error': return 'bg-red-500';
-			default: return 'bg-zinc-500';
+			case 'registered':
+				return 'bg-emerald-500';
+			case 'registering':
+				return 'bg-yellow-500 animate-pulse';
+			case 'error':
+				return 'bg-red-500';
+			default:
+				return 'bg-zinc-500';
 		}
 	}
 
@@ -463,35 +498,39 @@
 		<div class="flex items-center gap-3">
 			<span class="flex items-center gap-2 text-sm">
 				<span class="relative flex h-2.5 w-2.5">
-					<span class="absolute inline-flex h-full w-full rounded-full {statusColor(deviceStatus)} opacity-75 {deviceStatus === 'registering' ? 'animate-ping' : ''}"></span>
-					<span class="relative inline-flex h-2.5 w-2.5 rounded-full {statusColor(deviceStatus)}"></span>
+					<span
+						class="absolute inline-flex h-full w-full rounded-full {statusColor(
+							deviceStatus
+						)} opacity-75 {deviceStatus === 'registering' ? 'animate-ping' : ''}"
+					></span>
+					<span class="relative inline-flex h-2.5 w-2.5 rounded-full {statusColor(deviceStatus)}"
+					></span>
 				</span>
 				<span class="text-[rgba(255,255,255,0.5)]">{statusMessage}</span>
 			</span>
 			{#if deviceStatus === 'offline' || deviceStatus === 'error'}
-				<Button
-					size="sm"
-					onclick={connectDevice}
-					disabled={isConnecting}
-				>
+				<Button size="sm" onclick={connectDevice} disabled={isConnecting}>
 					{isConnecting ? 'Connecting...' : 'Connect'}
 				</Button>
 			{:else if deviceStatus === 'registered'}
-				<Button
-					variant="outline"
-					size="sm"
-					onclick={disconnectDevice}
-				>
-					Disconnect
-				</Button>
+				<Button variant="outline" size="sm" onclick={disconnectDevice}>Disconnect</Button>
 			{/if}
 		</div>
 	</div>
 
 	{#if errorMessage}
-		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3 flex items-center justify-between">
+		<div
+			class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3 flex items-center justify-between"
+		>
 			<p class="text-sm text-red-400">{errorMessage}</p>
-			<Button variant="outline" size="sm" onclick={() => { errorMessage = ''; connectDevice(); }}>Retry</Button>
+			<Button
+				variant="outline"
+				size="sm"
+				onclick={() => {
+					errorMessage = '';
+					connectDevice();
+				}}>Retry</Button
+			>
 		</div>
 	{/if}
 
@@ -509,14 +548,21 @@
 				{#if callState !== 'idle'}
 					{#if callState === 'incoming'}
 						<!-- INCOMING CALL — Big, obvious, impossible to miss -->
-						<div class="rounded-xl border-2 border-blue-400/50 bg-gradient-to-b from-blue-500/15 to-blue-500/5 p-6 text-center space-y-4 animate-pulse-slow">
+						<div
+							class="rounded-xl border-2 border-blue-400/50 bg-gradient-to-b from-blue-500/15 to-blue-500/5 p-6 text-center space-y-4 animate-pulse-slow"
+						>
 							<div class="flex items-center justify-center gap-3 text-blue-400">
 								<PhoneIncoming class="h-8 w-8 animate-bounce" />
 								<span class="text-xl font-semibold tracking-wide">INCOMING CALL</span>
 								<PhoneIncoming class="h-8 w-8 animate-bounce" />
 							</div>
 
-							<p class="text-3xl font-light text-[rgba(255,255,255,0.95)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
+							<p
+								class="text-3xl font-light text-[rgba(255,255,255,0.95)]"
+								style="font-family: 'Playfair Display', serif;"
+							>
+								{formatPhone(callerInfo)}
+							</p>
 
 							<!-- Answer / Decline buttons — large and clear -->
 							<div class="flex items-center justify-center gap-6 pt-4">
@@ -527,7 +573,9 @@
 									>
 										<Phone class="h-9 w-9" />
 									</button>
-									<span class="text-sm font-medium text-emerald-400 uppercase tracking-wider">Answer</span>
+									<span class="text-sm font-medium text-emerald-400 uppercase tracking-wider"
+										>Answer</span
+									>
 								</div>
 								<div class="flex flex-col items-center gap-2">
 									<button
@@ -536,23 +584,34 @@
 									>
 										<PhoneOff class="h-9 w-9" />
 									</button>
-									<span class="text-sm font-medium text-red-400 uppercase tracking-wider">Decline</span>
+									<span class="text-sm font-medium text-red-400 uppercase tracking-wider"
+										>Decline</span
+									>
 								</div>
 							</div>
 						</div>
 					{:else if callState === 'connecting' && activeCall}
 						<!-- Answering / connecting state -->
-						<div class="rounded-xl border-2 border-yellow-400/40 bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 p-6 text-center space-y-3">
+						<div
+							class="rounded-xl border-2 border-yellow-400/40 bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 p-6 text-center space-y-3"
+						>
 							<div class="flex items-center justify-center gap-2 text-yellow-400">
 								<Phone class="h-6 w-6 animate-pulse" />
 								<span class="text-lg font-medium">Connecting...</span>
 							</div>
-							<p class="text-2xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
+							<p
+								class="text-2xl font-light text-[rgba(255,255,255,0.9)]"
+								style="font-family: 'Playfair Display', serif;"
+							>
+								{formatPhone(callerInfo)}
+							</p>
 							<p class="text-xs text-[rgba(255,255,255,0.35)]">Setting up audio...</p>
 						</div>
 					{:else}
 						<!-- Connecting / Connected state -->
-						<div class="rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.15)] p-5 text-center space-y-3">
+						<div
+							class="rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.15)] p-5 text-center space-y-3"
+						>
 							{#if callState === 'connecting'}
 								<div class="flex items-center justify-center gap-2 text-yellow-400">
 									<PhoneOutgoing class="h-5 w-5 animate-pulse" />
@@ -565,7 +624,12 @@
 								</div>
 							{/if}
 
-							<p class="text-xl font-light text-[rgba(255,255,255,0.9)]" style="font-family: 'Playfair Display', serif;">{formatPhone(callerInfo)}</p>
+							<p
+								class="text-xl font-light text-[rgba(255,255,255,0.9)]"
+								style="font-family: 'Playfair Display', serif;"
+							>
+								{formatPhone(callerInfo)}
+							</p>
 
 							{#if callState === 'connected'}
 								<div class="flex items-center justify-center gap-1 text-[rgba(255,255,255,0.4)]">
@@ -609,15 +673,18 @@
 							placeholder="Enter phone number..."
 							class="text-center text-lg font-mono tracking-wider"
 							bind:value={dialNumber}
-							onkeydown={(e) => { if (e.key === 'Enter') makeCall(); }}
+							onkeydown={(e) => {
+								if (e.key === 'Enter') makeCall();
+							}}
 						/>
 					</div>
 
-					<div class="grid grid-cols-3 gap-2">
+					<div class="grid grid-cols-3 gap-3 px-4">
 						{#each dialPad as row}
 							{#each row as digit}
 								<button
-									class="h-14 rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)] hover:bg-[rgba(197,165,90,0.12)] hover:border-[rgba(197,165,90,0.25)] text-lg font-medium transition-all duration-200 active:scale-95 text-[rgba(255,255,255,0.8)]"
+									class="dial-btn h-16 w-16 mx-auto rounded-full bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)] hover:bg-[rgba(197,165,90,0.12)] hover:border-[rgba(197,165,90,0.25)] text-xl font-light transition-all duration-150 text-[rgba(255,255,255,0.85)]"
+									style="font-family: 'Playfair Display', serif;"
 									onclick={() => sendDigit(digit)}
 								>
 									{digit}
@@ -628,7 +695,7 @@
 
 					{#if callState === 'idle'}
 						<Button
-							class="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-base shadow-lg shadow-emerald-600/10"
+							class="w-full bg-[#C5A55A] hover:bg-[#d4af37] text-[#1A1A1A] h-12 text-base font-medium tracking-wide shadow-lg shadow-[rgba(197,165,90,0.15)] transition-all duration-200 hover:shadow-xl hover:shadow-[rgba(197,165,90,0.2)]"
 							onclick={makeCall}
 							disabled={!dialNumber || deviceStatus !== 'registered'}
 						>
@@ -636,11 +703,7 @@
 							Call
 						</Button>
 					{:else}
-						<Button
-							variant="destructive"
-							class="w-full h-12 text-base"
-							onclick={hangUp}
-						>
+						<Button variant="destructive" class="w-full h-12 text-base" onclick={hangUp}>
 							<PhoneOff class="h-5 w-5 mr-2" />
 							End Call
 						</Button>
@@ -656,21 +719,36 @@
 					<Clock class="h-5 w-5 text-[#C5A55A]" />
 					<h2 class="text-base tracking-wide">Session Activity</h2>
 				</div>
-				<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">Calls during this browser session</p>
+				<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">
+					Calls during this browser session
+				</p>
 			</div>
 			<div class="p-5">
 				{#if callHistory.length === 0}
 					<div class="flex h-48 items-center justify-center">
 						<div class="text-center">
-							<Headset class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
-							<p class="text-sm text-[rgba(255,255,255,0.35)]">No calls yet this session.</p>
-							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Incoming calls will ring here once connected.</p>
+							<div
+								class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+							>
+								<Headset class="h-6 w-6 empty-state-icon" />
+							</div>
+							<p
+								class="text-sm font-light text-[rgba(255,255,255,0.4)] mb-1"
+								style="font-family: 'Playfair Display', serif;"
+							>
+								No calls yet
+							</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)]">
+								Incoming calls will ring here once connected.
+							</p>
 						</div>
 					</div>
 				{:else}
 					<div class="space-y-2 max-h-[400px] overflow-y-auto">
 						{#each callHistory as entry}
-							<div class="flex items-center gap-3 rounded-md border border-[rgba(197,165,90,0.08)] p-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)]">
+							<div
+								class="flex items-center gap-3 rounded-md border border-[rgba(197,165,90,0.08)] p-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)]"
+							>
 								{#if entry.type === 'incoming'}
 									<PhoneIncoming class="h-4 w-4 shrink-0 text-blue-400" />
 								{:else if entry.type === 'outgoing'}

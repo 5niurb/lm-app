@@ -1,3 +1,286 @@
+## Session — 2026-02-15 (Session 26)
+**Focus:** SPECS.md comprehensive update, /capture-specs skill creation
+
+**Accomplished:**
+- **SPECS.md accuracy fixes:**
+  - Corrected softphone URL param from `?dial=` → `?call=` across 5 references (matching actual code)
+  - Fixed IVR main greeting menu options: added "1 = text us (SMS)" that was missing
+  - Added IVR business hours table (Mon–Fri 10–6, Sat 10–4 PT, Sun closed)
+  - Added operator routing API endpoint detail and fail-safe documentation
+- **SPECS.md new sections:**
+  - Requirements Capture system (`docs/requirements/`) with 6 page files
+  - 4 new Design Decisions Log entries: business hours API, smart message routing, requirements capture, phone normalization
+- **Created `/capture-specs` skill** (`.claude/skills/capture-specs/SKILL.md`):
+  - Automated workflow: identify changes → read source → update SPECS.md → commit
+  - Follows existing format with format rules and safety guardrails
+
+**Current State:**
+- All changes committed and pushed to GitHub (2 commits: `8d98926`, `fcc4d9b`)
+- Working tree clean, up to date with origin/main
+- SPECS.md fully accurate with all sessions 1–25 work documented
+
+**Issues:**
+- Studio flow JSON updated but NOT deployed to Twilio (needs Flow SID in .env)
+- Messages lookup endpoint deployed but not yet tested on production
+
+**Next Steps:**
+- Deploy Studio flow to Twilio: `node twilio/deploy.js <FW_SID> twilio/flows/main-ivr-webhooks.json --publish`
+- Test after-hours IVR flow (call after 6pm PT or weekend)
+- Test smart message routing: click message icon from calls → verify existing conversation auto-selects
+- Continue Phase 1C: services catalog content, automation wiring
+- Consent form end-to-end testing (sign + submit from phone, verify in DB)
+
+---
+
+## Session — 2026-02-15 (Session 25)
+**Focus:** After-hours IVR flow, smart message routing, requirements capture system
+
+**Accomplished:**
+- **IVR Studio Flow Update:**
+  - Uploaded "Closed text us" audio to Twilio Serverless (lm-ivr-assets-2112.twil.io)
+  - Added business hours check API: `GET /api/webhooks/voice/hours-check` (Mon-Fri 10-6, Sat 10-4 PT, Sun closed)
+  - Updated Studio flow JSON: press 0 now checks hours → open: operator, closed: play closed greeting
+  - Closed greeting: press 1 → SMS, timeout → voicemail recording
+  - Flow JSON ready to deploy (needs Flow SID — not in .env yet)
+
+- **Smart Message Routing:**
+  - Added `GET /api/messages/lookup?phone=` endpoint — finds existing conversation or contact by phone
+  - Messages page now auto-selects existing conversation when navigating from quick action icons
+  - If no conversation exists but contact is known, shows contact name in new compose view
+  - Phone number field hidden when contact name is displayed
+  - URL params cleaned after processing
+  - All quick action message links now pass `&name=` param (calls, dashboard, contacts pages)
+
+- **Requirements Capture System:**
+  - Created `docs/requirements/` directory with README template and format guide
+  - Initial requirement docs for: calls, messages, dashboard, softphone, contacts, IVR flow
+  - Each doc captures user stories, acceptance criteria, design specs, API deps, revision history
+  - Added "Requirements Capture" section to CLAUDE.md instructing future sessions to maintain it
+  - User's exact words quoted in requirement docs for traceability
+
+**Current State:**
+- Frontend deployed to Cloudflare Pages (https://lm-app.pages.dev)
+- API pushed to Render (auto-deploys from main)
+- Studio flow JSON updated but NOT deployed to Twilio yet (needs Flow SID)
+- All changes committed and pushed to GitHub
+
+**Issues:**
+- `TWILIO_PROD_FLOW_SID` not in api/.env — needed to deploy Studio flow via `node twilio/deploy.js`
+- Need to test the messages lookup endpoint on production after Render redeploy (~2-3 min)
+
+**Next Steps:**
+- Deploy Studio flow to Twilio: `node twilio/deploy.js <FW_SID> twilio/flows/main-ivr-webhooks.json --publish`
+- Test after-hours flow (call main number after 6pm PT or on weekend)
+- Test message routing: click message icon from calls page, verify it opens existing conversation
+- Continue with Phase 1C features: services catalog, automation sequences
+
+---
+
+## Session — 2026-02-14 (Session 24)
+**Focus:** Comprehensive frontend design polish — 11 improvements across all pages
+
+**Accomplished:**
+- **P0 Fixes:**
+  - Contacts: phone-only contacts now show formatted phone as display name (not "Unknown"), avatar shows "#" instead of "?"
+  - Settings: replaced emoji tab icons (🕐📞🔀🛡️) with proper Lucide components (Clock, Phone, GitBranch, Shield)
+- **P1 Major Improvements:**
+  - Login page: complete redesign — split-panel layout with brand visual (left) and form (right), gold ornaments, noise texture, "Private. Intimate. Exclusive." tagline
+  - Global texture/depth system: noise texture overlay class, card-elevated with gradient+shadow, page-enter fade-up animation, empty-state-icon gold glow
+  - All empty states upgraded across dashboard, contacts, services, softphone, messages, settings — rounded icon containers, Playfair Display headings, better CTAs
+- **P2 Polish:**
+  - Softphone dial pad: round buttons (was square), gold call button (was green), active press animation
+  - Page transitions: fade-up animation on auth layout content area
+  - Messages empty pane: radial glow, Playfair heading, gold-bordered "New conversation" button
+- **P3 Refinements:**
+  - Dashboard: SVG sparklines on Total Calls & Missed Calls cards, enlarged chart (h-36→h-48), card-elevated class
+  - Typography: heading weight hierarchy (h1=300 light, h2=400 regular, h3=500 medium)
+  - Services: colored left borders by category (gold/emerald/purple), hover transition
+
+**Files Changed (9 files, +293/-70):**
+- `src/app.css` — Global animation, texture, card, and typography classes
+- `src/routes/(auth)/+layout.svelte` — page-enter animation class
+- `src/routes/(auth)/contacts/+page.svelte` — Phone formatting fix, empty state
+- `src/routes/(auth)/dashboard/+page.svelte` — Sparklines, card-elevated, empty states
+- `src/routes/(auth)/messages/+page.svelte` — Empty pane redesign
+- `src/routes/(auth)/services/+page.svelte` — Category borders, empty state
+- `src/routes/(auth)/settings/+page.svelte` — Lucide icons, empty states
+- `src/routes/(auth)/softphone/+page.svelte` — Round dial pad, gold call button
+- `src/routes/login/+page.svelte` — Complete split-panel redesign
+
+**Technical Notes:**
+- Svelte 5 restriction: `{@const}` cannot be used directly inside `<svg>` — must use `$derived()` and helper functions instead
+- Sparkline SVGs use `<linearGradient>` with unique IDs and `<polyline>` + `<polygon>` for line + fill
+
+**Current State:**
+- Build passes, deployed to https://lm-app.pages.dev
+- Committed: `84ecd29` → pushed to GitHub
+- All 11 design improvements live in production
+
+**Next Steps:**
+- Visual verification on production site (login page, dashboard, contacts, softphone, messages, services, settings)
+- Consider accessibility audit on new components (color contrast on gold elements)
+- Phase 1A functional work: call logging, voicemail playback
+
+---
+
+## Session — 2026-02-14 (Session 23)
+**Focus:** Full Claude Code automation suite — skills, hooks, rules, testing, CI
+
+**Accomplished:**
+- **4 Custom Skills** (slash commands):
+  - `/deploy` — Build + deploy to CF Pages with automatic retry (up to 3 attempts on network failure), correct `PUBLIC_API_URL`, and post-deploy verification
+  - `/verify` — Comprehensive production health check: API health, CORS, frontend, Supabase, public endpoints, webhook endpoints — results in table format
+  - `/commit` — Standardized git commit following `[area] Description` format with Co-Authored-By, staged file selection, and auto-push
+  - `/migrate` — Supabase migration helper with SQL review, `apply_migration`/`execute_sql`, verification, and advisory checks
+- **4 Lifecycle Hooks:**
+  - `SessionStart` — Auto-loads latest 2 SESSION_NOTES.md entries + git status as context on startup
+  - `PreToolUse (Bash)` — Build guard: blocks `vite build` or `npm run build` without `PUBLIC_API_URL` set to production URL (exit code 2 = block)
+  - `PostToolUse (Write|Edit)` — Async build check: runs `vite build` after editing frontend files, reports errors as context without blocking
+  - `Stop` — Pre-stop warnings: checks for uncommitted changes, stale SESSION_NOTES.md (>30 min), unpushed commits — feeds into TextMe SMS hook
+- **3 Conditional Code Rules** (`.claude/rules/`):
+  - `api.md` — Express conventions: supabaseAdmin for server-side, webhook mount order, error/audit patterns
+  - `frontend.md` — Svelte 5 runes mandate, shadcn hands-off, dark+gold theme colors, api() wrapper
+  - `database.md` — Supabase schema conventions: RLS required, snake_case naming, E.164 phone format
+- **Clean Project Settings** (`.claude/settings.json`):
+  - Curated permission allow/deny lists replacing 35+ organically accumulated entries
+  - All hooks wired via `$CLAUDE_PROJECT_DIR` for portability
+  - `.gitignore` updated: `.claude/` tracked in git, `settings.local.json` excluded
+- **ESLint + Prettier:**
+  - ESLint 9 with `eslint-plugin-svelte`, `eslint-config-prettier`, `globals`
+  - Prettier with tabs, Svelte plugin, 100-char line width
+  - Custom rules: warn (not error) for `no-unused-vars`, `goto()` without `resolve()`, `{#each}` keys
+  - 102 warnings + 3 errors in pre-existing code (all new files clean)
+- **Vitest + Tests:**
+  - 20 unit tests passing: phone formatting (5), phone normalization (5), duration formatting (4), build guard hook (5), stop-check hook (1)
+  - API integration test suite (Node.js built-in runner): health, CORS, public endpoints
+  - Cross-platform stdin helper for hook testing (`spawnSync` with `input` parameter)
+- **GitHub Actions CI:**
+  - `.github/workflows/ci.yml` — runs on push to main and PRs
+  - Steps: install deps → lint → format check → type check → build → unit tests → API integration tests
+
+**Files Created (25):**
+- `.claude/settings.json` — Project-level shared settings with hooks
+- `.claude/hooks/build-guard.js` — PreToolUse build guard
+- `.claude/hooks/check-build.js` — PostToolUse async build check
+- `.claude/hooks/session-start.js` — SessionStart context loader
+- `.claude/hooks/stop-check.js` — Stop pre-check warnings
+- `.claude/hooks/read-stdin.js` — Cross-platform stdin helper
+- `.claude/hooks/package.json` — ES module flag for hooks
+- `.claude/skills/deploy/SKILL.md` — /deploy skill
+- `.claude/skills/verify/SKILL.md` — /verify skill
+- `.claude/skills/commit/SKILL.md` — /commit skill
+- `.claude/skills/migrate/SKILL.md` — /migrate skill
+- `.claude/rules/api.md` — API code rules
+- `.claude/rules/frontend.md` — Frontend code rules
+- `.claude/rules/database.md` — Database rules
+- `.github/workflows/ci.yml` — GitHub Actions CI
+- `eslint.config.js` — ESLint flat config
+- `.prettierrc` — Prettier config
+- `.prettierignore` — Prettier ignore patterns
+- `tests/utils.test.js` — Utility function tests
+- `tests/hooks.test.js` — Hook script tests
+- `api/tests/health.test.js` — API integration tests
+
+**Files Modified:**
+- `package.json` — Added lint/format/test scripts + devDeps (ESLint, Prettier, Vitest)
+- `vite.config.js` — Added Vitest test config
+- `.gitignore` — Track `.claude/` except `settings.local.json`
+- `.claude/settings.local.json` — Cleaned to minimal local overrides
+
+**Deployed:**
+- ✅ Frontend deployed to Cloudflare Pages (commit 976f32b)
+- ✅ 20/20 tests passing
+- ✅ Build passes clean
+- ✅ Pushed to GitHub
+
+**Current State:**
+- Claude Code automation fully configured — skills, hooks, rules, settings all wired
+- ESLint + Prettier installed and configured (102 warnings in pre-existing code, fixable over time)
+- Vitest with 20 passing tests
+- GitHub Actions CI will run on next push/PR
+- All 4 skills available as `/deploy`, `/verify`, `/commit`, `/migrate`
+
+**Next Steps:**
+1. Test consent form end-to-end: sign and submit from phone, verify in DB
+2. Wire consent forms into automation sequences (consent_request template type)
+3. Set up pg_cron for automation processing (`/api/automation/process`)
+4. Add content for remaining services (IV Therapy, Bioidentical Hormones, Body Contouring)
+5. Build admin view for consent submissions (view signatures, responses, status)
+6. Gradually fix ESLint warnings across codebase
+
+---
+
+## Session — 2026-02-14 (Session 22)
+**Focus:** Consent form public pages with digital signature capture
+
+**Accomplished:**
+- **Public consent API** (`api/routes/public-consent.js`):
+  - `GET /api/public/consent/:slug` — fetches consent form by slug (no auth, consent_form type filter)
+  - `POST /api/public/consent/:slug/submit` — submits signed consent with:
+    - Signature data (base64 PNG from canvas)
+    - Questionnaire responses (JSONB)
+    - Patient identification (client_id from URL param OR name/email/phone for walk-ins)
+    - Auto-creates contact for new walk-in patients
+    - Records IP address + user agent
+    - Resolves form_id + service_id from slug
+  - Mounted in server.js: `/api/public/consent`
+- **Patient-facing consent form page** (`src/routes/consent/[slug]/+page.svelte`):
+  - Canvas-based signature pad — touch + mouse support, retina-ready (devicePixelRatio scaling)
+  - Gold ink (#c5a55a) signature on dark background
+  - Renders `content_json` sections with mixed types:
+    - Informational sections (numbered, Playfair Display headings)
+    - Checkbox questions (with custom labels)
+    - Radio button groups (from `options` array)
+    - Text area responses (with placeholders)
+  - Walk-in patient form: name (required), email, phone — only shown without client_id
+  - Agreement checkbox with full consent acknowledgment text
+  - Branded dark+gold design matching care instruction pages
+  - Success page with green checkmark after submission
+  - URL parameter `?cid=` for client_id passthrough from automation links
+  - Mobile responsive with touch-optimized signature area
+- **Seeded 5 consent forms** in Supabase:
+  - Neuromodulators (8 sections: procedure, benefits, risks, contraindications, 2 checkboxes, alternatives, post-care)
+  - Dermal Fillers (8 sections: procedure, benefits, risks, contraindications, 2 checkboxes, dissolving, post-care)
+  - Microneedling (7 sections: procedure, benefits, risks, contraindications, 2 checkboxes, post-care)
+  - Chemical Peels (7 sections: procedure, benefits, risks, contraindications, 2 checkboxes, post-care)
+  - Laser Resurfacing (7 sections: procedure, benefits, risks, contraindications, 2 checkboxes, post-care)
+
+**Files Created:**
+- `api/routes/public-consent.js` — Public consent API (no auth, form retrieval + submission)
+- `src/routes/consent/[slug]/+page.svelte` — Patient-facing consent form with signature pad
+
+**Files Modified:**
+- `api/server.js` — Mounted public consent route
+
+**Deployed:**
+- ✅ Frontend deployed to Cloudflare Pages (commit ebf33fd)
+- ✅ API deployed to Render (auto-deploy on push)
+- ✅ All 5 consent form API endpoints return 200
+- ✅ Build passes clean
+
+**Available Consent Forms (5 total):**
+- consent-neuromodulators, consent-dermal-fillers, consent-microneedling
+- consent-chemical-peels, consent-laser-resurfacing
+
+**Access URLs:**
+- https://lm-app.pages.dev/consent/consent-neuromodulators
+- https://lm-app.pages.dev/consent/consent-dermal-fillers
+- https://lm-app.pages.dev/consent/consent-microneedling
+- https://lm-app.pages.dev/consent/consent-chemical-peels
+- https://lm-app.pages.dev/consent/consent-laser-resurfacing
+
+**Database:** 18 content blocks total (13 care + 5 consent), consent_submissions table ready (0 rows)
+
+**Next Steps:**
+1. Test consent form end-to-end: sign and submit from phone, verify in DB
+2. Wire consent forms into automation sequences (consent_request template type)
+3. Set up pg_cron for automation processing (`/api/automation/process`)
+4. Add content for remaining services (IV Therapy, Bioidentical Hormones, Body Contouring)
+5. Build admin view for consent submissions (view signatures, responses, status)
+6. Wire booking confirmations to trigger automation sequences automatically
+
+---
+
 ## Session — 2026-02-14 (Session 21, continued)
 **Focus:** Dashboard polish, sidebar badges, header clinic status, codebase assessment
 

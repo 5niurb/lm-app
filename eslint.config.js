@@ -1,23 +1,55 @@
-import tseslint from "@typescript-eslint/eslint-plugin";
-import tsparser from "@typescript-eslint/parser";
+import js from '@eslint/js';
+import svelte from 'eslint-plugin-svelte';
+import prettier from 'eslint-config-prettier';
+import globals from 'globals';
 
+/** @type {import('eslint').Linter.Config[]} */
 export default [
-  {
-    files: ["src/**/*.ts"],
-    languageOptions: {
-      parser: tsparser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-      },
-    },
-    plugins: {
-      "@typescript-eslint": tseslint,
-    },
-    rules: {
-      ...tseslint.configs.recommended.rules,
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": "error",
-    },
-  },
+	js.configs.recommended,
+	...svelte.configs['flat/recommended'],
+	prettier,
+	...svelte.configs['flat/prettier'],
+	{
+		languageOptions: {
+			globals: {
+				...globals.browser,
+				...globals.node
+			}
+		},
+		rules: {
+			// Relax rules for our codebase — warn instead of error for common patterns
+			'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+			'no-undef': 'warn'
+		}
+	},
+	{
+		files: ['**/*.svelte'],
+		languageOptions: {
+			parserOptions: {
+				svelteConfig: await import('./svelte.config.js')
+			}
+		},
+		rules: {
+			// Svelte-specific relaxations
+			'svelte/no-navigation-without-resolve': 'warn',
+			'svelte/require-each-key': 'warn',
+			'svelte/prefer-svelte-reactivity': 'off',
+			'no-useless-assignment': 'warn'
+		}
+	},
+	{
+		ignores: [
+			'build/',
+			'.svelte-kit/',
+			'dist/',
+			'.wrangler/',
+			'.cloudflare/',
+			'node_modules/',
+			'api/node_modules/',
+			// shadcn-svelte generated components — don't lint
+			'src/lib/components/ui/',
+			// TypeScript files from shadcn-svelte — no TS parser configured
+			'src/lib/hooks/'
+		]
+	}
 ];

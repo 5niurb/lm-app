@@ -1,5 +1,27 @@
 # CLAUDE.md — lm-app
 
+## Session Management
+
+### Starting a Session
+- Read `SESSION_NOTES.md` first to restore context from previous sessions.
+- Briefly confirm what you understand the current state to be before diving in.
+
+### During a Session
+- After completing each major task or milestone, append an update to `SESSION_NOTES.md`.
+- Every ~15 minutes of active work, checkpoint progress to `SESSION_NOTES.md`.
+- After implementing any new feature, design change, or component, update `SPECS.md` with the requirement, acceptance criteria, and any design decisions made. (Use `/capture-specs` to batch-update at session end if preferred.)
+- If the conversation is getting long (50+ exchanges), proactively write a summary and suggest starting a fresh session.
+
+### Ending a Session
+- Always write a final summary to `SESSION_NOTES.md` before the session ends, including:
+  - What was accomplished
+  - Current state and what's working
+  - Known issues or bugs
+  - Recommended next steps
+  - Dev server port and access URLs if running
+
+---
+
 ## What This Is
 
 Custom management platform for Le Med Spa. Replaces HighLevel, TextMagic, and (eventually) Aesthetic Record. Handles call logging, voicemail, 2-way SMS messaging, CRM/contacts, softphone, services catalog, and automation sequences.
@@ -13,6 +35,27 @@ All Le Med Spa properties use the **dark + gold** aesthetic:
 - **Style:** Luxurious, intimate, high-end
 
 The lm-app dashboard should follow this same design language where possible — dark sidebar, gold accents, clean typography. shadcn-svelte components can be themed to match.
+
+### Design References — Copy From the Best
+
+When building new pages or components, **study industry-leading med spa / salon / CRM platforms first** before designing from scratch. Use Firecrawl, Playwright screenshots, or web search to pull real UI patterns from these apps:
+
+| App | Strength | Use For |
+|-----|----------|---------|
+| **Mangomint** | Clean modern salon SaaS, beautiful dashboard | Dashboard layout, appointment views, nav patterns |
+| **Boulevard (joinblvd.com)** | Premium med spa platform, elegant UI | Client profiles, booking flows, service catalog |
+| **Pabau** | Med spa clinic management, clinical workflows | Consent forms, treatment records, automation |
+| **Podium** | Messaging + reviews platform | Inbox/conversation UI, notification patterns |
+| **Salesforce** | CRM gold standard | Contact management, pipeline views, settings |
+| **Aesthetic Record** | Med spa EHR (our current system to replace) | What to improve on — know the baseline |
+
+**Workflow for new UI:**
+1. Screenshot or scrape 2-3 reference apps for the feature being built
+2. Identify the best patterns (layout, information hierarchy, interactions)
+3. Adapt to our dark+gold theme and shadcn-svelte components
+4. Build — don't reinvent what industry leaders have already perfected
+
+**Goal:** The app should feel like Mangomint's polish with Boulevard's elegance, in our brand's dark+gold aesthetic. When in doubt about a design decision, look at what these apps do before asking the user.
 
 ## Tech Stack
 
@@ -161,6 +204,42 @@ npx wrangler pages deploy .svelte-kit/cloudflare --project-name lm-app --branch 
 SMS notifications are configured **globally** — see workspace `lmdev/CLAUDE.md` for full details.
 The Stop hook fires for ALL projects, not just lm-app.
 Script: `C:/Users/LMOperations/.claude/scripts/textme.mjs`
+
+## Requirements Capture
+
+When implementing features or design changes based on user instructions, **always update the relevant requirement file** in `docs/requirements/`. See `docs/requirements/README.md` for the format.
+
+Key rule: Capture the **user's exact words** in the "User's Original Words" section so requirements can be traced back to the original instruction.
+
+Files: `calls.md`, `messages.md`, `contacts.md`, `dashboard.md`, `softphone.md`, `ivr-flow.md`
+
+## Autonomous Problem-Solving
+
+**Resolve issues yourself before asking the user.** The goal is near-full automation — the user provides guidance and tweaks, not manual steps.
+
+### Escalation Order (follow this every time)
+1. **Use MCP tools first** — Supabase MCP for DB/keys, Firecrawl for web content, Chrome DevTools for debugging, Context7 for docs. These can answer most questions without user input.
+2. **Search the codebase** — Grep, Glob, Read. The answer is often already in .env files, config, SESSION_NOTES, or SPECS.md.
+3. **Search the web** — WebSearch, WebFetch for docs, Stack Overflow, GitHub issues.
+4. **Try it and see** — Run the command, make the API call, deploy and check. Errors are informative.
+5. **Only then ask the user** — And when you do, present the options you've already researched with a recommendation.
+
+### Common Self-Service Patterns
+| Need | Do This | Don't Do This |
+|------|---------|---------------|
+| Supabase anon key | `get_publishable_keys` MCP tool | Ask user to look it up |
+| API not responding | Check Render logs, try curl, check if sleeping | Ask user to check Render |
+| Package version issue | Check Node/npm versions, read lockfile, search for compatibility | Ask user what version to use |
+| Design decision | Screenshot reference apps (Mangomint, Boulevard, etc.) | Ask user "what should it look like?" |
+| Missing env var in CI | Hardcode public values, use MCP for keys | Ask user to add GitHub secrets |
+| Build failing | Read the error, check recent changes, fix it | Report the error and wait |
+| Unclear requirement | Check SPECS.md, docs/requirements/, SESSION_NOTES | Ask user to re-explain |
+
+### When to Actually Ask the User
+- **Business decisions** — pricing, feature priority, what to build next
+- **Credentials/secrets** — actual secret keys (service role, API secrets), never public keys
+- **Destructive actions** — deleting data, changing production config, domain changes
+- **Ambiguous intent** — when two valid approaches exist and the choice affects UX or architecture
 
 ## Important Notes
 

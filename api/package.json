@@ -1,18 +1,18 @@
 {
-  "name": "lm-app-api",
-  "version": "1.0.0",
-  "type": "module",
-  "description": "Le Med Spa management platform API",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.49.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.0",
-    "express": "^4.21.0",
-    "twilio": "^5.12.1"
-  }
+	"name": "lm-app-api",
+	"version": "1.0.0",
+	"type": "module",
+	"description": "Le Med Spa management platform API",
+	"main": "server.js",
+	"scripts": {
+		"start": "node server.js",
+		"dev": "node --watch server.js"
+	},
+	"dependencies": {
+		"@supabase/supabase-js": "^2.49.0",
+		"cors": "^2.8.5",
+		"dotenv": "^16.4.0",
+		"express": "^4.21.0",
+		"twilio": "^5.12.1"
+	}
 }
