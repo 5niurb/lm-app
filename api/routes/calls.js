@@ -13,7 +13,7 @@ router.use(verifyToken);
  * List call logs with pagination, filtering, and sorting.
  *
  * Query params:
- *   page (default 1), pageSize (default 25), direction, disposition, search, sort, order
+ *   page (default 1), pageSize (default 25), direction, disposition, search, sort, order, twilioNumber
  */
 router.get('/', logAction('calls.list'), async (req, res) => {
 	const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -41,6 +41,10 @@ router.get('/', logAction('calls.list'), async (req, res) => {
 		query = query.or(
 			`from_number.ilike.%${req.query.search}%,to_number.ilike.%${req.query.search}%,notes.ilike.%${req.query.search}%,caller_name.ilike.%${req.query.search}%`
 		);
+	}
+	// Filter by Twilio number
+	if (req.query.twilioNumber) {
+		query = query.eq('twilio_number', req.query.twilioNumber);
 	}
 
 	// Date range
