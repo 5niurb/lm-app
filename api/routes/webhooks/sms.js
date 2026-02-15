@@ -37,12 +37,14 @@ router.post('/incoming', async (req, res) => {
   }
 
   try {
-    // Find or create conversation
-    const { data: existing } = await supabaseAdmin
+    // Find or create conversation (scoped to the Twilio number that received it)
+    let existingQuery = supabaseAdmin
       .from('conversations')
       .select('id, unread_count')
-      .eq('phone_number', fromNumber)
-      .maybeSingle();
+      .eq('phone_number', fromNumber);
+    if (toNumber) existingQuery = existingQuery.eq('twilio_number', toNumber);
+
+    const { data: existing } = await existingQuery.maybeSingle();
 
     let convId;
 
@@ -72,6 +74,7 @@ router.post('/incoming', async (req, res) => {
         .from('conversations')
         .insert({
           phone_number: fromNumber,
+          twilio_number: toNumber || null,
           display_name: contact?.full_name || null,
           contact_id: contact?.id || null,
           last_message: body.substring(0, 200),

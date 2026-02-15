@@ -96,6 +96,7 @@ router.post('/incoming', async (req, res) => {
       direction: 'inbound',
       from_number: From || 'unknown',
       to_number: To || '',
+      twilio_number: To || null,
       status: CallStatus || 'initiated',
       caller_name: displayName,
       contact_id: contactId,

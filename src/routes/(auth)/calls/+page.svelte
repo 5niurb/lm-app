@@ -22,6 +22,12 @@
 	/** @type {HTMLAudioElement | null} */
 	let audioEl = $state(null);
 
+	// ─── Twilio number selector ───
+	/** @type {Array<{sid: string, phoneNumber: string, friendlyName: string}>} */
+	let twilioNumbers = $state([]);
+	/** @type {string} Currently selected Twilio number filter ('' = all) */
+	let selectedNumber = $state('');
+
 	// Check URL params for ?filter= preset
 	onMount(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -31,10 +37,26 @@
 		}
 	});
 
+	// Load Twilio numbers on mount
+	$effect(() => {
+		loadTwilioNumbers();
+	});
+
 	// ─── Load on mount ───
 	$effect(() => {
+		// Track selectedNumber to trigger reload
+		const _num = selectedNumber;
 		loadCalls();
 	});
+
+	async function loadTwilioNumbers() {
+		try {
+			const res = await api('/api/twilio-history/numbers');
+			twilioNumbers = res.data || [];
+		} catch (e) {
+			console.error('Failed to load Twilio numbers:', e);
+		}
+	}
 
 	async function loadCalls() {
 		try {
@@ -49,6 +71,7 @@
 			if (filter === 'missed') params.set('disposition', 'missed');
 			if (filter === 'voicemail') params.set('disposition', 'voicemail');
 			if (filter === 'answered') params.set('disposition', 'answered');
+			if (selectedNumber) params.set('twilioNumber', selectedNumber);
 
 			const res = await api(`/api/calls?${params}`);
 			calls = res.data;
@@ -219,6 +242,32 @@
 					<Button variant={filter === 'voicemail' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('voicemail')}>Voicemail</Button>
 				</div>
 			</div>
+			<!-- Twilio Number Selector -->
+			{#if twilioNumbers.length > 1}
+				<div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-[rgba(197,165,90,0.06)]">
+					<button
+						class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === ''
+							? 'bg-[#C5A55A] text-[#1A1A1A]'
+							: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
+						}"
+						onclick={() => { selectedNumber = ''; currentPage = 1; loadCalls(); }}
+					>
+						All Lines
+					</button>
+					{#each twilioNumbers as num}
+						<button
+							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === num.phoneNumber
+								? 'bg-[#C5A55A] text-[#1A1A1A]'
+								: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
+							}"
+							onclick={() => { selectedNumber = num.phoneNumber; currentPage = 1; loadCalls(); }}
+							title={num.friendlyName || num.phoneNumber}
+						>
+							{num.friendlyName || formatPhone(num.phoneNumber)}
+						</button>
+					{/each}
+				</div>
+			{/if}
 		</div>
 
 		<!-- Call list -->
@@ -272,9 +321,16 @@
 											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}</span>
 										{/if}
 									</p>
-									<span class="text-xs text-[rgba(255,255,255,0.3)] shrink-0 whitespace-nowrap">
-										{formatRelativeDate(call.started_at)}
-									</span>
+									<div class="flex items-center gap-2 shrink-0">
+										{#if call.twilio_number && twilioNumbers.length > 1 && !selectedNumber}
+											<span class="text-[9px] text-[rgba(197,165,90,0.5)] font-mono">
+												{formatPhone(call.twilio_number)}
+											</span>
+										{/if}
+										<span class="text-xs text-[rgba(255,255,255,0.3)] whitespace-nowrap">
+											{formatRelativeDate(call.started_at)}
+										</span>
+									</div>
 								</div>
 
 								<!-- Second line: phone number (if name shown) -->

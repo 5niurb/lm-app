@@ -5,7 +5,7 @@
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
-	import { MessageSquare, Search, Send, ArrowLeft, Phone } from '@lucide/svelte';
+	import { MessageSquare, Search, Send, ArrowLeft, Phone, RefreshCw } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 
@@ -30,6 +30,17 @@
 	/** @type {number|null} Auto-refresh interval */
 	let refreshInterval = null;
 
+	// ─── Twilio number selector ───
+	/** @type {Array<{sid: string, phoneNumber: string, friendlyName: string}>} */
+	let twilioNumbers = $state([]);
+	/** @type {string} Currently selected Twilio number filter ('' = all) */
+	let selectedNumber = $state('');
+	let loadingNumbers = $state(true);
+
+	// ─── Sync state ───
+	let syncing = $state(false);
+	let syncResult = $state(null);
+
 	// Check URL params for ?phone=xxx&new=true (from contacts page quick action)
 	onMount(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -40,12 +51,31 @@
 		}
 	});
 
+	// Load Twilio numbers on mount
 	$effect(() => {
+		loadTwilioNumbers();
+	});
+
+	// Reload conversations when selected number changes
+	$effect(() => {
+		// Track selectedNumber to trigger reload
+		const _num = selectedNumber;
 		loadConversations();
 		// Poll for new messages every 5 seconds
 		refreshInterval = setInterval(refreshAll, 5000);
 		return () => { if (refreshInterval) clearInterval(refreshInterval); };
 	});
+
+	async function loadTwilioNumbers() {
+		try {
+			const res = await api('/api/twilio-history/numbers');
+			twilioNumbers = res.data || [];
+		} catch (e) {
+			console.error('Failed to load Twilio numbers:', e);
+		} finally {
+			loadingNumbers = false;
+		}
+	}
 
 	async function refreshAll() {
 		await loadConversations();
@@ -64,6 +94,7 @@
 		try {
 			const params = new URLSearchParams();
 			if (search) params.set('search', search);
+			if (selectedNumber) params.set('twilioNumber', selectedNumber);
 			const res = await api(`/api/messages/conversations?${params}`);
 			conversations = res.data;
 			// Keep selectedConvo in sync with refreshed data
@@ -115,7 +146,8 @@
 			const payload = {
 				body: newMessage.trim(),
 				to: selectedConvo?.phone_number || newConvoPhone.trim(),
-				conversationId: selectedConvo?.id || undefined
+				conversationId: selectedConvo?.id || undefined,
+				from: selectedNumber || undefined
 			};
 
 			const res = await api('/api/messages/send', {
@@ -150,6 +182,25 @@
 		}
 	}
 
+	async function syncHistory() {
+		syncing = true;
+		syncResult = null;
+		try {
+			const payload = selectedNumber ? { phoneNumber: selectedNumber } : {};
+			const res = await api('/api/twilio-history/sync', {
+				method: 'POST',
+				body: JSON.stringify(payload)
+			});
+			syncResult = res;
+			// Reload conversations after sync
+			await loadConversations();
+		} catch (e) {
+			error = e.message;
+		} finally {
+			syncing = false;
+		}
+	}
+
 	function scrollToBottom() {
 		const container = document.getElementById('message-scroll');
 		if (container) container.scrollTop = container.scrollHeight;
@@ -158,6 +209,20 @@
 	function goBack() {
 		selectedConvo = null;
 		messages = [];
+	}
+
+	/**
+	 * Get sender display name for an outbound message.
+	 * @param {any} msg
+	 * @returns {string|null}
+	 */
+	function getSenderName(msg) {
+		if (msg.direction !== 'outbound') return null;
+		if (msg.sender?.full_name) return msg.sender.full_name;
+		if (msg.sender?.email) return msg.sender.email.split('@')[0];
+		if (msg.sent_by) return 'Staff';
+		if (msg.metadata?.source === 'ivr') return 'IVR Auto-reply';
+		return null;
 	}
 </script>
 
@@ -171,10 +236,62 @@
 		<div class="p-4 border-b border-[rgba(197,165,90,0.08)] space-y-3">
 			<div class="flex items-center justify-between">
 				<h1 class="text-xl tracking-wide">Messages</h1>
-				<Button size="sm" onclick={() => { showNewConvo = !showNewConvo; }}>
-					New
-				</Button>
+				<div class="flex items-center gap-1.5">
+					<Button
+						size="sm"
+						variant="outline"
+						onclick={syncHistory}
+						disabled={syncing}
+						title="Sync Twilio history"
+					>
+						<RefreshCw class="h-3.5 w-3.5 {syncing ? 'animate-spin' : ''}" />
+					</Button>
+					<Button size="sm" onclick={() => { showNewConvo = !showNewConvo; }}>
+						New
+					</Button>
+				</div>
 			</div>
+
+			<!-- Twilio Number Selector -->
+			{#if twilioNumbers.length > 1}
+				<div class="flex flex-wrap gap-1">
+					<button
+						class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === ''
+							? 'bg-[#C5A55A] text-[#1A1A1A]'
+							: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
+						}"
+						onclick={() => { selectedNumber = ''; }}
+					>
+						All Lines
+					</button>
+					{#each twilioNumbers as num}
+						<button
+							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === num.phoneNumber
+								? 'bg-[#C5A55A] text-[#1A1A1A]'
+								: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
+							}"
+							onclick={() => { selectedNumber = num.phoneNumber; }}
+							title={num.friendlyName || num.phoneNumber}
+						>
+							{num.friendlyName || formatPhone(num.phoneNumber)}
+						</button>
+					{/each}
+				</div>
+			{:else if twilioNumbers.length === 1}
+				<p class="text-[10px] text-[rgba(255,255,255,0.3)] uppercase tracking-wider">
+					{twilioNumbers[0].friendlyName || formatPhone(twilioNumbers[0].phoneNumber)}
+				</p>
+			{/if}
+
+			{#if syncResult}
+				<div class="rounded bg-[rgba(197,165,90,0.08)] border border-[rgba(197,165,90,0.15)] px-3 py-2">
+					<p class="text-[11px] text-[rgba(255,255,255,0.6)]">
+						Synced: {syncResult.newMessages} new messages, {syncResult.newCalls} new calls
+					</p>
+					<button class="text-[10px] text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.5)] mt-0.5" onclick={() => { syncResult = null; }}>Dismiss</button>
+				</div>
+			{/if}
+
 			<form class="relative" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
 				<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 				<Input placeholder="Search conversations..." class="pl-8 h-9 text-sm" bind:value={search} />
@@ -202,7 +319,13 @@
 					<div class="text-center">
 						<MessageSquare class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
 						<p class="text-sm text-[rgba(255,255,255,0.35)]">No conversations yet.</p>
-						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Incoming texts and auto-replies will appear here.</p>
+						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+							{#if twilioNumbers.length > 0}
+								Click the sync button to import history from Twilio.
+							{:else}
+								Incoming texts and auto-replies will appear here.
+							{/if}
+						</p>
 					</div>
 				</div>
 			{:else}
@@ -215,7 +338,7 @@
 							<div class="min-w-0 flex-1">
 								<p class="text-sm font-medium truncate flex items-center gap-1.5">
 									{#if convo.contact_id && convo.display_name}
-										<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
+										<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
 										<span class="text-[rgba(255,255,255,0.9)] truncate">{convo.display_name}</span>
 									{:else if convo.display_name}
 										<span class="text-[rgba(255,255,255,0.7)] truncate">{convo.display_name}</span>
@@ -234,6 +357,11 @@
 								<span class="text-[10px] text-[rgba(255,255,255,0.3)]">
 									{formatRelativeDate(convo.last_at)}
 								</span>
+								{#if convo.twilio_number && twilioNumbers.length > 1 && !selectedNumber}
+									<span class="text-[9px] text-[rgba(197,165,90,0.5)] font-mono">
+										{formatPhone(convo.twilio_number)}
+									</span>
+								{/if}
 								{#if convo.unread_count > 0}
 									<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]">
 										{convo.unread_count}
@@ -258,7 +386,7 @@
 				<div class="flex-1 min-w-0">
 					<p class="text-sm font-medium truncate flex items-center gap-1.5">
 						{#if selectedConvo.contact_id && selectedConvo.display_name}
-							<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
+							<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
 							<span class="text-[rgba(255,255,255,0.9)] truncate">{selectedConvo.display_name}</span>
 						{:else if selectedConvo.display_name}
 							<span class="text-[rgba(255,255,255,0.7)] truncate">{selectedConvo.display_name}</span>
@@ -268,6 +396,9 @@
 					</p>
 					{#if selectedConvo.display_name}
 						<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(selectedConvo.phone_number)}</p>
+					{/if}
+					{#if selectedConvo.twilio_number}
+						<p class="text-[10px] text-[rgba(197,165,90,0.4)]">via {formatPhone(selectedConvo.twilio_number)}</p>
 					{/if}
 				</div>
 				<a href="/calls?search={encodeURIComponent(selectedConvo.phone_number)}" class="text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A] transition-colors">
@@ -289,11 +420,17 @@
 					</div>
 				{:else}
 					{#each messages as msg}
+						{@const senderName = getSenderName(msg)}
 						<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
 							<div class="max-w-[75%] rounded-2xl px-4 py-2.5 {msg.direction === 'outbound'
 								? 'bg-[#C5A55A] text-[#1A1A1A] rounded-br-md'
 								: 'bg-[rgba(255,255,255,0.08)] border border-[rgba(197,165,90,0.12)] text-[rgba(255,255,255,0.85)] rounded-bl-md'
 							}">
+								{#if senderName}
+									<p class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound' ? 'text-[rgba(26,26,26,0.6)]' : 'text-[rgba(197,165,90,0.6)]'}">
+										{senderName}
+									</p>
+								{/if}
 								<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
 								<p class="text-[10px] mt-1 {msg.direction === 'outbound' ? 'text-[rgba(26,26,26,0.5)]' : 'text-[rgba(255,255,255,0.25)]'}">
 									{new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
@@ -338,6 +475,22 @@
 						class="text-center font-mono"
 						bind:value={newConvoPhone}
 					/>
+					{#if twilioNumbers.length > 1 && !selectedNumber}
+						<div class="flex items-center justify-center gap-1.5">
+							<span class="text-[10px] text-[rgba(255,255,255,0.35)] uppercase tracking-wider">Send from:</span>
+							{#each twilioNumbers as num}
+								<button
+									class="px-2 py-0.5 rounded text-[10px] font-mono transition-all {selectedNumber === num.phoneNumber
+										? 'bg-[#C5A55A] text-[#1A1A1A]'
+										: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.4)] hover:bg-[rgba(255,255,255,0.1)]'
+									}"
+									onclick={() => { selectedNumber = num.phoneNumber; }}
+								>
+									{formatPhone(num.phoneNumber)}
+								</button>
+							{/each}
+						</div>
+					{/if}
 					<form class="flex gap-2" onsubmit={(e) => { e.preventDefault(); sendMessage(); }}>
 						<Input
 							placeholder="Type a message..."

@@ -30,6 +30,11 @@ router.get('/conversations', logAction('messages.list'), async (req, res) => {
     query = query.eq('status', 'active');
   }
 
+  // Filter by Twilio number
+  if (req.query.twilioNumber) {
+    query = query.eq('twilio_number', req.query.twilioNumber);
+  }
+
   if (req.query.search) {
     query = query.or(
       `phone_number.ilike.%${req.query.search}%,display_name.ilike.%${req.query.search}%,last_message.ilike.%${req.query.search}%`
@@ -62,7 +67,7 @@ router.get('/conversations/:id', logAction('messages.read'), async (req, res) =>
 
   let query = supabaseAdmin
     .from('messages')
-    .select('*')
+    .select('*, sender:profiles!messages_sent_by_fkey(full_name, email)')
     .eq('conversation_id', id)
     .order('created_at', { ascending: true })
     .limit(pageSize);
@@ -119,8 +124,9 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
   if (toNumber.length === 10) toNumber = '+1' + toNumber;
   if (!toNumber.startsWith('+')) toNumber = '+' + toNumber;
 
-  // Use test number for outbound SMS if available, otherwise fall back to main
-  const fromNumber = process.env.TWILIO_SMS_FROM_NUMBER
+  // Use explicitly provided from number, or fall back to env defaults
+  const fromNumber = req.body.from
+    || process.env.TWILIO_SMS_FROM_NUMBER
     || process.env.TWILIO_TEST1_PHONE_NUMBER
     || process.env.TWILIO_PHONE_NUMBER
     || process.env.TWILIO_MAIN_PHONE_NUMBER;
@@ -144,15 +150,17 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
       ...(statusCallback && { statusCallback })
     });
 
-    // Find or create conversation
+    // Find or create conversation (scoped to twilio number)
     let convId = conversationId;
     if (!convId) {
-      // Look up existing conversation by phone number
-      const { data: existing } = await supabaseAdmin
+      // Look up existing conversation by phone number + twilio number
+      let existingQuery = supabaseAdmin
         .from('conversations')
         .select('id')
-        .eq('phone_number', toNumber)
-        .maybeSingle();
+        .eq('phone_number', toNumber);
+      if (fromNumber) existingQuery = existingQuery.eq('twilio_number', fromNumber);
+
+      const { data: existing } = await existingQuery.maybeSingle();
 
       if (existing) {
         convId = existing.id;
@@ -170,6 +178,7 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
           .from('conversations')
           .insert({
             phone_number: toNumber,
+            twilio_number: fromNumber || null,
             display_name: contact?.full_name || null,
             contact_id: contact?.id || null,
             last_message: body,

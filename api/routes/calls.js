@@ -37,6 +37,10 @@ router.get('/', logAction('calls.list'), async (req, res) => {
   if (req.query.search) {
     query = query.or(`from_number.ilike.%${req.query.search}%,to_number.ilike.%${req.query.search}%,notes.ilike.%${req.query.search}%,caller_name.ilike.%${req.query.search}%`);
   }
+  // Filter by Twilio number
+  if (req.query.twilioNumber) {
+    query = query.eq('twilio_number', req.query.twilioNumber);
+  }
 
   // Date range
   if (req.query.from) {

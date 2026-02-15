@@ -80,6 +80,7 @@ import messageRoutes from './routes/messages.js';
 import settingsRoutes from './routes/settings.js';
 import serviceRoutes from './routes/services.js';
 import automationRoutes from './routes/automation.js';
+import twilioHistoryRoutes from './routes/twilio-history.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/calls', callRoutes);
@@ -89,6 +90,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/automation', automationRoutes);
+app.use('/api/twilio-history', twilioHistoryRoutes);
 
 app.listen(PORT, () => {
   console.log(`LM App API running on port ${PORT}`);
