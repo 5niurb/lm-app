@@ -47,7 +47,6 @@ When building new pages or components, **study industry-leading med spa / salon 
 | **Pabau** | Med spa clinic management, clinical workflows | Consent forms, treatment records, automation |
 | **Podium** | Messaging + reviews platform | Inbox/conversation UI, notification patterns |
 | **Salesforce** | CRM gold standard | Contact management, pipeline views, settings |
-| **Aesthetic Record** | Med spa EHR (our current system to replace) | What to improve on — know the baseline |
 
 **Workflow for new UI:**
 1. Screenshot or scrape 2-3 reference apps for the feature being built
