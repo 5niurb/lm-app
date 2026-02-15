@@ -8,10 +8,10 @@
 import { readFileSync } from 'fs';
 
 export function readStdinSync() {
-  try {
-    // fd 0 = stdin — works cross-platform
-    return JSON.parse(readFileSync(0, 'utf8'));
-  } catch {
-    return null;
-  }
+	try {
+		// fd 0 = stdin — works cross-platform
+		return JSON.parse(readFileSync(0, 'utf8'));
+	} catch {
+		return null;
+	}
 }

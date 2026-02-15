@@ -5,10 +5,10 @@ import cors from 'cors';
 // Validate required env vars at startup
 const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'];
 for (const key of required) {
-  if (!process.env[key]) {
-    console.error(`Missing required env var: ${key}`);
-    process.exit(1);
-  }
+	if (!process.env[key]) {
+		console.error(`Missing required env var: ${key}`);
+		process.exit(1);
+	}
 }
 
 const app = express();
@@ -17,29 +17,33 @@ const PORT = process.env.PORT || 3001;
 // CORS — must be BEFORE all routes so every response gets headers
 // Allow both the production CF Pages URL and local dev
 const ALLOWED_ORIGINS = [
-  'https://lm-app.pages.dev',
-  'https://lemedspa.com',
-  'https://www.lemedspa.com',
-  'https://lemedspa.pages.dev',
-  'http://localhost:5173',
-  process.env.FRONTEND_URL,
-  process.env.FRONTEND_URL_LOCAL,
-  process.env.FRONTEND_URL_PUBLIC
+	'https://lm-app.pages.dev',
+	'https://lemedspa.com',
+	'https://www.lemedspa.com',
+	'https://lemedspa.pages.dev',
+	'http://localhost:5173',
+	process.env.FRONTEND_URL,
+	process.env.FRONTEND_URL_LOCAL,
+	process.env.FRONTEND_URL_PUBLIC
 ].filter(Boolean);
 
-app.use(cors({
-  origin(origin, cb) {
-    // Allow requests with no origin (curl, server-to-server, Twilio webhooks)
-    if (!origin) return cb(null, true);
-    if (ALLOWED_ORIGINS.includes(origin)
-        || origin.endsWith('.lm-app.pages.dev')
-        || origin.endsWith('.lemedspa.pages.dev')) {
-      return cb(null, origin);
-    }
-    cb(new Error('Not allowed by CORS'));
-  },
-  credentials: true
-}));
+app.use(
+	cors({
+		origin(origin, cb) {
+			// Allow requests with no origin (curl, server-to-server, Twilio webhooks)
+			if (!origin) return cb(null, true);
+			if (
+				ALLOWED_ORIGINS.includes(origin) ||
+				origin.endsWith('.lm-app.pages.dev') ||
+				origin.endsWith('.lemedspa.pages.dev')
+			) {
+				return cb(null, origin);
+			}
+			cb(new Error('Not allowed by CORS'));
+		},
+		credentials: true
+	})
+);
 
 // Webhook routes FIRST (before json parsing — Twilio sends URL-encoded)
 import webhookVoice from './routes/webhooks/voice.js';
@@ -56,7 +60,7 @@ app.use(express.json());
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+	res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Public webhook — website contact form (no auth, needs JSON parsing)
@@ -91,18 +95,20 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/automation', automationRoutes);
 
 app.listen(PORT, () => {
-  console.log(`LM App API running on port ${PORT}`);
+	console.log(`LM App API running on port ${PORT}`);
 });
 
 // Keep-alive ping in production (prevent Render free tier spin-down)
 // RENDER_EXTERNAL_URL is auto-set by Render; fallback to known URL
-const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || (process.env.NODE_ENV === 'production' ? 'https://lm-app-api.onrender.com' : null);
+const KEEP_ALIVE_URL =
+	process.env.RENDER_EXTERNAL_URL ||
+	(process.env.NODE_ENV === 'production' ? 'https://lm-app-api.onrender.com' : null);
 if (KEEP_ALIVE_URL) {
-  const INTERVAL = 14 * 60 * 1000; // 14 minutes
-  setInterval(() => {
-    fetch(`${KEEP_ALIVE_URL}/api/health`)
-      .then(r => console.log(`[keep-alive] ${r.status}`))
-      .catch(e => console.warn(`[keep-alive] failed: ${e.message}`));
-  }, INTERVAL);
-  console.log(`Keep-alive ping enabled: ${KEEP_ALIVE_URL} every 14m`);
+	const INTERVAL = 14 * 60 * 1000; // 14 minutes
+	setInterval(() => {
+		fetch(`${KEEP_ALIVE_URL}/api/health`)
+			.then((r) => console.log(`[keep-alive] ${r.status}`))
+			.catch((e) => console.warn(`[keep-alive] failed: ${e.message}`));
+	}, INTERVAL);
+	console.log(`Keep-alive ping enabled: ${KEEP_ALIVE_URL} every 14m`);
 }

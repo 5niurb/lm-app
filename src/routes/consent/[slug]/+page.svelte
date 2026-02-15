@@ -187,7 +187,12 @@
 
 	// Determine which sections are informational vs questionnaire
 	function getSectionType(section) {
-		if (section.type === 'checkbox' || section.type === 'radio' || section.type === 'text' || section.type === 'question') {
+		if (
+			section.type === 'checkbox' ||
+			section.type === 'radio' ||
+			section.type === 'text' ||
+			section.type === 'question'
+		) {
 			return 'question';
 		}
 		return 'info';
@@ -258,12 +263,18 @@
 <svelte:head>
 	{#if content}
 		<title>{content.title} — Le Med Spa Consent</title>
-		<meta name="description" content={content.summary || `${content.title} consent form — Le Med Spa, Encino CA`} />
+		<meta
+			name="description"
+			content={content.summary || `${content.title} consent form — Le Med Spa, Encino CA`}
+		/>
 	{:else}
 		<title>Consent Form — Le Med Spa</title>
 	{/if}
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link
+		href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500&display=swap"
+		rel="stylesheet"
+	/>
 </svelte:head>
 
 <div class="consent-page">
@@ -298,11 +309,14 @@
 			<div class="success-icon">✓</div>
 			<h1 class="success-title">Consent Form Submitted</h1>
 			<p class="success-message">
-				Thank you for completing the consent form for <strong>{content.title}</strong>.
-				Your signed consent has been securely recorded.
+				Thank you for completing the consent form for <strong>{content.title}</strong>. Your signed
+				consent has been securely recorded.
 			</p>
 			<div class="success-details">
-				<p>You may close this page. If you have any questions before your appointment, please don't hesitate to reach out.</p>
+				<p>
+					You may close this page. If you have any questions before your appointment, please don't
+					hesitate to reach out.
+				</p>
 			</div>
 			<div class="contact-card">
 				<p class="contact-label">Questions? We're here for you.</p>
@@ -361,7 +375,10 @@
 										<input
 											type="checkbox"
 											checked={responses[`q_${i}`] === 'yes'}
-											onchange={(e) => { responses[`q_${i}`] = e.target.checked ? 'yes' : 'no'; responses = responses; }}
+											onchange={(e) => {
+												responses[`q_${i}`] = e.target.checked ? 'yes' : 'no';
+												responses = responses;
+											}}
 										/>
 										<span class="checkbox-text">{section.label || 'I acknowledge'}</span>
 									</label>
@@ -370,7 +387,10 @@
 										class="response-input"
 										placeholder={section.placeholder || 'Your answer...'}
 										value={responses[`q_${i}`] || ''}
-										oninput={(e) => { responses[`q_${i}`] = e.target.value; responses = responses; }}
+										oninput={(e) => {
+											responses[`q_${i}`] = e.target.value;
+											responses = responses;
+										}}
 										rows="3"
 									></textarea>
 								{:else if section.type === 'radio' && section.options}
@@ -382,7 +402,10 @@
 													name={`q_${i}`}
 													value={option}
 													checked={responses[`q_${i}`] === option}
-													onchange={() => { responses[`q_${i}`] = option; responses = responses; }}
+													onchange={() => {
+														responses[`q_${i}`] = option;
+														responses = responses;
+													}}
 												/>
 												<span class="radio-text">{option}</span>
 											</label>
@@ -438,8 +461,8 @@
 			<label class="agreement-label">
 				<input type="checkbox" bind:checked={agreedToTerms} />
 				<span class="agreement-text">
-					I have read and understand the information above. I consent to the described treatment
-					and acknowledge the potential risks and benefits. I confirm that the information I have
+					I have read and understand the information above. I consent to the described treatment and
+					acknowledge the potential risks and benefits. I confirm that the information I have
 					provided is accurate to the best of my knowledge.
 				</span>
 			</label>
@@ -475,11 +498,7 @@
 			<div class="submit-error">{submitError}</div>
 		{/if}
 
-		<button
-			class="submit-btn"
-			onclick={handleSubmit}
-			disabled={submitting}
-		>
+		<button class="submit-btn" onclick={handleSubmit} disabled={submitting}>
 			{#if submitting}
 				<span class="btn-spinner"></span>
 				Submitting...
@@ -491,7 +510,10 @@
 		<!-- Footer -->
 		<footer class="consent-footer">
 			<div class="footer-note">
-				<p>This form is securely transmitted and stored in compliance with healthcare data protection standards.</p>
+				<p>
+					This form is securely transmitted and stored in compliance with healthcare data protection
+					standards.
+				</p>
 			</div>
 
 			<div class="address">
@@ -522,7 +544,11 @@
 		min-height: 100vh;
 		background: #0a0a0c;
 		color: #e8e0d0;
-		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		font-family:
+			'Inter',
+			-apple-system,
+			BlinkMacSystemFont,
+			sans-serif;
 		padding: 0 16px 48px;
 		max-width: 680px;
 		margin: 0 auto;
@@ -536,21 +562,23 @@
 		justify-content: center;
 		min-height: 60vh;
 		gap: 16px;
-		color: rgba(255,255,255,0.3);
+		color: rgba(255, 255, 255, 0.3);
 		font-size: 14px;
 	}
 
 	.loading-spinner {
 		width: 32px;
 		height: 32px;
-		border: 2px solid rgba(197,165,90,0.15);
+		border: 2px solid rgba(197, 165, 90, 0.15);
 		border-top-color: #c5a55a;
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	/* Error */
@@ -564,7 +592,9 @@
 		gap: 12px;
 	}
 
-	.error-icon { font-size: 48px; }
+	.error-icon {
+		font-size: 48px;
+	}
 
 	.error-container h1 {
 		font-family: 'Playfair Display', Georgia, serif;
@@ -575,7 +605,7 @@
 	}
 
 	.error-container p {
-		color: rgba(255,255,255,0.4);
+		color: rgba(255, 255, 255, 0.4);
 		font-size: 14px;
 		max-width: 320px;
 	}
@@ -591,7 +621,9 @@
 		font-family: inherit;
 	}
 
-	.cta-link:hover { color: #d4af37; }
+	.cta-link:hover {
+		color: #d4af37;
+	}
 
 	/* Success */
 	.success-container {
@@ -624,7 +656,7 @@
 	.success-message {
 		font-size: 15px;
 		line-height: 1.6;
-		color: rgba(255,255,255,0.6);
+		color: rgba(255, 255, 255, 0.6);
 		margin: 0 0 24px;
 	}
 
@@ -633,8 +665,8 @@
 	}
 
 	.success-details {
-		background: rgba(197,165,90,0.04);
-		border: 1px solid rgba(197,165,90,0.12);
+		background: rgba(197, 165, 90, 0.04);
+		border: 1px solid rgba(197, 165, 90, 0.12);
 		border-radius: 12px;
 		padding: 16px 20px;
 		margin-bottom: 24px;
@@ -642,7 +674,7 @@
 
 	.success-details p {
 		font-size: 13px;
-		color: rgba(255,255,255,0.5);
+		color: rgba(255, 255, 255, 0.5);
 		margin: 0;
 		line-height: 1.6;
 	}
@@ -651,7 +683,7 @@
 	.consent-header {
 		padding: 32px 0 24px;
 		text-align: center;
-		border-bottom: 1px solid rgba(197,165,90,0.12);
+		border-bottom: 1px solid rgba(197, 165, 90, 0.12);
 		margin-bottom: 32px;
 	}
 
@@ -673,7 +705,7 @@
 		display: block;
 		font-size: 9px;
 		letter-spacing: 3px;
-		color: rgba(255,255,255,0.25);
+		color: rgba(255, 255, 255, 0.25);
 		margin-top: 6px;
 	}
 
@@ -683,19 +715,21 @@
 		align-items: center;
 		gap: 8px;
 		padding: 6px 14px;
-		border: 1px solid rgba(197,165,90,0.15);
+		border: 1px solid rgba(197, 165, 90, 0.15);
 		border-radius: 20px;
-		background: rgba(197,165,90,0.04);
+		background: rgba(197, 165, 90, 0.04);
 		margin-bottom: 16px;
 	}
 
-	.type-icon { font-size: 14px; }
+	.type-icon {
+		font-size: 14px;
+	}
 
 	.type-label {
 		font-size: 11px;
 		letter-spacing: 1px;
 		text-transform: uppercase;
-		color: rgba(197,165,90,0.7);
+		color: rgba(197, 165, 90, 0.7);
 	}
 
 	/* Title */
@@ -710,14 +744,14 @@
 
 	.service-name {
 		font-size: 14px;
-		color: rgba(197,165,90,0.5);
+		color: rgba(197, 165, 90, 0.5);
 		margin: 0 0 12px;
 	}
 
 	.form-summary {
 		font-size: 14px;
 		line-height: 1.7;
-		color: rgba(255,255,255,0.5);
+		color: rgba(255, 255, 255, 0.5);
 		margin: 0 0 32px;
 	}
 
@@ -732,19 +766,23 @@
 		display: flex;
 		gap: 16px;
 		padding: 24px 0;
-		border-bottom: 1px solid rgba(255,255,255,0.04);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 		animation: fadeIn 0.4s ease-out forwards;
 		opacity: 0;
 	}
 
 	@keyframes fadeIn {
-		to { opacity: 1; }
+		to {
+			opacity: 1;
+		}
 	}
 
-	.section:last-child { border-bottom: none; }
+	.section:last-child {
+		border-bottom: none;
+	}
 
 	.question-section {
-		background: rgba(197,165,90,0.02);
+		background: rgba(197, 165, 90, 0.02);
 		padding: 24px 16px;
 		margin: 0 -16px;
 		border-radius: 8px;
@@ -756,8 +794,8 @@
 		width: 28px;
 		height: 28px;
 		border-radius: 50%;
-		background: rgba(197,165,90,0.08);
-		border: 1px solid rgba(197,165,90,0.15);
+		background: rgba(197, 165, 90, 0.08);
+		border: 1px solid rgba(197, 165, 90, 0.15);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -783,12 +821,13 @@
 	.section-body {
 		font-size: 14px;
 		line-height: 1.75;
-		color: rgba(255,255,255,0.65);
+		color: rgba(255, 255, 255, 0.65);
 		margin: 0;
 	}
 
 	/* Questionnaire controls */
-	.checkbox-label, .radio-label {
+	.checkbox-label,
+	.radio-label {
 		display: flex;
 		align-items: flex-start;
 		gap: 10px;
@@ -796,7 +835,8 @@
 		margin-top: 12px;
 	}
 
-	.checkbox-label input, .radio-label input {
+	.checkbox-label input,
+	.radio-label input {
 		accent-color: #c5a55a;
 		width: 18px;
 		height: 18px;
@@ -804,9 +844,10 @@
 		flex-shrink: 0;
 	}
 
-	.checkbox-text, .radio-text {
+	.checkbox-text,
+	.radio-text {
 		font-size: 14px;
-		color: rgba(255,255,255,0.6);
+		color: rgba(255, 255, 255, 0.6);
 		line-height: 1.5;
 	}
 
@@ -821,8 +862,8 @@
 		width: 100%;
 		margin-top: 12px;
 		padding: 12px;
-		background: rgba(255,255,255,0.04);
-		border: 1px solid rgba(197,165,90,0.15);
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(197, 165, 90, 0.15);
 		border-radius: 8px;
 		color: white;
 		font-size: 14px;
@@ -832,20 +873,20 @@
 	}
 
 	.response-input::placeholder {
-		color: rgba(255,255,255,0.2);
+		color: rgba(255, 255, 255, 0.2);
 	}
 
 	.response-input:focus {
 		outline: none;
-		border-color: rgba(197,165,90,0.4);
+		border-color: rgba(197, 165, 90, 0.4);
 	}
 
 	/* Patient info section */
 	.patient-info-section {
 		margin-top: 32px;
 		padding: 24px;
-		background: rgba(197,165,90,0.03);
-		border: 1px solid rgba(197,165,90,0.1);
+		background: rgba(197, 165, 90, 0.03);
+		border: 1px solid rgba(197, 165, 90, 0.1);
 		border-radius: 12px;
 	}
 
@@ -868,7 +909,7 @@
 		font-size: 12px;
 		text-transform: uppercase;
 		letter-spacing: 1px;
-		color: rgba(255,255,255,0.4);
+		color: rgba(255, 255, 255, 0.4);
 		margin-bottom: 6px;
 	}
 
@@ -879,8 +920,8 @@
 	.field input {
 		width: 100%;
 		padding: 12px 14px;
-		background: rgba(255,255,255,0.04);
-		border: 1px solid rgba(197,165,90,0.15);
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(197, 165, 90, 0.15);
 		border-radius: 8px;
 		color: white;
 		font-size: 15px;
@@ -889,20 +930,20 @@
 	}
 
 	.field input::placeholder {
-		color: rgba(255,255,255,0.2);
+		color: rgba(255, 255, 255, 0.2);
 	}
 
 	.field input:focus {
 		outline: none;
-		border-color: rgba(197,165,90,0.4);
+		border-color: rgba(197, 165, 90, 0.4);
 	}
 
 	/* Agreement */
 	.agreement-section {
 		margin-top: 32px;
 		padding: 20px;
-		background: rgba(197,165,90,0.04);
-		border: 1px solid rgba(197,165,90,0.12);
+		background: rgba(197, 165, 90, 0.04);
+		border: 1px solid rgba(197, 165, 90, 0.12);
 		border-radius: 12px;
 	}
 
@@ -924,7 +965,7 @@
 	.agreement-text {
 		font-size: 13px;
 		line-height: 1.7;
-		color: rgba(255,255,255,0.5);
+		color: rgba(255, 255, 255, 0.5);
 	}
 
 	/* Signature */
@@ -934,16 +975,16 @@
 
 	.signature-instructions {
 		font-size: 13px;
-		color: rgba(255,255,255,0.35);
+		color: rgba(255, 255, 255, 0.35);
 		margin: 0 0 12px;
 	}
 
 	.signature-pad-wrapper {
 		position: relative;
-		border: 1px solid rgba(197,165,90,0.2);
+		border: 1px solid rgba(197, 165, 90, 0.2);
 		border-radius: 12px;
 		overflow: hidden;
-		background: rgba(255,255,255,0.02);
+		background: rgba(255, 255, 255, 0.02);
 	}
 
 	.signature-canvas {
@@ -955,7 +996,7 @@
 	}
 
 	.signature-canvas.has-signature {
-		border-color: rgba(197,165,90,0.35);
+		border-color: rgba(197, 165, 90, 0.35);
 	}
 
 	.signature-placeholder {
@@ -972,7 +1013,7 @@
 
 	.signature-placeholder span {
 		font-size: 14px;
-		color: rgba(255,255,255,0.15);
+		color: rgba(255, 255, 255, 0.15);
 		letter-spacing: 1px;
 	}
 
@@ -985,17 +1026,17 @@
 	.clear-btn {
 		padding: 6px 14px;
 		background: none;
-		border: 1px solid rgba(255,255,255,0.1);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 6px;
-		color: rgba(255,255,255,0.4);
+		color: rgba(255, 255, 255, 0.4);
 		font-size: 12px;
 		cursor: pointer;
 		font-family: inherit;
 	}
 
 	.clear-btn:hover:not(:disabled) {
-		border-color: rgba(255,255,255,0.2);
-		color: rgba(255,255,255,0.6);
+		border-color: rgba(255, 255, 255, 0.2);
+		color: rgba(255, 255, 255, 0.6);
 	}
 
 	.clear-btn:disabled {
@@ -1045,7 +1086,7 @@
 	.btn-spinner {
 		width: 18px;
 		height: 18px;
-		border: 2px solid rgba(10,10,12,0.2);
+		border: 2px solid rgba(10, 10, 12, 0.2);
 		border-top-color: #0a0a0c;
 		border-radius: 50%;
 		animation: spin 0.6s linear infinite;
@@ -1055,7 +1096,7 @@
 	.consent-footer {
 		margin-top: 48px;
 		padding: 32px 0;
-		border-top: 1px solid rgba(197,165,90,0.12);
+		border-top: 1px solid rgba(197, 165, 90, 0.12);
 		text-align: center;
 	}
 
@@ -1065,14 +1106,14 @@
 
 	.footer-note p {
 		font-size: 11px;
-		color: rgba(255,255,255,0.25);
+		color: rgba(255, 255, 255, 0.25);
 		margin: 0;
 		line-height: 1.5;
 	}
 
 	.contact-card {
-		background: rgba(197,165,90,0.04);
-		border: 1px solid rgba(197,165,90,0.12);
+		background: rgba(197, 165, 90, 0.04);
+		border: 1px solid rgba(197, 165, 90, 0.12);
 		border-radius: 12px;
 		padding: 24px;
 		margin-bottom: 24px;
@@ -1080,7 +1121,7 @@
 
 	.contact-label {
 		font-size: 13px;
-		color: rgba(255,255,255,0.4);
+		color: rgba(255, 255, 255, 0.4);
 		margin: 0 0 8px;
 	}
 
@@ -1093,22 +1134,26 @@
 		margin-bottom: 4px;
 	}
 
-	.phone-link:hover { color: #d4af37; }
+	.phone-link:hover {
+		color: #d4af37;
+	}
 
 	.phone-full {
 		font-size: 12px;
-		color: rgba(255,255,255,0.25);
+		color: rgba(255, 255, 255, 0.25);
 		margin: 0;
 	}
 
 	.address {
 		font-size: 13px;
-		color: rgba(255,255,255,0.3);
+		color: rgba(255, 255, 255, 0.3);
 		margin-bottom: 16px;
 		line-height: 1.6;
 	}
 
-	.address p { margin: 0; }
+	.address p {
+		margin: 0;
+	}
 
 	.footer-links {
 		display: flex;
@@ -1120,20 +1165,22 @@
 
 	.footer-links a {
 		font-size: 12px;
-		color: rgba(197,165,90,0.5);
+		color: rgba(197, 165, 90, 0.5);
 		text-decoration: none;
 	}
 
-	.footer-links a:hover { color: #c5a55a; }
+	.footer-links a:hover {
+		color: #c5a55a;
+	}
 
 	.dot {
-		color: rgba(255,255,255,0.15);
+		color: rgba(255, 255, 255, 0.15);
 		font-size: 10px;
 	}
 
 	.trademark {
 		font-size: 10px;
-		color: rgba(255,255,255,0.15);
+		color: rgba(255, 255, 255, 0.15);
 		margin: 0;
 	}
 

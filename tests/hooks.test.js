@@ -30,7 +30,11 @@ function runHook(hookPath, input) {
 			stderr: result.stderr || ''
 		};
 	} finally {
-		try { unlinkSync(tmpFile); } catch { /* ignore */ }
+		try {
+			unlinkSync(tmpFile);
+		} catch {
+			/* ignore */
+		}
 	}
 }
 

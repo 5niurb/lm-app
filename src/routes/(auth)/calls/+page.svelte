@@ -4,9 +4,26 @@
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
-	import { Phone, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, ChevronLeft, ChevronRight, Voicemail, Play, Pause, MessageSquare } from '@lucide/svelte';
+	import {
+		Phone,
+		Search,
+		PhoneIncoming,
+		PhoneOutgoing,
+		PhoneMissed,
+		ChevronLeft,
+		ChevronRight,
+		Voicemail,
+		Play,
+		Pause,
+		MessageSquare
+	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
-	import { formatPhone, formatDuration, formatDate, formatRelativeDate } from '$lib/utils/formatters.js';
+	import {
+		formatPhone,
+		formatDuration,
+		formatDate,
+		formatRelativeDate
+	} from '$lib/utils/formatters.js';
 
 	// ─── State ───
 	let search = $state('');
@@ -70,10 +87,16 @@
 	}
 
 	function nextPage() {
-		if (currentPage * pageSize < totalCount) { currentPage++; loadCalls(); }
+		if (currentPage * pageSize < totalCount) {
+			currentPage++;
+			loadCalls();
+		}
 	}
 	function prevPage() {
-		if (currentPage > 1) { currentPage--; loadCalls(); }
+		if (currentPage > 1) {
+			currentPage--;
+			loadCalls();
+		}
 	}
 
 	const totalPages = $derived(Math.ceil(totalCount / pageSize) || 1);
@@ -88,15 +111,32 @@
 		// Voicemail left — show transcription preview
 		if (call.disposition === 'voicemail' && vm) {
 			if (vm.transcription) {
-				const preview = vm.transcription.length > 90
-					? vm.transcription.slice(0, 90).trim() + '...'
-					: vm.transcription;
-				return { text: preview, type: 'voicemail', hasAudio: !!vm.recording_url, vmId: vm.id, vmIsNew: vm.is_new };
+				const preview =
+					vm.transcription.length > 90
+						? vm.transcription.slice(0, 90).trim() + '...'
+						: vm.transcription;
+				return {
+					text: preview,
+					type: 'voicemail',
+					hasAudio: !!vm.recording_url,
+					vmId: vm.id,
+					vmIsNew: vm.is_new
+				};
 			}
 			if (vm.transcription_status === 'pending') {
-				return { text: 'Transcribing voicemail...', type: 'voicemail-pending', hasAudio: !!vm.recording_url, vmId: vm.id };
+				return {
+					text: 'Transcribing voicemail...',
+					type: 'voicemail-pending',
+					hasAudio: !!vm.recording_url,
+					vmId: vm.id
+				};
 			}
-			return { text: 'Voicemail left', type: 'voicemail', hasAudio: !!vm.recording_url, vmId: vm.id };
+			return {
+				text: 'Voicemail left',
+				type: 'voicemail',
+				hasAudio: !!vm.recording_url,
+				vmId: vm.id
+			};
 		}
 
 		// Voicemail disposition but no voicemail record yet
@@ -161,13 +201,15 @@
 		try {
 			playingId = vmId;
 			const res = await fetch(proxyUrl, {
-				headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+				headers: token ? { Authorization: `Bearer ${token}` } : {}
 			});
 			if (!res.ok) throw new Error('Failed to load recording');
 			const blob = await res.blob();
 			audioEl.src = URL.createObjectURL(blob);
 			audioEl.play();
-			audioEl.onended = () => { playingId = null; };
+			audioEl.onended = () => {
+				playingId = null;
+			};
 		} catch (e) {
 			console.error('Failed to play recording:', e);
 			playingId = null;
@@ -198,25 +240,51 @@
 		<!-- Search + filters -->
 		<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-				<form class="relative flex-1" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+				<form
+					class="relative flex-1"
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleSearch();
+					}}
+				>
 					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-					<Input
-						placeholder="Search by name or phone number..."
-						class="pl-8"
-						bind:value={search}
-					/>
+					<Input placeholder="Search by name or phone number..." class="pl-8" bind:value={search} />
 				</form>
 				<div class="flex flex-wrap gap-1">
-					<Button variant={filter === 'all' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('all')}>All</Button>
-					<Button variant={filter === 'inbound' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('inbound')}>
+					<Button
+						variant={filter === 'all' ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setFilter('all')}>All</Button
+					>
+					<Button
+						variant={filter === 'inbound' ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setFilter('inbound')}
+					>
 						<PhoneIncoming class="h-3.5 w-3.5 mr-1" />Inbound
 					</Button>
-					<Button variant={filter === 'outbound' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('outbound')}>
+					<Button
+						variant={filter === 'outbound' ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setFilter('outbound')}
+					>
 						<PhoneOutgoing class="h-3.5 w-3.5 mr-1" />Outbound
 					</Button>
-					<Button variant={filter === 'answered' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('answered')}>Answered</Button>
-					<Button variant={filter === 'missed' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('missed')}>Missed</Button>
-					<Button variant={filter === 'voicemail' ? 'default' : 'outline'} size="sm" onclick={() => setFilter('voicemail')}>Voicemail</Button>
+					<Button
+						variant={filter === 'answered' ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setFilter('answered')}>Answered</Button
+					>
+					<Button
+						variant={filter === 'missed' ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setFilter('missed')}>Missed</Button
+					>
+					<Button
+						variant={filter === 'voicemail' ? 'default' : 'outline'}
+						size="sm"
+						onclick={() => setFilter('voicemail')}>Voicemail</Button
+					>
 				</div>
 			</div>
 		</div>
@@ -235,9 +303,13 @@
 						<Phone class="mx-auto mb-3 h-8 w-8 text-[rgba(197,165,90,0.2)]" />
 						<p class="text-sm text-[rgba(255,255,255,0.35)]">No call records found.</p>
 						{#if search || filter !== 'all'}
-							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Try adjusting your search or filter.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+								Try adjusting your search or filter.
+							</p>
 						{:else}
-							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Calls will appear here once Twilio webhooks are connected.</p>
+							<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+								Calls will appear here once Twilio webhooks are connected.
+							</p>
 						{/if}
 					</div>
 				</div>
@@ -246,15 +318,21 @@
 					{#each calls as call}
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
-						<div class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]">
+						<div
+							class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]"
+						>
 							<!-- Direction icon -->
 							<div class="mt-0.5 shrink-0">
 								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
 									<PhoneMissed class="h-4 w-4 text-red-400/70" />
 								{:else if call.direction === 'inbound'}
-									<PhoneIncoming class="h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors" />
+									<PhoneIncoming
+										class="h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors"
+									/>
 								{:else}
-									<PhoneOutgoing class="h-4 w-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors" />
+									<PhoneOutgoing
+										class="h-4 w-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors"
+									/>
 								{/if}
 							</div>
 
@@ -265,18 +343,25 @@
 									<div class="flex items-center gap-1.5 min-w-0">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if call.contact_id && call.caller_name}
-												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
+												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact"
+													>&#9670;</span
+												>
 												<span class="text-[rgba(255,255,255,0.9)]">{call.caller_name}</span>
 											{:else if call.caller_name}
 												<span class="text-[rgba(255,255,255,0.7)]">{call.caller_name}</span>
-												<span class="text-[9px] uppercase tracking-wider px-1 py-px rounded bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.3)] leading-none shrink-0">CID</span>
+												<span
+													class="text-[9px] uppercase tracking-wider px-1 py-px rounded bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.3)] leading-none shrink-0"
+													>CID</span
+												>
 											{:else}
 												<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(callPhone)}</span>
 											{/if}
 										</p>
 										<!-- Quick actions — right next to name, visible on hover -->
 										{#if callPhone}
-											<div class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+											<div
+												class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+											>
 												<a
 													href="/softphone?call={encodeURIComponent(callPhone)}"
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
@@ -285,7 +370,9 @@
 													<PhoneOutgoing class="h-3.5 w-3.5" />
 												</a>
 												<a
-													href="/messages?phone={encodeURIComponent(callPhone)}{call.caller_name ? '&name=' + encodeURIComponent(call.caller_name) : ''}&new=true"
+													href="/messages?phone={encodeURIComponent(callPhone)}{call.caller_name
+														? '&name=' + encodeURIComponent(call.caller_name)
+														: ''}&new=true"
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 													title="Send message"
 												>
@@ -310,11 +397,16 @@
 								<div class="flex items-center gap-2 mt-1">
 									{#if summary.type === 'voicemail' || summary.type === 'voicemail-pending'}
 										<Voicemail class="h-3.5 w-3.5 shrink-0 text-[#C5A55A]/70" />
-										<span class="text-xs text-[rgba(255,255,255,0.45)] truncate italic">{summary.text}</span>
+										<span class="text-xs text-[rgba(255,255,255,0.45)] truncate italic"
+											>{summary.text}</span
+										>
 										{#if summary.hasAudio}
 											<button
 												class="shrink-0 flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#C5A55A]/60 hover:text-[#C5A55A] transition-colors"
-												onclick={(e) => { e.stopPropagation(); togglePlay(summary.vmId); }}
+												onclick={(e) => {
+													e.stopPropagation();
+													togglePlay(summary.vmId);
+												}}
 											>
 												{#if playingId === summary.vmId}
 													<Pause class="h-3 w-3" />
@@ -346,14 +438,24 @@
 				{#if totalCount > pageSize}
 					<div class="flex items-center justify-between pt-4">
 						<p class="text-sm text-muted-foreground">
-							Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount}
+							Showing {(currentPage - 1) * pageSize + 1}–{Math.min(
+								currentPage * pageSize,
+								totalCount
+							)} of {totalCount}
 						</p>
 						<div class="flex gap-1">
 							<Button variant="outline" size="sm" onclick={prevPage} disabled={currentPage <= 1}>
 								<ChevronLeft class="h-4 w-4" />
 							</Button>
-							<span class="flex items-center px-2 text-sm text-muted-foreground">{currentPage} / {totalPages}</span>
-							<Button variant="outline" size="sm" onclick={nextPage} disabled={currentPage >= totalPages}>
+							<span class="flex items-center px-2 text-sm text-muted-foreground"
+								>{currentPage} / {totalPages}</span
+							>
+							<Button
+								variant="outline"
+								size="sm"
+								onclick={nextPage}
+								disabled={currentPage >= totalPages}
+							>
 								<ChevronRight class="h-4 w-4" />
 							</Button>
 						</div>

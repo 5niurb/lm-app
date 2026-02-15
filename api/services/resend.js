@@ -9,24 +9,24 @@ const FROM_ADDRESS = 'noreply@updates.lemedspa.com';
  * @returns {Promise<{ success: boolean, data?: object, error?: string }>}
  */
 export async function sendOtpEmail(to, otp) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error('RESEND_API_KEY is not set — cannot send OTP email');
-    return { success: false, error: 'Email service not configured' };
-  }
+	const apiKey = process.env.RESEND_API_KEY;
+	if (!apiKey) {
+		console.error('RESEND_API_KEY is not set — cannot send OTP email');
+		return { success: false, error: 'Email service not configured' };
+	}
 
-  try {
-    const response = await fetch(RESEND_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: [to],
-        subject: 'Your Le Med Spa verification code',
-        html: `
+	try {
+		const response = await fetch(RESEND_API_URL, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				from: FROM_ADDRESS,
+				to: [to],
+				subject: 'Your Le Med Spa verification code',
+				html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
             <h2 style="color: #1a1a1a; margin-bottom: 16px;">Verification Code</h2>
             <p style="color: #444; font-size: 16px; line-height: 1.5;">
@@ -40,19 +40,19 @@ export async function sendOtpEmail(to, otp) {
             </p>
           </div>
         `
-      })
-    });
+			})
+		});
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('Resend API error:', response.status, errorBody);
-      return { success: false, error: `Email send failed: ${response.status}` };
-    }
+		if (!response.ok) {
+			const errorBody = await response.text();
+			console.error('Resend API error:', response.status, errorBody);
+			return { success: false, error: `Email send failed: ${response.status}` };
+		}
 
-    const data = await response.json();
-    return { success: true, data };
-  } catch (err) {
-    console.error('Failed to send OTP email:', err);
-    return { success: false, error: err.message };
-  }
+		const data = await response.json();
+		return { success: true, data };
+	} catch (err) {
+		console.error('Failed to send OTP email:', err);
+		return { success: false, error: err.message };
+	}
 }

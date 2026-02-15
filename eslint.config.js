@@ -47,7 +47,9 @@ export default [
 			'node_modules/',
 			'api/node_modules/',
 			// shadcn-svelte generated components — don't lint
-			'src/lib/components/ui/'
+			'src/lib/components/ui/',
+			// TypeScript files from shadcn-svelte — no TS parser configured
+			'src/lib/hooks/'
 		]
 	}
 ];

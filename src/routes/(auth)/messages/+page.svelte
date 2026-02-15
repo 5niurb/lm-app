@@ -88,7 +88,9 @@
 		loadConversations();
 		// Poll for new messages every 5 seconds
 		refreshInterval = setInterval(refreshAll, 5000);
-		return () => { if (refreshInterval) clearInterval(refreshInterval); };
+		return () => {
+			if (refreshInterval) clearInterval(refreshInterval);
+		};
 	});
 
 	async function refreshAll() {
@@ -112,7 +114,7 @@
 			conversations = res.data;
 			// Keep selectedConvo in sync with refreshed data
 			if (selectedConvo) {
-				const updated = conversations?.find(c => c.id === selectedConvo.id);
+				const updated = conversations?.find((c) => c.id === selectedConvo.id);
 				if (updated) selectedConvo = updated;
 			}
 		} catch (e) {
@@ -177,7 +179,7 @@
 
 			// If this was a new conversation, select it
 			if (!selectedConvo && res.data?.conversation_id) {
-				const convo = conversations?.find(c => c.id === res.data.conversation_id);
+				const convo = conversations?.find((c) => c.id === res.data.conversation_id);
 				if (convo) selectConversation(convo);
 			}
 
@@ -211,15 +213,30 @@
 
 <div class="flex h-[calc(100vh-4rem)] overflow-hidden -m-6">
 	<!-- Conversation List (left panel) -->
-	<div class="w-full sm:w-80 lg:w-96 border-r border-[rgba(197,165,90,0.12)] flex flex-col shrink-0 {selectedConvo ? 'hidden sm:flex' : 'flex'}">
+	<div
+		class="w-full sm:w-80 lg:w-96 border-r border-[rgba(197,165,90,0.12)] flex flex-col shrink-0 {selectedConvo
+			? 'hidden sm:flex'
+			: 'flex'}"
+	>
 		<div class="p-4 border-b border-[rgba(197,165,90,0.08)] space-y-3">
 			<div class="flex items-center justify-between">
 				<h1 class="text-xl tracking-wide">Messages</h1>
-				<Button size="sm" onclick={() => { showNewConvo = !showNewConvo; }}>
+				<Button
+					size="sm"
+					onclick={() => {
+						showNewConvo = !showNewConvo;
+					}}
+				>
 					New
 				</Button>
 			</div>
-			<form class="relative" onsubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+			<form
+				class="relative"
+				onsubmit={(e) => {
+					e.preventDefault();
+					handleSearch();
+				}}
+			>
 				<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 				<Input placeholder="Search conversations..." class="pl-8 h-9 text-sm" bind:value={search} />
 			</form>
@@ -244,31 +261,48 @@
 			{:else if conversations.length === 0}
 				<div class="flex h-48 items-center justify-center">
 					<div class="text-center">
-						<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]">
+						<div
+							class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+						>
 							<MessageSquare class="h-5 w-5 empty-state-icon" />
 						</div>
-						<p class="text-sm font-light text-[rgba(255,255,255,0.4)]" style="font-family: 'Playfair Display', serif;">No conversations</p>
-						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">Incoming texts and auto-replies will appear here.</p>
+						<p
+							class="text-sm font-light text-[rgba(255,255,255,0.4)]"
+							style="font-family: 'Playfair Display', serif;"
+						>
+							No conversations
+						</p>
+						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+							Incoming texts and auto-replies will appear here.
+						</p>
 					</div>
 				</div>
 			{:else}
 				{#each conversations as convo}
-					<div class="group border-b border-[rgba(197,165,90,0.06)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id === convo.id ? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]' : ''}">
-						<button
-							class="w-full text-left px-4 py-3"
-							onclick={() => selectConversation(convo)}
-						>
+					<div
+						class="group border-b border-[rgba(197,165,90,0.06)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id ===
+						convo.id
+							? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]'
+							: ''}"
+					>
+						<button class="w-full text-left px-4 py-3" onclick={() => selectConversation(convo)}>
 							<div class="flex items-start justify-between gap-2">
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-1.5">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if convo.contact_id && convo.display_name}
 												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
-												<span class="text-[rgba(255,255,255,0.9)] truncate">{convo.display_name}</span>
+												<span class="text-[rgba(255,255,255,0.9)] truncate"
+													>{convo.display_name}</span
+												>
 											{:else if convo.display_name}
-												<span class="text-[rgba(255,255,255,0.7)] truncate">{convo.display_name}</span>
+												<span class="text-[rgba(255,255,255,0.7)] truncate"
+													>{convo.display_name}</span
+												>
 											{:else}
-												<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(convo.phone_number)}</span>
+												<span class="text-[rgba(255,255,255,0.85)]"
+													>{formatPhone(convo.phone_number)}</span
+												>
 											{/if}
 										</p>
 										<!-- Quick call action — right next to name, visible on hover -->
@@ -284,7 +318,9 @@
 										{/if}
 									</div>
 									{#if convo.display_name}
-										<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(convo.phone_number)}</p>
+										<p class="text-xs text-[rgba(255,255,255,0.35)]">
+											{formatPhone(convo.phone_number)}
+										</p>
 									{/if}
 									<p class="text-xs text-[rgba(255,255,255,0.4)] truncate mt-0.5">
 										{convo.last_message || 'No messages'}
@@ -295,7 +331,9 @@
 										{formatRelativeDate(convo.last_at)}
 									</span>
 									{#if convo.unread_count > 0}
-										<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]">
+										<span
+											class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]"
+										>
 											{convo.unread_count}
 										</span>
 									{/if}
@@ -320,15 +358,21 @@
 					<p class="text-sm font-medium truncate flex items-center gap-1.5">
 						{#if selectedConvo.contact_id && selectedConvo.display_name}
 							<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
-							<span class="text-[rgba(255,255,255,0.9)] truncate">{selectedConvo.display_name}</span>
+							<span class="text-[rgba(255,255,255,0.9)] truncate">{selectedConvo.display_name}</span
+							>
 						{:else if selectedConvo.display_name}
-							<span class="text-[rgba(255,255,255,0.7)] truncate">{selectedConvo.display_name}</span>
+							<span class="text-[rgba(255,255,255,0.7)] truncate">{selectedConvo.display_name}</span
+							>
 						{:else}
-							<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(selectedConvo.phone_number)}</span>
+							<span class="text-[rgba(255,255,255,0.85)]"
+								>{formatPhone(selectedConvo.phone_number)}</span
+							>
 						{/if}
 					</p>
 					{#if selectedConvo.display_name}
-						<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(selectedConvo.phone_number)}</p>
+						<p class="text-xs text-[rgba(255,255,255,0.35)]">
+							{formatPhone(selectedConvo.phone_number)}
+						</p>
 					{/if}
 				</div>
 				<div class="flex items-center gap-1.5 shrink-0">
@@ -359,18 +403,28 @@
 					</div>
 				{:else if messages.length === 0}
 					<div class="flex h-full items-center justify-center">
-						<p class="text-sm text-[rgba(255,255,255,0.3)]">No messages in this conversation yet.</p>
+						<p class="text-sm text-[rgba(255,255,255,0.3)]">
+							No messages in this conversation yet.
+						</p>
 					</div>
 				{:else}
 					{#each messages as msg}
 						<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
-							<div class="max-w-[75%] rounded-2xl px-4 py-2.5 {msg.direction === 'outbound'
-								? 'bg-[#C5A55A] text-[#1A1A1A] rounded-br-md'
-								: 'bg-[rgba(255,255,255,0.08)] border border-[rgba(197,165,90,0.12)] text-[rgba(255,255,255,0.85)] rounded-bl-md'
-							}">
+							<div
+								class="max-w-[75%] rounded-2xl px-4 py-2.5 {msg.direction === 'outbound'
+									? 'bg-[#C5A55A] text-[#1A1A1A] rounded-br-md'
+									: 'bg-[rgba(255,255,255,0.08)] border border-[rgba(197,165,90,0.12)] text-[rgba(255,255,255,0.85)] rounded-bl-md'}"
+							>
 								<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
-								<p class="text-[10px] mt-1 {msg.direction === 'outbound' ? 'text-[rgba(26,26,26,0.5)]' : 'text-[rgba(255,255,255,0.25)]'}">
-									{new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+								<p
+									class="text-[10px] mt-1 {msg.direction === 'outbound'
+										? 'text-[rgba(26,26,26,0.5)]'
+										: 'text-[rgba(255,255,255,0.25)]'}"
+								>
+									{new Date(msg.created_at).toLocaleTimeString('en-US', {
+										hour: 'numeric',
+										minute: '2-digit'
+									})}
 									{#if msg.status === 'delivered'}
 										&middot; Delivered
 									{:else if msg.status === 'failed'}
@@ -385,7 +439,13 @@
 
 			<!-- Compose -->
 			<div class="p-3 border-t border-[rgba(197,165,90,0.12)]">
-				<form class="flex gap-2" onsubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+				<form
+					class="flex gap-2"
+					onsubmit={(e) => {
+						e.preventDefault();
+						sendMessage();
+					}}
+				>
 					<Input
 						placeholder="Type a message..."
 						class="flex-1"
@@ -406,10 +466,17 @@
 			<div class="flex-1 flex flex-col items-center justify-center p-8">
 				<MessageSquare class="h-12 w-12 text-[rgba(197,165,90,0.3)] mb-4" />
 				{#if newConvoDisplayName}
-					<p class="text-base font-medium text-[rgba(255,255,255,0.85)] mb-1" style="font-family: 'Playfair Display', serif;">{newConvoDisplayName}</p>
+					<p
+						class="text-base font-medium text-[rgba(255,255,255,0.85)] mb-1"
+						style="font-family: 'Playfair Display', serif;"
+					>
+						{newConvoDisplayName}
+					</p>
 					<p class="text-xs text-[rgba(255,255,255,0.4)] mb-6">{formatPhone(newConvoPhone)}</p>
 				{:else}
-					<p class="text-sm text-[rgba(255,255,255,0.5)] mb-6">Enter a phone number and message to start a new conversation.</p>
+					<p class="text-sm text-[rgba(255,255,255,0.5)] mb-6">
+						Enter a phone number and message to start a new conversation.
+					</p>
 				{/if}
 				<div class="w-full max-w-md space-y-3">
 					{#if !newConvoDisplayName}
@@ -419,7 +486,13 @@
 							bind:value={newConvoPhone}
 						/>
 					{/if}
-					<form class="flex gap-2" onsubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+					<form
+						class="flex gap-2"
+						onsubmit={(e) => {
+							e.preventDefault();
+							sendMessage();
+						}}
+					>
 						<Input
 							placeholder="Type a message..."
 							class="flex-1"
@@ -440,16 +513,29 @@
 			<!-- Empty state -->
 			<div class="flex-1 flex items-center justify-center relative">
 				<!-- Subtle radial glow -->
-				<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(197,165,90,0.03)_0%,_transparent_60%)]"></div>
+				<div
+					class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(197,165,90,0.03)_0%,_transparent_60%)]"
+				></div>
 				<div class="text-center relative z-10">
-					<div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)]">
+					<div
+						class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)]"
+					>
 						<MessageSquare class="h-8 w-8 text-[rgba(197,165,90,0.25)]" />
 					</div>
-					<p class="text-base font-light text-[rgba(255,255,255,0.4)] mb-1" style="font-family: 'Playfair Display', serif;">No conversation selected</p>
-					<p class="text-xs text-[rgba(255,255,255,0.2)]">Choose a conversation from the left, or start a new one.</p>
+					<p
+						class="text-base font-light text-[rgba(255,255,255,0.4)] mb-1"
+						style="font-family: 'Playfair Display', serif;"
+					>
+						No conversation selected
+					</p>
+					<p class="text-xs text-[rgba(255,255,255,0.2)]">
+						Choose a conversation from the left, or start a new one.
+					</p>
 					<button
 						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-[#C5A55A] border border-[rgba(197,165,90,0.2)] hover:bg-[rgba(197,165,90,0.06)] transition-colors"
-						onclick={() => { showNewConvo = true; }}
+						onclick={() => {
+							showNewConvo = true;
+						}}
 					>
 						<MessageSquare class="h-3.5 w-3.5" />
 						New conversation
@@ -460,9 +546,16 @@
 	</div>
 
 	{#if error}
-		<div class="fixed bottom-4 right-4 rounded border border-red-500/30 bg-red-500/10 px-4 py-2 backdrop-blur">
+		<div
+			class="fixed bottom-4 right-4 rounded border border-red-500/30 bg-red-500/10 px-4 py-2 backdrop-blur"
+		>
 			<p class="text-sm text-red-400">{error}</p>
-			<button class="text-xs text-red-400/60 hover:text-red-400 mt-1" onclick={() => { error = ''; }}>Dismiss</button>
+			<button
+				class="text-xs text-red-400/60 hover:text-red-400 mt-1"
+				onclick={() => {
+					error = '';
+				}}>Dismiss</button
+			>
 		</div>
 	{/if}
 </div>

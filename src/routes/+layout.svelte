@@ -16,7 +16,9 @@
 		});
 
 		// Listen for auth changes
-		const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+		const {
+			data: { subscription }
+		} = supabase.auth.onAuthStateChange((_event, s) => {
 			session.set(s);
 			if (s) loadProfile(s.user.id);
 			else {
