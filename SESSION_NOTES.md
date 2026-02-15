@@ -1,3 +1,47 @@
+## Session — 2026-02-15 (Session 25)
+**Focus:** After-hours IVR flow, smart message routing, requirements capture system
+
+**Accomplished:**
+- **IVR Studio Flow Update:**
+  - Uploaded "Closed text us" audio to Twilio Serverless (lm-ivr-assets-2112.twil.io)
+  - Added business hours check API: `GET /api/webhooks/voice/hours-check` (Mon-Fri 10-6, Sat 10-4 PT, Sun closed)
+  - Updated Studio flow JSON: press 0 now checks hours → open: operator, closed: play closed greeting
+  - Closed greeting: press 1 → SMS, timeout → voicemail recording
+  - Flow JSON ready to deploy (needs Flow SID — not in .env yet)
+
+- **Smart Message Routing:**
+  - Added `GET /api/messages/lookup?phone=` endpoint — finds existing conversation or contact by phone
+  - Messages page now auto-selects existing conversation when navigating from quick action icons
+  - If no conversation exists but contact is known, shows contact name in new compose view
+  - Phone number field hidden when contact name is displayed
+  - URL params cleaned after processing
+  - All quick action message links now pass `&name=` param (calls, dashboard, contacts pages)
+
+- **Requirements Capture System:**
+  - Created `docs/requirements/` directory with README template and format guide
+  - Initial requirement docs for: calls, messages, dashboard, softphone, contacts, IVR flow
+  - Each doc captures user stories, acceptance criteria, design specs, API deps, revision history
+  - Added "Requirements Capture" section to CLAUDE.md instructing future sessions to maintain it
+  - User's exact words quoted in requirement docs for traceability
+
+**Current State:**
+- Frontend deployed to Cloudflare Pages (https://lm-app.pages.dev)
+- API pushed to Render (auto-deploys from main)
+- Studio flow JSON updated but NOT deployed to Twilio yet (needs Flow SID)
+- All changes committed and pushed to GitHub
+
+**Issues:**
+- `TWILIO_PROD_FLOW_SID` not in api/.env — needed to deploy Studio flow via `node twilio/deploy.js`
+- Need to test the messages lookup endpoint on production after Render redeploy (~2-3 min)
+
+**Next Steps:**
+- Deploy Studio flow to Twilio: `node twilio/deploy.js <FW_SID> twilio/flows/main-ivr-webhooks.json --publish`
+- Test after-hours flow (call main number after 6pm PT or on weekend)
+- Test message routing: click message icon from calls page, verify it opens existing conversation
+- Continue with Phase 1C features: services catalog, automation sequences
+
+---
+
 ## Session — 2026-02-14 (Session 24)
 **Focus:** Comprehensive frontend design polish — 11 improvements across all pages
 

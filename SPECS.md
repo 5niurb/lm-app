@@ -2,7 +2,7 @@
 
 > **Auto-maintained by Claude.** Updated after each feature, design change, or component implementation.
 > Detailed enough to rebuild the entire platform from scratch.
-> Last updated: Session 25 (2026-02-15)
+> Last updated: Session 25–26 (2026-02-15)
 
 ---
 
@@ -140,7 +140,7 @@
 - [x] Transcription displayed when available
 - [x] Inline action summaries (`getActionSummary()` function)
 - [x] Contact name source indicators (gold ◆ / CID / phone-only)
-- [x] Quick action icons: click phone → `/softphone?dial=PHONE`, click message → `/messages?phone=PHONE&name=NAME`
+- [x] Quick action icons: click phone → `/softphone?call=PHONE`, click message → `/messages?phone=PHONE&name=NAME`
 - [x] URL param `?view=voicemails` deep links to voicemail tab
 - [x] Old `/voicemails` route redirects to `/calls?view=voicemails`
 
@@ -155,7 +155,7 @@
 | Component | Description |
 |-----------|-------------|
 | Dial pad | Round buttons (0-9, *, #), gold call button |
-| Phone input | Number field, supports paste and `?dial=` URL param |
+| Phone input | Number field, supports paste and `?call=` URL param |
 | Call controls | Answer (green), Decline (red), Hangup, Mute, Hold |
 | Incoming call UI | Large 80px buttons, blue gradient background, bounce animation |
 | Ringtone | Web Audio API dual-tone (440Hz + 480Hz), ring pattern |
@@ -176,7 +176,7 @@
 - [x] Call timer displays elapsed time
 - [x] Call events logged to `call_logs` table
 - [x] "Connecting" yellow transition state between answer and audio
-- [x] Auto-dial from URL param: `/softphone?dial=+18185551234`
+- [x] Auto-dial from URL param: `/softphone?call=+18185551234`
 
 **Design Decisions:**
 - Round dial pad buttons (not square) to match luxury brand
@@ -239,7 +239,7 @@
 - [x] Contact detail shows all fields + tags + source
 - [x] Tag-based filter tabs with counts
 - [x] Inline tag add/remove
-- [x] Quick action icons: phone → `/softphone?dial=PHONE`, message → `/messages?phone=PHONE&name=NAME`
+- [x] Quick action icons: phone → `/softphone?call=PHONE`, message → `/messages?phone=PHONE&name=NAME`
 - [x] Website form submissions appear as contacts (via webhook)
 - [x] Source tracking (AR, HighLevel, TextMagic, manual, inbound_call)
 - [x] Phone-only contacts show formatted phone as display name
@@ -498,7 +498,7 @@
 ### Quick Action Icons
 
 Consistent across all pages showing contacts (Phone Log, Dashboard, Contacts, Messages):
-- **Phone icon** — Green outline/border, links to `/softphone?dial=PHONE`
+- **Phone icon** — Green outline/border, links to `/softphone?call=PHONE`
 - **Message icon** — Blue outline/border, links to `/messages?phone=PHONE&name=NAME`
 - Always visible (not hover-gated), hover brightens to full opacity
 - Icons positioned next to contact name
@@ -590,13 +590,20 @@ Shown on all pages displaying caller/contact names:
 
 | Menu | Options |
 |------|---------|
-| Main greeting | 0 = operator (hours-checked), 1 = hours & location, 2 = company directory, timeout = operator |
+| Main greeting | 0 = operator (hours-checked), 1 = text us (SMS), 2 = hours & location, 3 = company directory, timeout = operator |
 | After-hours (press 0 when closed) | Plays "closed" greeting: 1 = send SMS, timeout = voicemail |
 | Company directory | Sub-menus for departments: Lea, Clinical, Accounts/Ops |
 | Each department | 1 = two-way text, 0 = operator, timeout = voicemail |
 | Global | Pressing 0 from ANY menu routes to operator |
 
-**Operator routing:** Checks business hours → open: SIP + browser softphone simultaneous ring → closed: after-hours greeting
+**Business Hours (for IVR routing):**
+- Mon–Fri: 10:00 AM – 6:00 PM PT
+- Sat: 10:00 AM – 4:00 PM PT
+- Sun: Closed
+
+**Operator routing:** Checks business hours via `GET /api/webhooks/voice/hours-check` → open: connects to HighLevel operator → closed: plays after-hours greeting with SMS/voicemail options
+
+**Fail-safe:** If hours-check API fails, falls through to operator (always reachable)
 
 **IVR-initiated SMS:** Routes through `/api/webhooks/sms/studio-send` so messages appear in Messages page
 
@@ -621,6 +628,23 @@ Shown on all pages displaying caller/contact names:
 | `build-guard.js` | PreToolUse (Bash) | Blocks `vite build` without `PUBLIC_API_URL` set to production URL |
 | `check-build.js` | PostToolUse (Write/Edit) | Async build check after editing frontend files |
 | `stop-check.js` | Stop | Checks for uncommitted changes, stale SESSION_NOTES, unpushed commits |
+
+### Requirements Capture (`docs/requirements/`)
+
+Structured documentation of all user stories, acceptance criteria, and design specs per page/component. Each page gets its own `.md` file following a standard template:
+
+| File | Page |
+|------|------|
+| `calls.md` | Phone Log / Calls |
+| `messages.md` | Messages / SMS |
+| `contacts.md` | Contacts / CRM |
+| `dashboard.md` | Dashboard |
+| `softphone.md` | Softphone |
+| `ivr-flow.md` | Twilio IVR / Studio Flow |
+
+**Format:** User Stories → Acceptance Criteria → Design Specs → User's Original Words → Revision History
+
+**Rule:** When implementing features or design changes from user instructions, always update the relevant requirement file. Capture the user's exact words in "User's Original Words" sections.
 
 ### Rules (`.claude/rules/`)
 
@@ -658,3 +682,7 @@ Steps: install deps → lint → format check → type check → build → unit 
 | 2026-02 | Quick action icons always visible | Not hover-gated, phone=green border, message=blue border, next to contact name |
 | 2026-02 | ESLint + Vitest + GitHub Actions CI | Automated quality gates, 20 unit tests, lint on every push |
 | 2026-02 | Claude Code skills for deploy/verify/commit | Standardized workflows, prevents localhost-in-build errors |
+| 2026-02 | Business hours via API endpoint (not Studio widget) | Studio time widget lacks timezone support; API handles LA timezone correctly, extensible to DB-configurable hours |
+| 2026-02 | Smart message routing with lookup API | 3-tier: existing conversation → known contact → unknown number; graceful fallback on API errors |
+| 2026-02 | Requirements capture in `docs/requirements/` | Structured user stories with acceptance criteria + user's exact words; enables rebuild-from-scratch and regression testing |
+| 2026-02 | Phone normalization with format variants | Lookup endpoints try +1XXXXXXXXXX, 1XXXXXXXXXX, XXXXXXXXXX variants to handle inconsistent storage formats |
