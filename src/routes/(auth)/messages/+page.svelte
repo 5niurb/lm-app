@@ -420,7 +420,7 @@
 			{:else}
 				{#each conversations as convo}
 					<div
-						class="group border-b border-[rgba(197,165,90,0.06)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id ===
+						class="group border-b border-[rgba(255,255,255,0.08)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id ===
 						convo.id
 							? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]'
 							: ''}"
