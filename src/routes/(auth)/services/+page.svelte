@@ -820,7 +820,9 @@
 
 								<!-- Description -->
 								{#if service.description}
-									<p class="text-xs text-[rgba(255,255,255,0.35)] line-clamp-2 leading-relaxed mb-4">
+									<p
+										class="text-xs text-[rgba(255,255,255,0.35)] line-clamp-2 leading-relaxed mb-4"
+									>
 										{service.description}
 									</p>
 								{:else}
@@ -836,24 +838,22 @@
 								>
 									<div class="flex items-center gap-4">
 										{#if service.duration_min}
-											<span
-												class="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.4)]"
-											>
+											<span class="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.4)]">
 												<Clock class="h-3.5 w-3.5 text-[rgba(255,255,255,0.2)]" />
 												{service.duration_min} min
 											</span>
 										{/if}
 										{#if service.price_from}
-											<span
-												class="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.4)]"
-											>
+											<span class="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.4)]">
 												<DollarSign class="h-3.5 w-3.5 text-[rgba(255,255,255,0.2)]" />
 												From ${Number(service.price_from).toFixed(0)}
 											</span>
 										{/if}
 									</div>
 									<!-- Expand indicator -->
-									<div class="text-[rgba(255,255,255,0.15)] group-hover/card:text-[#c5a55a] transition-colors">
+									<div
+										class="text-[rgba(255,255,255,0.15)] group-hover/card:text-[#c5a55a] transition-colors"
+									>
 										{#if expandedId === service.id}
 											<ChevronDown class="h-4 w-4" />
 										{:else}
@@ -905,8 +905,7 @@
 										>
 											{service.name}
 										</h3>
-										<span
-											class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.25)]"
+										<span class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.25)]"
 											>Content Blocks</span
 										>
 									</div>
@@ -934,9 +933,7 @@
 											>
 												<div class="flex items-center justify-between">
 													<div class="flex items-center gap-2">
-														<FileText
-															class="h-3 w-3 {contentTypeColor(content.content_type)}"
-														/>
+														<FileText class="h-3 w-3 {contentTypeColor(content.content_type)}" />
 														<span class="text-xs font-medium text-[rgba(255,255,255,0.7)]"
 															>{content.title}</span
 														>
@@ -963,23 +960,20 @@
 													>
 													{#if Array.isArray(content.content_json)}
 														<span class="text-[10px] text-[rgba(255,255,255,0.12)]"
-															>{content.content_json.length} section{content.content_json
-																.length !== 1
+															>{content.content_json.length} section{content.content_json.length !==
+															1
 																? 's'
 																: ''}</span
 														>
 													{/if}
 													{#if content.page_slug}
-														<span
-															class="text-[10px] text-[rgba(255,255,255,0.12)] font-mono"
+														<span class="text-[10px] text-[rgba(255,255,255,0.12)] font-mono"
 															>/care/{content.page_slug}</span
 														>
 													{/if}
 												</div>
 												{#if content.summary}
-													<p
-														class="text-[10px] text-[rgba(255,255,255,0.2)] mt-1 line-clamp-2"
-													>
+													<p class="text-[10px] text-[rgba(255,255,255,0.2)] mt-1 line-clamp-2">
 														{content.summary}
 													</p>
 												{/if}
@@ -989,9 +983,7 @@
 								{:else}
 									<div class="flex items-center gap-2 py-3">
 										<FileText class="h-4 w-4 text-[rgba(255,255,255,0.1)]" />
-										<span class="text-xs text-[rgba(255,255,255,0.2)]"
-											>No content blocks yet.</span
-										>
+										<span class="text-xs text-[rgba(255,255,255,0.2)]">No content blocks yet.</span>
 									</div>
 								{/if}
 
@@ -1011,9 +1003,7 @@
 													openContentCreate(service.id, service.name);
 												}
 											}}
-											title={exists
-												? `${ct.label} exists — click to edit`
-												: `Add ${ct.label}`}
+											title={exists ? `${ct.label} exists — click to edit` : `Add ${ct.label}`}
 										>
 											{exists ? '✓' : '+'}
 											{ct.shortLabel}

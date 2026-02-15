@@ -313,7 +313,10 @@
 				<div class="space-y-1 list-enter">
 					{#each contacts as contact}
 						<div
-							class="group rounded-md border transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)] {expandedId === contact.id && drawerOpen ? 'border-[rgba(197,165,90,0.2)] bg-[rgba(197,165,90,0.04)]' : 'border-transparent'}"
+							class="group rounded-md border transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] hover:border-[rgba(197,165,90,0.1)] {expandedId ===
+								contact.id && drawerOpen
+								? 'border-[rgba(197,165,90,0.2)] bg-[rgba(197,165,90,0.04)]'
+								: 'border-transparent'}"
 						>
 							<button
 								class="flex w-full items-center justify-between p-3 text-left"
@@ -409,13 +412,17 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-40 transition-opacity duration-200 {drawerOpen ? 'bg-black/60 opacity-100' : 'opacity-0 pointer-events-none'}"
+		class="fixed inset-0 z-40 transition-opacity duration-200 {drawerOpen
+			? 'bg-black/60 opacity-100'
+			: 'opacity-0 pointer-events-none'}"
 		onclick={closeDrawer}
 	></div>
 
 	<!-- Panel -->
 	<div
-		class="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-[rgba(197,165,90,0.15)] bg-[#0e0e10] shadow-2xl transform transition-transform duration-200 ease-out overflow-y-auto {drawerOpen ? 'translate-x-0' : 'translate-x-full'}"
+		class="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-[rgba(197,165,90,0.15)] bg-[#0e0e10] shadow-2xl transform transition-transform duration-200 ease-out overflow-y-auto {drawerOpen
+			? 'translate-x-0'
+			: 'translate-x-full'}"
 	>
 		<!-- Drawer header -->
 		<div class="sticky top-0 z-10 bg-[#0e0e10] border-b border-[rgba(197,165,90,0.1)] px-5 py-4">
@@ -442,7 +449,8 @@
 							style="font-family: 'Playfair Display', serif;"
 						>
 							{#if expandedContact}
-								{expandedContact.full_name || (expandedContact.phone ? formatPhone(expandedContact.phone) : 'Unknown')}
+								{expandedContact.full_name ||
+									(expandedContact.phone ? formatPhone(expandedContact.phone) : 'Unknown')}
 							{:else}
 								Loading...
 							{/if}
@@ -472,7 +480,9 @@
 						Call
 					</a>
 					<a
-						href="/messages?phone={encodeURIComponent(expandedContact.phone)}{expandedContact.full_name
+						href="/messages?phone={encodeURIComponent(
+							expandedContact.phone
+						)}{expandedContact.full_name
 							? '&name=' + encodeURIComponent(expandedContact.full_name)
 							: ''}&new=true"
 						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-blue-500/40 text-blue-400 hover:bg-blue-500/15 hover:border-blue-400 transition-all text-sm font-medium"
@@ -489,13 +499,17 @@
 			<div class="px-5 py-5 space-y-5">
 				<!-- Tags section -->
 				<div class="card-elevated rounded-lg p-4">
-					<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]">
+					<p
+						class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]"
+					>
 						<Tag class="h-3.5 w-3.5" /> Tags
 					</p>
 					<div class="flex flex-wrap items-center gap-1.5">
 						{#each expandedContact.tags || [] as tag}
 							<span
-								class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium {getTagClasses(tag)}"
+								class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium {getTagClasses(
+									tag
+								)}"
 							>
 								{getTagLabel(tag)}
 								<button
@@ -548,7 +562,9 @@
 
 				<!-- Contact details -->
 				<div class="card-elevated rounded-lg p-4">
-					<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-3 uppercase tracking-[0.1em]">
+					<p
+						class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-3 uppercase tracking-[0.1em]"
+					>
 						Contact Details
 					</p>
 					<div class="grid gap-3 grid-cols-2">
@@ -618,7 +634,9 @@
 
 				<!-- Recent calls -->
 				<div class="card-elevated rounded-lg p-4">
-					<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]">
+					<p
+						class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]"
+					>
 						<Phone class="h-3.5 w-3.5" /> Recent Calls
 					</p>
 					{#if expandedContact.recent_calls && expandedContact.recent_calls.length > 0}
@@ -649,7 +667,9 @@
 				<!-- Form submissions -->
 				{#if expandedContact.form_submissions && expandedContact.form_submissions.length > 0}
 					<div class="card-elevated rounded-lg p-4">
-						<p class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]">
+						<p
+							class="section-label text-xs font-medium text-[rgba(255,255,255,0.4)] mb-2.5 flex items-center gap-1.5 uppercase tracking-[0.1em]"
+						>
 							<FileText class="h-3.5 w-3.5" /> Website Inquiries
 						</p>
 						<div class="space-y-2">
@@ -660,9 +680,7 @@
 									<div class="flex items-center justify-between mb-1">
 										<div class="flex items-center gap-2">
 											{#if sub.interested_in}
-												<Badge variant="outline" class="text-xs"
-													>{sub.interested_in}</Badge
-												>
+												<Badge variant="outline" class="text-xs">{sub.interested_in}</Badge>
 											{/if}
 											<Badge
 												variant={sub.status === 'new' ? 'default' : 'secondary'}
