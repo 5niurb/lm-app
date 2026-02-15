@@ -1,3 +1,34 @@
+## Session — 2026-02-15 (Session 28)
+**Focus:** Restore Wave 1 design changes lost to linter reversion
+
+**Accomplished:**
+- **Discovered Wave 1 loss**: Previous session's Wave 1 agent changes (CSS, Sidebar, Header) were reverted by the Prettier PostToolUse hook before they could be committed. Wave 2 + Wave 3 changes were intact.
+- **Re-implemented all 3 Wave 1 files:**
+  - `app.css`: Status semantic colors (`--status-success/info/warning/danger`), Mangomint minimal cards (white borders instead of gold), Boulevard gold-line sidebar active state (`transparent bg + 3px border-left`), sidebar `#161619`, staggered `list-enter` animation (8 child steps), `skeleton-shimmer` gradient, `section-label` + `section-label-gold` utility classes
+  - `AppSidebar.svelte`: Grouped `navGroups` array (Communications/Operations/System), `Sidebar.GroupLabel` with `section-label-gold` class, Dashboard standalone at top
+  - `AppHeader.svelte`: Notification bell dropdown (missed calls + voicemails, 30s polling), unread count badge (gold), Cmd+K search trigger with `<kbd>` shortcut hint, `timeAgo()` relative time formatter
+- **Build passes clean** (only pre-existing a11y warnings)
+- **Deployed to Cloudflare Pages** — https://lm-app.pages.dev (commit 2a8b8dc)
+- **Pushed to GitHub**
+
+**Files Changed (3 files, +310/-57):**
+- `src/app.css` — Status colors, Mangomint cards, Boulevard sidebar, list-enter, shimmer, section labels
+- `src/lib/components/AppSidebar.svelte` — Grouped nav with section labels
+- `src/lib/components/AppHeader.svelte` — Notification bell + Cmd+K search
+
+**Current State:**
+- All 15 design recommendations from Session 27 research now fully implemented and deployed
+- All CSS classes referenced by other pages (`list-enter`, `card-elevated`, `section-label`) now defined in app.css
+- Wave 1 + Wave 2 + Wave 3 all committed and live
+
+**Next Steps:**
+- Visual verification on production (login, navigate all pages, check sidebar grouping, notification bell, Cmd+K)
+- Wire up Cmd+K command palette (currently just UI trigger, no modal)
+- Phase 1A functional work: call logging completeness, voicemail playback
+- Deploy Studio flow to Twilio for after-hours IVR
+
+---
+
 ## Session — 2026-02-15 (Session 27)
 **Focus:** Full UI overhaul — Mangomint/Boulevard/Pabau-inspired design improvements
 
