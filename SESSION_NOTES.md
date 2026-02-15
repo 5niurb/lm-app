@@ -1,3 +1,37 @@
+## Session — 2026-02-15 (Session 26)
+**Focus:** SPECS.md comprehensive update, /capture-specs skill creation
+
+**Accomplished:**
+- **SPECS.md accuracy fixes:**
+  - Corrected softphone URL param from `?dial=` → `?call=` across 5 references (matching actual code)
+  - Fixed IVR main greeting menu options: added "1 = text us (SMS)" that was missing
+  - Added IVR business hours table (Mon–Fri 10–6, Sat 10–4 PT, Sun closed)
+  - Added operator routing API endpoint detail and fail-safe documentation
+- **SPECS.md new sections:**
+  - Requirements Capture system (`docs/requirements/`) with 6 page files
+  - 4 new Design Decisions Log entries: business hours API, smart message routing, requirements capture, phone normalization
+- **Created `/capture-specs` skill** (`.claude/skills/capture-specs/SKILL.md`):
+  - Automated workflow: identify changes → read source → update SPECS.md → commit
+  - Follows existing format with format rules and safety guardrails
+
+**Current State:**
+- All changes committed and pushed to GitHub (2 commits: `8d98926`, `fcc4d9b`)
+- Working tree clean, up to date with origin/main
+- SPECS.md fully accurate with all sessions 1–25 work documented
+
+**Issues:**
+- Studio flow JSON updated but NOT deployed to Twilio (needs Flow SID in .env)
+- Messages lookup endpoint deployed but not yet tested on production
+
+**Next Steps:**
+- Deploy Studio flow to Twilio: `node twilio/deploy.js <FW_SID> twilio/flows/main-ivr-webhooks.json --publish`
+- Test after-hours IVR flow (call after 6pm PT or weekend)
+- Test smart message routing: click message icon from calls → verify existing conversation auto-selects
+- Continue Phase 1C: services catalog content, automation wiring
+- Consent form end-to-end testing (sign + submit from phone, verify in DB)
+
+---
+
 ## Session — 2026-02-15 (Session 25)
 **Focus:** After-hours IVR flow, smart message routing, requirements capture system
 
