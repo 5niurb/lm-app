@@ -1,3 +1,36 @@
+## Session — 2026-02-15 (Session 27)
+**Focus:** Infrastructure gaps — server-side auth, husky pre-commit, ESLint, Vitest config
+
+**Accomplished:**
+- **`hooks.server.js`** — SvelteKit server hooks with `@supabase/ssr` for server-side auth:
+  - Creates Supabase server client per request using cookie-based session
+  - Passes `supabase` + `safeGetSession()` via `event.locals`
+  - Auth-protected layout (`(auth)/+layout.server.js`) reads session from server hook
+  - Updated `app.d.ts` with `App.Locals` types
+- **Husky pre-commit hook** (`.husky/pre-commit`):
+  - Runs `npx vite build` as a gate before every commit
+  - Ensures no broken builds get committed
+- **ESLint dependencies installed** — `eslint`, `eslint-plugin-svelte`, `globals`, `@eslint/js`
+- **Vitest config fix** — `vite.config.js` updated with `test.include` targeting `tests/**/*.test.js`
+
+**Commits (on feature branch `claude/ios-app-planning-q8Wdj`):**
+- `cdf96e7` — [deps] Add ESLint with Svelte plugin for linting infrastructure
+- `80f8a30` — [infra] Add server-side auth, husky pre-commit, fix vite test config
+
+**Current State:**
+- Feature branch fully committed and pushed — working tree clean
+- **Not merged to main** — all work is on `claude/ios-app-planning-q8Wdj`
+- **Not deployed** — merge to main + deploy needed to go live
+
+**Next Steps:**
+- Merge feature branch to main when ready
+- Deploy: `PUBLIC_API_URL=https://lm-app-api.onrender.com npx vite build` + CF Pages deploy
+- Complete ESLint config (`eslint.config.js` — already has Svelte plugin, may need tuning)
+- Add more pre-commit checks (lint, svelte-check) once ESLint config is finalized
+- Continue Phase 1C: services content, automation wiring, consent form testing
+
+---
+
 ## Session — 2026-02-15 (Session 26)
 **Focus:** SPECS.md comprehensive update, /capture-specs skill creation
 
