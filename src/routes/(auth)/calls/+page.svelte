@@ -314,21 +314,29 @@
 			{#if twilioNumbers.length > 1}
 				<div class="flex flex-wrap gap-1 mt-3 pt-3 border-t border-[rgba(197,165,90,0.06)]">
 					<button
-						class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === ''
+						class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
+						''
 							? 'bg-[#C5A55A] text-[#1A1A1A]'
-							: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
-						}"
-						onclick={() => { selectedNumber = ''; currentPage = 1; loadCalls(); }}
+							: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'}"
+						onclick={() => {
+							selectedNumber = '';
+							currentPage = 1;
+							loadCalls();
+						}}
 					>
 						All Lines
 					</button>
 					{#each twilioNumbers as num}
 						<button
-							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === num.phoneNumber
+							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
+							num.phoneNumber
 								? 'bg-[#C5A55A] text-[#1A1A1A]'
-								: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
-							}"
-							onclick={() => { selectedNumber = num.phoneNumber; currentPage = 1; loadCalls(); }}
+								: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'}"
+							onclick={() => {
+								selectedNumber = num.phoneNumber;
+								currentPage = 1;
+								loadCalls();
+							}}
 							title={num.friendlyName || num.phoneNumber}
 						>
 							{num.friendlyName || formatPhone(num.phoneNumber)}

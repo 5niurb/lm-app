@@ -319,21 +319,25 @@
 			{#if twilioNumbers.length > 1}
 				<div class="flex flex-wrap gap-1">
 					<button
-						class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === ''
+						class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
+						''
 							? 'bg-[#C5A55A] text-[#1A1A1A]'
-							: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
-						}"
-						onclick={() => { selectedNumber = ''; }}
+							: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'}"
+						onclick={() => {
+							selectedNumber = '';
+						}}
 					>
 						All Lines
 					</button>
 					{#each twilioNumbers as num}
 						<button
-							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber === num.phoneNumber
+							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
+							num.phoneNumber
 								? 'bg-[#C5A55A] text-[#1A1A1A]'
-								: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'
-							}"
-							onclick={() => { selectedNumber = num.phoneNumber; }}
+								: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'}"
+							onclick={() => {
+								selectedNumber = num.phoneNumber;
+							}}
 							title={num.friendlyName || num.phoneNumber}
 						>
 							{num.friendlyName || formatPhone(num.phoneNumber)}
@@ -347,11 +351,18 @@
 			{/if}
 
 			{#if syncResult}
-				<div class="rounded bg-[rgba(197,165,90,0.08)] border border-[rgba(197,165,90,0.15)] px-3 py-2">
+				<div
+					class="rounded bg-[rgba(197,165,90,0.08)] border border-[rgba(197,165,90,0.15)] px-3 py-2"
+				>
 					<p class="text-[11px] text-[rgba(255,255,255,0.6)]">
 						Synced: {syncResult.newMessages} new messages, {syncResult.newCalls} new calls
 					</p>
-					<button class="text-[10px] text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.5)] mt-0.5" onclick={() => { syncResult = null; }}>Dismiss</button>
+					<button
+						class="text-[10px] text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.5)] mt-0.5"
+						onclick={() => {
+							syncResult = null;
+						}}>Dismiss</button
+					>
 				</div>
 			{/if}
 
@@ -420,7 +431,9 @@
 									<div class="flex items-center gap-1.5">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if convo.contact_id && convo.display_name}
-												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
+												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact"
+													>&#9670;</span
+												>
 												<span class="text-[rgba(255,255,255,0.9)] truncate"
 													>{convo.display_name}</span
 												>
@@ -492,9 +505,11 @@
 					<p class="text-sm font-medium truncate flex items-center gap-1.5">
 						{#if selectedConvo.contact_id && selectedConvo.display_name}
 							<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
-							<span class="text-[rgba(255,255,255,0.9)] truncate">{selectedConvo.display_name}</span>
+							<span class="text-[rgba(255,255,255,0.9)] truncate">{selectedConvo.display_name}</span
+							>
 						{:else if selectedConvo.display_name}
-							<span class="text-[rgba(255,255,255,0.7)] truncate">{selectedConvo.display_name}</span>
+							<span class="text-[rgba(255,255,255,0.7)] truncate">{selectedConvo.display_name}</span
+							>
 						{:else}
 							<span class="text-[rgba(255,255,255,0.85)]"
 								>{formatPhone(selectedConvo.phone_number)}</span
@@ -507,7 +522,9 @@
 						</p>
 					{/if}
 					{#if selectedConvo.twilio_number}
-						<p class="text-[10px] text-[rgba(197,165,90,0.4)]">via {formatPhone(selectedConvo.twilio_number)}</p>
+						<p class="text-[10px] text-[rgba(197,165,90,0.4)]">
+							via {formatPhone(selectedConvo.twilio_number)}
+						</p>
 					{/if}
 				</div>
 				<div class="flex items-center gap-1.5 shrink-0 ml-auto">
@@ -552,7 +569,11 @@
 									: 'bg-[rgba(255,255,255,0.08)] border border-[rgba(197,165,90,0.12)] text-[rgba(255,255,255,0.85)] rounded-bl-md'}"
 							>
 								{#if senderName}
-									<p class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound' ? 'text-[rgba(26,26,26,0.6)]' : 'text-[rgba(197,165,90,0.6)]'}">
+									<p
+										class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound'
+											? 'text-[rgba(26,26,26,0.6)]'
+											: 'text-[rgba(197,165,90,0.6)]'}"
+									>
 										{senderName}
 									</p>
 								{/if}
@@ -629,14 +650,18 @@
 					{/if}
 					{#if twilioNumbers.length > 1 && !selectedNumber}
 						<div class="flex items-center justify-center gap-1.5">
-							<span class="text-[10px] text-[rgba(255,255,255,0.35)] uppercase tracking-wider">Send from:</span>
+							<span class="text-[10px] text-[rgba(255,255,255,0.35)] uppercase tracking-wider"
+								>Send from:</span
+							>
 							{#each twilioNumbers as num}
 								<button
-									class="px-2 py-0.5 rounded text-[10px] font-mono transition-all {selectedNumber === num.phoneNumber
+									class="px-2 py-0.5 rounded text-[10px] font-mono transition-all {selectedNumber ===
+									num.phoneNumber
 										? 'bg-[#C5A55A] text-[#1A1A1A]'
-										: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.4)] hover:bg-[rgba(255,255,255,0.1)]'
-									}"
-									onclick={() => { selectedNumber = num.phoneNumber; }}
+										: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.4)] hover:bg-[rgba(255,255,255,0.1)]'}"
+									onclick={() => {
+										selectedNumber = num.phoneNumber;
+									}}
 								>
 									{formatPhone(num.phoneNumber)}
 								</button>
