@@ -4,7 +4,7 @@
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
-	import { Phone, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, ChevronLeft, ChevronRight, Voicemail, Play, Pause } from '@lucide/svelte';
+	import { Phone, Search, PhoneIncoming, PhoneOutgoing, PhoneMissed, ChevronLeft, ChevronRight, Voicemail, Play, Pause, MessageSquare } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatDuration, formatDate, formatRelativeDate } from '$lib/utils/formatters.js';
 
@@ -245,6 +245,7 @@
 				<div class="space-y-0.5">
 					{#each calls as call}
 						{@const summary = getActionSummary(call)}
+						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)]">
 							<!-- Direction icon -->
 							<div class="mt-0.5 shrink-0">
@@ -259,7 +260,7 @@
 
 							<!-- Content: name + action summary -->
 							<div class="min-w-0 flex-1">
-								<!-- Top line: name/number + time -->
+								<!-- Top line: name/number + time + quick actions -->
 								<div class="flex items-center justify-between gap-2">
 									<p class="text-sm font-medium truncate flex items-center gap-1.5">
 										{#if call.contact_id && call.caller_name}
@@ -269,12 +270,33 @@
 											<span class="text-[rgba(255,255,255,0.7)]">{call.caller_name}</span>
 											<span class="text-[9px] uppercase tracking-wider px-1 py-px rounded bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.3)] leading-none shrink-0">CID</span>
 										{:else}
-											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(call.direction === 'inbound' ? call.from_number : call.to_number)}</span>
+											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(callPhone)}</span>
 										{/if}
 									</p>
-									<span class="text-xs text-[rgba(255,255,255,0.3)] shrink-0 whitespace-nowrap">
-										{formatRelativeDate(call.started_at)}
-									</span>
+									<div class="flex items-center gap-1.5 shrink-0">
+										<!-- Quick actions — visible on hover -->
+										{#if callPhone}
+											<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+												<a
+													href="/softphone?call={encodeURIComponent(callPhone)}"
+													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+													title="Call back"
+												>
+													<PhoneOutgoing class="h-3.5 w-3.5" />
+												</a>
+												<a
+													href="/messages?phone={encodeURIComponent(callPhone)}&new=true"
+													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
+													title="Send message"
+												>
+													<MessageSquare class="h-3.5 w-3.5" />
+												</a>
+											</div>
+										{/if}
+										<span class="text-xs text-[rgba(255,255,255,0.3)] whitespace-nowrap">
+											{formatRelativeDate(call.started_at)}
+										</span>
+									</div>
 								</div>
 
 								<!-- Second line: phone number (if name shown) -->

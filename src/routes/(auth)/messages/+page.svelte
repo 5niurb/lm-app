@@ -5,7 +5,7 @@
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
-	import { MessageSquare, Search, Send, ArrowLeft, Phone } from '@lucide/svelte';
+	import { MessageSquare, Search, Send, ArrowLeft, Phone, PhoneOutgoing } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 
@@ -209,41 +209,54 @@
 				</div>
 			{:else}
 				{#each conversations as convo}
-					<button
-						class="w-full text-left px-4 py-3 border-b border-[rgba(197,165,90,0.06)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id === convo.id ? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]' : ''}"
-						onclick={() => selectConversation(convo)}
-					>
-						<div class="flex items-start justify-between gap-2">
-							<div class="min-w-0 flex-1">
-								<p class="text-sm font-medium truncate flex items-center gap-1.5">
-									{#if convo.contact_id && convo.display_name}
-										<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
-										<span class="text-[rgba(255,255,255,0.9)] truncate">{convo.display_name}</span>
-									{:else if convo.display_name}
-										<span class="text-[rgba(255,255,255,0.7)] truncate">{convo.display_name}</span>
-									{:else}
-										<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(convo.phone_number)}</span>
+					<div class="group relative border-b border-[rgba(197,165,90,0.06)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id === convo.id ? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]' : ''}">
+						<button
+							class="w-full text-left px-4 py-3"
+							onclick={() => selectConversation(convo)}
+						>
+							<div class="flex items-start justify-between gap-2">
+								<div class="min-w-0 flex-1">
+									<p class="text-sm font-medium truncate flex items-center gap-1.5">
+										{#if convo.contact_id && convo.display_name}
+											<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">◆</span>
+											<span class="text-[rgba(255,255,255,0.9)] truncate">{convo.display_name}</span>
+										{:else if convo.display_name}
+											<span class="text-[rgba(255,255,255,0.7)] truncate">{convo.display_name}</span>
+										{:else}
+											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(convo.phone_number)}</span>
+										{/if}
+									</p>
+									{#if convo.display_name}
+										<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(convo.phone_number)}</p>
 									{/if}
-								</p>
-								{#if convo.display_name}
-									<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(convo.phone_number)}</p>
-								{/if}
-								<p class="text-xs text-[rgba(255,255,255,0.4)] truncate mt-0.5">
-									{convo.last_message || 'No messages'}
-								</p>
-							</div>
-							<div class="flex flex-col items-end gap-1 shrink-0">
-								<span class="text-[10px] text-[rgba(255,255,255,0.3)]">
-									{formatRelativeDate(convo.last_at)}
-								</span>
-								{#if convo.unread_count > 0}
-									<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]">
-										{convo.unread_count}
+									<p class="text-xs text-[rgba(255,255,255,0.4)] truncate mt-0.5">
+										{convo.last_message || 'No messages'}
+									</p>
+								</div>
+								<div class="flex flex-col items-end gap-1 shrink-0">
+									<span class="text-[10px] text-[rgba(255,255,255,0.3)]">
+										{formatRelativeDate(convo.last_at)}
 									</span>
-								{/if}
+									{#if convo.unread_count > 0}
+										<span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]">
+											{convo.unread_count}
+										</span>
+									{/if}
+								</div>
 							</div>
-						</div>
-					</button>
+						</button>
+						<!-- Quick call action — visible on hover -->
+						{#if convo.phone_number}
+							<a
+								href="/softphone?call={encodeURIComponent(convo.phone_number)}"
+								class="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all z-10"
+								title="Call {convo.display_name || formatPhone(convo.phone_number)}"
+								onclick={(e) => e.stopPropagation()}
+							>
+								<PhoneOutgoing class="h-3.5 w-3.5" />
+							</a>
+						{/if}
+					</div>
 				{/each}
 			{/if}
 		</div>
@@ -272,9 +285,22 @@
 						<p class="text-xs text-[rgba(255,255,255,0.35)]">{formatPhone(selectedConvo.phone_number)}</p>
 					{/if}
 				</div>
-				<a href="/calls?search={encodeURIComponent(selectedConvo.phone_number)}" class="text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A] transition-colors">
-					<Phone class="h-4 w-4" />
-				</a>
+				<div class="flex items-center gap-1.5">
+					<a
+						href="/softphone?call={encodeURIComponent(selectedConvo.phone_number)}"
+						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+						title="Call {selectedConvo.display_name || formatPhone(selectedConvo.phone_number)}"
+					>
+						<PhoneOutgoing class="h-4 w-4" />
+					</a>
+					<a
+						href="/calls?search={encodeURIComponent(selectedConvo.phone_number)}"
+						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.35)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[rgba(255,255,255,0.6)] hover:border-[rgba(255,255,255,0.2)] transition-all"
+						title="View call history"
+					>
+						<Phone class="h-4 w-4" />
+					</a>
+				</div>
 			</div>
 
 			<!-- Messages -->

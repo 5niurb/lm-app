@@ -109,7 +109,22 @@
 		}
 	}
 
+	/** @type {string|null} Phone number from URL ?call= param — triggers auto-dial once device registers */
+	let pendingCall = $state(null);
+
 	onMount(() => {
+		// Check for ?call= URL parameter (from contacts/calls quick action)
+		const params = new URLSearchParams(window.location.search);
+		const callParam = params.get('call');
+		if (callParam) {
+			dialNumber = callParam;
+			pendingCall = callParam;
+			// Clean the URL so refresh doesn't re-trigger
+			const url = new URL(window.location.href);
+			url.searchParams.delete('call');
+			window.history.replaceState({}, '', url.pathname);
+		}
+
 		// Auto-connect to Twilio on page load — no manual "Connect" button needed.
 		// Registering with Twilio's signaling server costs nothing; bandwidth is only
 		// used when an actual call happens.
@@ -218,6 +233,13 @@
 				statusMessage = 'Ready — listening for calls';
 				isConnecting = false;
 				addToHistory('system', 'Connected to Twilio');
+
+				// Auto-dial if we arrived via ?call= parameter
+				if (pendingCall && dialNumber) {
+					pendingCall = null;
+					// Short delay so the UI can render the "Ready" state first
+					setTimeout(() => makeCall(), 300);
+				}
 			});
 
 			device.on('error', (error) => {
