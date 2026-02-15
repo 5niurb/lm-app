@@ -387,20 +387,20 @@
 							</div>
 							<div class="min-w-0 flex-1">
 								<div class="flex items-center justify-between gap-2">
-									<p class="text-sm font-medium truncate flex items-center gap-1.5">
-										{#if call.contact_id && call.caller_name}
-											<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
-											<span class="text-[rgba(255,255,255,0.9)]">{call.caller_name}</span>
-										{:else if call.caller_name}
-											<span class="text-[rgba(255,255,255,0.7)]">{call.caller_name}</span>
-										{:else}
-											<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(callPhone)}</span>
-										{/if}
-									</p>
-									<div class="flex items-center gap-1.5 shrink-0">
-										<!-- Quick actions -->
+									<div class="flex items-center gap-1.5 min-w-0">
+										<p class="text-sm font-medium truncate flex items-center gap-1.5">
+											{#if call.contact_id && call.caller_name}
+												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
+												<span class="text-[rgba(255,255,255,0.9)]">{call.caller_name}</span>
+											{:else if call.caller_name}
+												<span class="text-[rgba(255,255,255,0.7)]">{call.caller_name}</span>
+											{:else}
+												<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(callPhone)}</span>
+											{/if}
+										</p>
+										<!-- Quick actions — right next to name -->
 										{#if callPhone}
-											<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+											<div class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
 												<a
 													href="/softphone?call={encodeURIComponent(callPhone)}"
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
@@ -417,8 +417,8 @@
 												</a>
 											</div>
 										{/if}
-										<span class="text-xs text-[rgba(255,255,255,0.3)]">{formatRelativeDate(call.started_at)}</span>
 									</div>
+									<span class="text-xs text-[rgba(255,255,255,0.3)] shrink-0">{formatRelativeDate(call.started_at)}</span>
 								</div>
 								<div class="mt-0.5">
 									{#if summary.type === 'voicemail'}
