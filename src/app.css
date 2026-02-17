@@ -45,6 +45,8 @@
 	--color-surface-subtle: var(--surface-subtle);
 	--color-surface-raised: var(--surface-raised);
 	--color-surface-hover: var(--surface-hover);
+	--color-border-subtle: var(--border-subtle);
+	--color-border-default: var(--border-default);
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);

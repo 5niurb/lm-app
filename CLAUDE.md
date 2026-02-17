@@ -19,6 +19,10 @@
   - Known issues or bugs
   - Recommended next steps
   - Dev server port and access URLs if running
+  - A simple ASCII diagram illustrating the key changes (data flow, architecture, UI layout)
+
+#### ASCII Diagrams in Session Notes
+After each session's accomplishments, include a simple ASCII diagram illustrating the key changes. Keeps session notes scannable and helps restore context quickly. Under 15 lines, focused on data flow or architecture — not implementation details.
 
 ---
 

@@ -287,11 +287,11 @@
 <div class="flex h-[calc(100vh-4rem)] overflow-hidden -m-6">
 	<!-- Conversation List (left panel) -->
 	<div
-		class="w-full sm:w-80 lg:w-96 border-r border-[rgba(197,165,90,0.12)] flex flex-col shrink-0 {selectedConvo
+		class="w-full sm:w-80 lg:w-96 border-r border-border flex flex-col shrink-0 {selectedConvo
 			? 'hidden sm:flex'
 			: 'flex'}"
 	>
-		<div class="p-4 border-b border-[rgba(197,165,90,0.08)] space-y-3">
+		<div class="p-4 border-b border-border space-y-3">
 			<div class="flex items-center justify-between">
 				<h1 class="text-xl tracking-wide">Messages</h1>
 				<div class="flex items-center gap-1.5">
@@ -321,8 +321,8 @@
 					<button
 						class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
 						''
-							? 'bg-[#C5A55A] text-[#1A1A1A]'
-							: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'}"
+							? 'bg-gold text-primary-foreground'
+							: 'bg-surface-subtle text-text-secondary hover:bg-surface-hover'}"
 						onclick={() => {
 							selectedNumber = '';
 						}}
@@ -333,8 +333,8 @@
 						<button
 							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
 							num.phoneNumber
-								? 'bg-[#C5A55A] text-[#1A1A1A]'
-								: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.5)] hover:bg-[rgba(255,255,255,0.1)]'}"
+								? 'bg-gold text-primary-foreground'
+								: 'bg-surface-subtle text-text-secondary hover:bg-surface-hover'}"
 							onclick={() => {
 								selectedNumber = num.phoneNumber;
 							}}
@@ -345,20 +345,20 @@
 					{/each}
 				</div>
 			{:else if twilioNumbers.length === 1}
-				<p class="text-[10px] text-[rgba(255,255,255,0.3)] uppercase tracking-wider">
+				<p class="text-[10px] text-text-tertiary uppercase tracking-wider">
 					{twilioNumbers[0].friendlyName || formatPhone(twilioNumbers[0].phoneNumber)}
 				</p>
 			{/if}
 
 			{#if syncResult}
 				<div
-					class="rounded bg-[rgba(197,165,90,0.08)] border border-[rgba(197,165,90,0.15)] px-3 py-2"
+					class="rounded bg-gold-glow border border-border px-3 py-2"
 				>
-					<p class="text-[11px] text-[rgba(255,255,255,0.6)]">
+					<p class="text-[11px] text-text-secondary">
 						Synced: {syncResult.newMessages} new messages, {syncResult.newCalls} new calls
 					</p>
 					<button
-						class="text-[10px] text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.5)] mt-0.5"
+						class="text-[10px] text-text-tertiary hover:text-text-secondary mt-0.5"
 						onclick={() => {
 							syncResult = null;
 						}}>Dismiss</button
@@ -398,17 +398,17 @@
 				<div class="flex h-48 items-center justify-center">
 					<div class="text-center">
 						<div
-							class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+							class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gold-glow border border-border"
 						>
 							<MessageSquare class="h-5 w-5 empty-state-icon" />
 						</div>
 						<p
-							class="text-sm font-light text-[rgba(255,255,255,0.4)]"
+							class="text-sm font-light text-text-tertiary"
 							style="font-family: 'Playfair Display', serif;"
 						>
 							No conversations
 						</p>
-						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+						<p class="text-xs text-text-ghost mt-1">
 							{#if twilioNumbers.length > 0}
 								Click the sync button to import history from Twilio.
 							{:else}
@@ -420,9 +420,9 @@
 			{:else}
 				{#each conversations as convo}
 					<div
-						class="group border-b border-[rgba(255,255,255,0.08)] transition-all duration-200 hover:bg-[rgba(197,165,90,0.06)] {selectedConvo?.id ===
+						class="group border-b border-border-subtle transition-all duration-200 hover:bg-gold-glow {selectedConvo?.id ===
 						convo.id
-							? 'bg-[rgba(197,165,90,0.1)] border-l-2 border-l-[#C5A55A]'
+							? 'bg-gold-glow border-l-2 border-l-gold'
 							: ''}"
 					>
 						<button class="w-full text-left px-4 py-3" onclick={() => selectConversation(convo)}>
@@ -431,18 +431,18 @@
 									<div class="flex items-center gap-1.5">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if convo.contact_id && convo.display_name}
-												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact"
+												<span class="text-gold text-[10px] shrink-0" title="Contact"
 													>&#9670;</span
 												>
-												<span class="text-[rgba(255,255,255,0.9)] truncate"
+												<span class="text-text-primary truncate"
 													>{convo.display_name}</span
 												>
 											{:else if convo.display_name}
-												<span class="text-[rgba(255,255,255,0.7)] truncate"
+												<span class="text-text-secondary truncate"
 													>{convo.display_name}</span
 												>
 											{:else}
-												<span class="text-[rgba(255,255,255,0.85)]"
+												<span class="text-text-primary"
 													>{formatPhone(convo.phone_number)}</span
 												>
 											{/if}
@@ -460,26 +460,26 @@
 										{/if}
 									</div>
 									{#if convo.display_name}
-										<p class="text-xs text-[rgba(255,255,255,0.35)]">
+										<p class="text-xs text-text-tertiary">
 											{formatPhone(convo.phone_number)}
 										</p>
 									{/if}
-									<p class="text-xs text-[rgba(255,255,255,0.4)] truncate mt-0.5">
+									<p class="text-xs text-text-tertiary truncate mt-0.5">
 										{convo.last_message || 'No messages'}
 									</p>
 								</div>
 								<div class="flex flex-col items-end gap-1 shrink-0">
-									<span class="text-[10px] text-[rgba(255,255,255,0.3)]">
+									<span class="text-[10px] text-text-tertiary">
 										{formatRelativeDate(convo.last_at)}
 									</span>
 									{#if convo.twilio_number && twilioNumbers.length > 1 && !selectedNumber}
-										<span class="text-[9px] text-[rgba(197,165,90,0.5)] font-mono">
+										<span class="text-[9px] text-gold-dim font-mono">
 											{formatPhone(convo.twilio_number)}
 										</span>
 									{/if}
 									{#if convo.unread_count > 0}
 										<span
-											class="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C5A55A] px-1.5 text-[10px] font-bold text-[#1A1A1A]"
+											class="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-bold text-primary-foreground"
 										>
 											{convo.unread_count}
 										</span>
@@ -497,32 +497,32 @@
 	<div class="flex-1 flex flex-col {selectedConvo || showNewConvo ? 'flex' : 'hidden sm:flex'}">
 		{#if selectedConvo}
 			<!-- Thread header -->
-			<div class="px-4 py-3 border-b border-[rgba(197,165,90,0.12)] flex items-center gap-3">
+			<div class="px-4 py-3 border-b border-border flex items-center gap-3">
 				<button class="sm:hidden" onclick={goBack}>
-					<ArrowLeft class="h-5 w-5 text-[rgba(255,255,255,0.6)]" />
+					<ArrowLeft class="h-5 w-5 text-text-secondary" />
 				</button>
 				<div class="min-w-0">
 					<p class="text-sm font-medium truncate flex items-center gap-1.5">
 						{#if selectedConvo.contact_id && selectedConvo.display_name}
-							<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact">&#9670;</span>
-							<span class="text-[rgba(255,255,255,0.9)] truncate">{selectedConvo.display_name}</span
+							<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
+							<span class="text-text-primary truncate">{selectedConvo.display_name}</span
 							>
 						{:else if selectedConvo.display_name}
-							<span class="text-[rgba(255,255,255,0.7)] truncate">{selectedConvo.display_name}</span
+							<span class="text-text-secondary truncate">{selectedConvo.display_name}</span
 							>
 						{:else}
-							<span class="text-[rgba(255,255,255,0.85)]"
+							<span class="text-text-primary"
 								>{formatPhone(selectedConvo.phone_number)}</span
 							>
 						{/if}
 					</p>
 					{#if selectedConvo.display_name}
-						<p class="text-xs text-[rgba(255,255,255,0.35)]">
+						<p class="text-xs text-text-tertiary">
 							{formatPhone(selectedConvo.phone_number)}
 						</p>
 					{/if}
 					{#if selectedConvo.twilio_number}
-						<p class="text-[10px] text-[rgba(197,165,90,0.4)]">
+						<p class="text-[10px] text-gold-dim">
 							via {formatPhone(selectedConvo.twilio_number)}
 						</p>
 					{/if}
@@ -537,7 +537,7 @@
 					</a>
 					<a
 						href="/calls?search={encodeURIComponent(selectedConvo.phone_number)}"
-						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.35)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[rgba(255,255,255,0.6)] hover:border-[rgba(255,255,255,0.2)] transition-all"
+						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border-default text-text-tertiary hover:bg-surface-subtle hover:text-text-secondary hover:border-border-default transition-all"
 						title="View call history"
 					>
 						<Phone class="h-4 w-4" />
@@ -555,7 +555,7 @@
 					</div>
 				{:else if messages.length === 0}
 					<div class="flex h-full items-center justify-center">
-						<p class="text-sm text-[rgba(255,255,255,0.3)]">
+						<p class="text-sm text-text-tertiary">
 							No messages in this conversation yet.
 						</p>
 					</div>
@@ -565,14 +565,14 @@
 						<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
 							<div
 								class="max-w-[75%] rounded-2xl px-4 py-2.5 {msg.direction === 'outbound'
-									? 'bg-[#C5A55A] text-[#1A1A1A] rounded-br-md'
-									: 'bg-[rgba(255,255,255,0.08)] border border-[rgba(197,165,90,0.12)] text-[rgba(255,255,255,0.85)] rounded-bl-md'}"
+									? 'bg-gold text-primary-foreground rounded-br-md'
+									: 'bg-surface-raised border border-border text-text-primary rounded-bl-md'}"
 							>
 								{#if senderName}
 									<p
 										class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound'
-											? 'text-[rgba(26,26,26,0.6)]'
-											: 'text-[rgba(197,165,90,0.6)]'}"
+											? 'text-primary-foreground/60'
+											: 'text-gold-dim'}"
 									>
 										{senderName}
 									</p>
@@ -580,8 +580,8 @@
 								<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
 								<p
 									class="text-[10px] mt-1 {msg.direction === 'outbound'
-										? 'text-[rgba(26,26,26,0.5)]'
-										: 'text-[rgba(255,255,255,0.25)]'}"
+										? 'text-primary-foreground/50'
+										: 'text-text-ghost'}"
 								>
 									{new Date(msg.created_at).toLocaleTimeString('en-US', {
 										hour: 'numeric',
@@ -600,7 +600,7 @@
 			</div>
 
 			<!-- Compose -->
-			<div class="p-3 border-t border-[rgba(197,165,90,0.12)]">
+			<div class="p-3 border-t border-border">
 				<form
 					class="flex gap-2"
 					onsubmit={(e) => {
@@ -617,7 +617,7 @@
 					<Button
 						type="submit"
 						disabled={!newMessage.trim() || sending}
-						class="bg-[#C5A55A] hover:bg-[#b8943e] text-[#1A1A1A]"
+						class="bg-gold hover:bg-gold/80 text-primary-foreground"
 					>
 						<Send class="h-4 w-4" />
 					</Button>
@@ -626,17 +626,17 @@
 		{:else if showNewConvo}
 			<!-- New conversation compose view -->
 			<div class="flex-1 flex flex-col items-center justify-center p-8">
-				<MessageSquare class="h-12 w-12 text-[rgba(197,165,90,0.3)] mb-4" />
+				<MessageSquare class="h-12 w-12 text-gold-dim mb-4" />
 				{#if newConvoDisplayName}
 					<p
-						class="text-base font-medium text-[rgba(255,255,255,0.85)] mb-1"
+						class="text-base font-medium text-text-primary mb-1"
 						style="font-family: 'Playfair Display', serif;"
 					>
 						{newConvoDisplayName}
 					</p>
-					<p class="text-xs text-[rgba(255,255,255,0.4)] mb-6">{formatPhone(newConvoPhone)}</p>
+					<p class="text-xs text-text-tertiary mb-6">{formatPhone(newConvoPhone)}</p>
 				{:else}
-					<p class="text-sm text-[rgba(255,255,255,0.5)] mb-6">
+					<p class="text-sm text-text-secondary mb-6">
 						Enter a phone number and message to start a new conversation.
 					</p>
 				{/if}
@@ -650,15 +650,15 @@
 					{/if}
 					{#if twilioNumbers.length > 1 && !selectedNumber}
 						<div class="flex items-center justify-center gap-1.5">
-							<span class="text-[10px] text-[rgba(255,255,255,0.35)] uppercase tracking-wider"
+							<span class="text-[10px] text-text-tertiary uppercase tracking-wider"
 								>Send from:</span
 							>
 							{#each twilioNumbers as num}
 								<button
 									class="px-2 py-0.5 rounded text-[10px] font-mono transition-all {selectedNumber ===
 									num.phoneNumber
-										? 'bg-[#C5A55A] text-[#1A1A1A]'
-										: 'bg-[rgba(255,255,255,0.06)] text-[rgba(255,255,255,0.4)] hover:bg-[rgba(255,255,255,0.1)]'}"
+										? 'bg-gold text-primary-foreground'
+										: 'bg-surface-subtle text-text-tertiary hover:bg-surface-hover'}"
 									onclick={() => {
 										selectedNumber = num.phoneNumber;
 									}}
@@ -684,7 +684,7 @@
 						<Button
 							type="submit"
 							disabled={!newMessage.trim() || !newConvoPhone.trim() || sending}
-							class="bg-[#C5A55A] hover:bg-[#b8943e] text-[#1A1A1A]"
+							class="bg-gold hover:bg-gold/80 text-primary-foreground"
 						>
 							<Send class="h-4 w-4" />
 						</Button>
@@ -696,25 +696,25 @@
 			<div class="flex-1 flex items-center justify-center relative">
 				<!-- Subtle radial glow -->
 				<div
-					class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(197,165,90,0.03)_0%,_transparent_60%)]"
+					class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--gold-glow)_0%,_transparent_60%)]"
 				></div>
 				<div class="text-center relative z-10">
 					<div
-						class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)]"
+						class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-glow border border-border"
 					>
-						<MessageSquare class="h-8 w-8 text-[rgba(197,165,90,0.25)]" />
+						<MessageSquare class="h-8 w-8 text-gold-dim" />
 					</div>
 					<p
-						class="text-base font-light text-[rgba(255,255,255,0.4)] mb-1"
+						class="text-base font-light text-text-tertiary mb-1"
 						style="font-family: 'Playfair Display', serif;"
 					>
 						No conversation selected
 					</p>
-					<p class="text-xs text-[rgba(255,255,255,0.2)]">
+					<p class="text-xs text-text-ghost">
 						Choose a conversation from the left, or start a new one.
 					</p>
 					<button
-						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-[#C5A55A] border border-[rgba(197,165,90,0.2)] hover:bg-[rgba(197,165,90,0.06)] transition-colors"
+						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-gold-glow transition-colors"
 						onclick={() => {
 							showNewConvo = true;
 						}}

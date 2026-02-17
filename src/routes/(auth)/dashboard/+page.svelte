@@ -156,17 +156,17 @@
 			<div
 				class="flex items-center gap-2 px-3 py-1.5 rounded-full border {clinicOpen
 					? 'border-green-500/20 bg-green-500/5'
-					: 'border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)]'}"
+					: 'border-border-default bg-surface-subtle'}"
 			>
 				<div
 					class="w-2 h-2 rounded-full {clinicOpen
 						? 'bg-green-400 animate-pulse'
-						: 'bg-[rgba(255,255,255,0.2)]'}"
+						: 'bg-text-ghost'}"
 				></div>
-				<span class="text-xs {clinicOpen ? 'text-green-400' : 'text-[rgba(255,255,255,0.35)]'}">
+				<span class="text-xs {clinicOpen ? 'text-green-400' : 'text-text-tertiary'}">
 					{clinicOpen ? 'Clinic Open' : 'Closed'}
 					{#if clinicOpen === false}
-						<span class="text-[rgba(255,255,255,0.2)]"> · Opens {getNextOpen()}</span>
+						<span class="text-text-ghost"> · Opens {getNextOpen()}</span>
 					{/if}
 				</span>
 			</div>
@@ -186,16 +186,16 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]"
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
 					>Total Calls</span
 				>
 				<Phone
-					class="h-4 w-4 text-[#C5A55A] opacity-50 group-hover:opacity-100 transition-opacity"
+					class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity"
 				/>
 			</div>
 			{#if stats}
 				<div
-					class="text-3xl font-light text-[rgba(255,255,255,0.9)]"
+					class="text-3xl font-light text-text-primary"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.totalCalls}
@@ -209,16 +209,16 @@
 					>
 						<defs
 							><linearGradient id="spark-gold" x1="0" y1="0" x2="0" y2="1"
-								><stop offset="0%" stop-color="#C5A55A" stop-opacity="0.3" /><stop
+								><stop offset="0%" stop-color="var(--gold)" stop-opacity="0.3" /><stop
 									offset="100%"
-									stop-color="#C5A55A"
+									stop-color="var(--gold)"
 									stop-opacity="0"
 								/></linearGradient
 							></defs
 						>
 						<polyline
 							fill="none"
-							stroke="#C5A55A"
+							stroke="var(--gold)"
 							stroke-width="1.5"
 							stroke-linejoin="round"
 							points={sparkPoints(dailyStats, 'total', sparkTotalMax)}
@@ -238,7 +238,7 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]"
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
 					>Missed Calls</span
 				>
 				<PhoneMissed
@@ -247,7 +247,7 @@
 			</div>
 			{#if stats}
 				<div
-					class="text-3xl font-light text-[rgba(255,255,255,0.9)]"
+					class="text-3xl font-light text-text-primary"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.missed}
@@ -290,21 +290,21 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]"
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
 					>Voicemails</span
 				>
 				<Voicemail
-					class="h-4 w-4 text-[#C5A55A] opacity-50 group-hover:opacity-100 transition-opacity"
+					class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity"
 				/>
 			</div>
 			{#if stats}
 				<div
-					class="text-3xl font-light text-[rgba(255,255,255,0.9)]"
+					class="text-3xl font-light text-text-primary"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.unheardVoicemails}
 				</div>
-				<p class="text-[10px] uppercase tracking-[0.12em] text-[rgba(197,165,90,0.4)] mt-1">
+				<p class="text-[10px] uppercase tracking-[0.12em] text-gold-dim mt-1">
 					unheard
 				</p>
 			{:else}
@@ -316,16 +316,16 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-[rgba(255,255,255,0.4)]"
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
 					>Avg Duration</span
 				>
 				<Clock
-					class="h-4 w-4 text-[#C5A55A] opacity-50 group-hover:opacity-100 transition-opacity"
+					class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity"
 				/>
 			</div>
 			{#if stats}
 				<div
-					class="text-3xl font-light text-[rgba(255,255,255,0.9)]"
+					class="text-3xl font-light text-text-primary"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{formatDuration(stats.avgDuration)}
@@ -339,8 +339,8 @@
 	<!-- Call Volume Chart + Quick Links -->
 	<div class="grid gap-4 lg:grid-cols-3">
 		<!-- Daily call volume chart -->
-		<div class="lg:col-span-2 rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-			<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+		<div class="lg:col-span-2 rounded border border-border overflow-hidden">
+			<div class="px-5 py-4 border-b border-border">
 				<h2 class="text-base tracking-wide">Call Volume</h2>
 				<p class="text-xs text-muted-foreground mt-0.5">Daily calls over the past week.</p>
 			</div>
@@ -354,7 +354,7 @@
 								<div class="w-full flex flex-col items-center relative group">
 									<!-- Tooltip on hover -->
 									<div
-										class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-[rgba(0,0,0,0.9)] border border-[rgba(197,165,90,0.2)] rounded px-2 py-1 text-xs whitespace-nowrap z-10"
+										class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-popover border border-border rounded px-2 py-1 text-xs whitespace-nowrap z-10"
 									>
 										{day.total} calls
 										{#if day.answered > 0}<span class="text-green-400">
@@ -368,22 +368,22 @@
 										style="height: {pct}%; min-height: 4px;"
 									>
 										{#if day.total === 0}
-											<div class="absolute inset-0 bg-[rgba(255,255,255,0.03)] rounded-t"></div>
+											<div class="absolute inset-0 bg-surface-subtle rounded-t"></div>
 										{:else}
 											{@const answeredPct = (day.answered / day.total) * 100}
 											{@const missedPct = (day.missed / day.total) * 100}
 											<div class="absolute inset-0 flex flex-col-reverse">
-												<div class="bg-[#c5a55a]" style="height: {answeredPct}%;"></div>
+												<div class="bg-gold" style="height: {answeredPct}%;"></div>
 												<div class="bg-red-400/70" style="height: {missedPct}%;"></div>
 												<div
-													class="bg-[rgba(197,165,90,0.3)]"
+													class="bg-gold-dim"
 													style="height: {100 - answeredPct - missedPct}%;"
 												></div>
 											</div>
 										{/if}
 									</div>
 								</div>
-								<span class="text-[10px] text-[rgba(255,255,255,0.3)] mt-1"
+								<span class="text-[10px] text-text-tertiary mt-1"
 									>{dayLabel(day.date)}</span
 								>
 							</div>
@@ -392,28 +392,28 @@
 					<!-- Legend -->
 					<div class="flex gap-4 mt-4 justify-center">
 						<div class="flex items-center gap-1.5">
-							<div class="w-2.5 h-2.5 rounded-sm bg-[#c5a55a]"></div>
-							<span class="text-[10px] text-[rgba(255,255,255,0.35)]">Answered</span>
+							<div class="w-2.5 h-2.5 rounded-sm bg-gold"></div>
+							<span class="text-[10px] text-text-tertiary">Answered</span>
 						</div>
 						<div class="flex items-center gap-1.5">
 							<div class="w-2.5 h-2.5 rounded-sm bg-red-400/70"></div>
-							<span class="text-[10px] text-[rgba(255,255,255,0.35)]">Missed</span>
+							<span class="text-[10px] text-text-tertiary">Missed</span>
 						</div>
 						<div class="flex items-center gap-1.5">
-							<div class="w-2.5 h-2.5 rounded-sm bg-[rgba(197,165,90,0.3)]"></div>
-							<span class="text-[10px] text-[rgba(255,255,255,0.35)]">Voicemail</span>
+							<div class="w-2.5 h-2.5 rounded-sm bg-gold-dim"></div>
+							<span class="text-[10px] text-text-tertiary">Voicemail</span>
 						</div>
 					</div>
 				{:else}
 					<div class="flex h-48 items-center justify-center">
 						<div class="text-center">
 							<div
-								class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+								class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gold-glow border border-border"
 							>
 								<Phone class="h-5 w-5 empty-state-icon" />
 							</div>
-							<p class="text-sm text-[rgba(255,255,255,0.3)]">No call data yet</p>
-							<p class="text-xs text-[rgba(255,255,255,0.15)] mt-1">
+							<p class="text-sm text-text-tertiary">No call data yet</p>
+							<p class="text-xs text-text-ghost mt-1">
 								Charts will populate once calls are logged.
 							</p>
 						</div>
@@ -423,106 +423,106 @@
 		</div>
 
 		<!-- Quick Links panel -->
-		<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-			<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+		<div class="rounded border border-border overflow-hidden">
+			<div class="px-5 py-4 border-b border-border">
 				<h2 class="text-base tracking-wide">Quick Access</h2>
 			</div>
-			<div class="p-3 divide-y divide-[rgba(255,255,255,0.06)]">
+			<div class="p-3 divide-y divide-border-subtle">
 				<a
 					href="/calls?filter=voicemail"
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group"
+					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
 						<Voicemail
-							class="h-4 w-4 text-[rgba(255,255,255,0.3)] group-hover:text-[#c5a55a] transition-colors"
+							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
 						/>
 						<span
-							class="text-sm text-[rgba(255,255,255,0.6)] group-hover:text-white transition-colors"
+							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Voicemails</span
 						>
 					</div>
 					<div class="flex items-center gap-2">
 						{#if stats?.unheardVoicemails > 0}
 							<span
-								class="px-1.5 py-0.5 rounded-full text-[10px] bg-[#c5a55a] text-black font-medium"
+								class="px-1.5 py-0.5 rounded-full text-[10px] bg-gold text-primary-foreground font-medium"
 								>{stats.unheardVoicemails}</span
 							>
 						{/if}
 						<ArrowRight
-							class="h-3.5 w-3.5 text-[rgba(255,255,255,0.15)] group-hover:text-[rgba(255,255,255,0.4)] transition-colors"
+							class="h-3.5 w-3.5 text-text-ghost group-hover:text-text-tertiary transition-colors"
 						/>
 					</div>
 				</a>
 
 				<a
 					href="/messages"
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group"
+					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
 						<MessageSquare
-							class="h-4 w-4 text-[rgba(255,255,255,0.3)] group-hover:text-[#c5a55a] transition-colors"
+							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
 						/>
 						<span
-							class="text-sm text-[rgba(255,255,255,0.6)] group-hover:text-white transition-colors"
+							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Messages</span
 						>
 					</div>
 					<div class="flex items-center gap-2">
 						{#if messageStats?.unread > 0}
 							<span
-								class="px-1.5 py-0.5 rounded-full text-[10px] bg-[#c5a55a] text-black font-medium"
+								class="px-1.5 py-0.5 rounded-full text-[10px] bg-gold text-primary-foreground font-medium"
 								>{messageStats.unread}</span
 							>
 						{/if}
 						<ArrowRight
-							class="h-3.5 w-3.5 text-[rgba(255,255,255,0.15)] group-hover:text-[rgba(255,255,255,0.4)] transition-colors"
+							class="h-3.5 w-3.5 text-text-ghost group-hover:text-text-tertiary transition-colors"
 						/>
 					</div>
 				</a>
 
 				<a
 					href="/calls"
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group"
+					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
 						<Phone
-							class="h-4 w-4 text-[rgba(255,255,255,0.3)] group-hover:text-[#c5a55a] transition-colors"
+							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
 						/>
 						<span
-							class="text-sm text-[rgba(255,255,255,0.6)] group-hover:text-white transition-colors"
+							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Call Log</span
 						>
 					</div>
 					<ArrowRight
-						class="h-3.5 w-3.5 text-[rgba(255,255,255,0.15)] group-hover:text-[rgba(255,255,255,0.4)] transition-colors"
+						class="h-3.5 w-3.5 text-text-ghost group-hover:text-text-tertiary transition-colors"
 					/>
 				</a>
 
 				<a
 					href="/softphone"
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group"
+					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
 						<PhoneOutgoing
-							class="h-4 w-4 text-[rgba(255,255,255,0.3)] group-hover:text-[#c5a55a] transition-colors"
+							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
 						/>
 						<span
-							class="text-sm text-[rgba(255,255,255,0.6)] group-hover:text-white transition-colors"
+							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Softphone</span
 						>
 					</div>
 					<ArrowRight
-						class="h-3.5 w-3.5 text-[rgba(255,255,255,0.15)] group-hover:text-[rgba(255,255,255,0.4)] transition-colors"
+						class="h-3.5 w-3.5 text-text-ghost group-hover:text-text-tertiary transition-colors"
 					/>
 				</a>
 
 				<a
 					href="/settings"
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-[rgba(197,165,90,0.04)] group"
+					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
 						<svg
-							class="h-4 w-4 text-[rgba(255,255,255,0.3)] group-hover:text-[#c5a55a] transition-colors"
+							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -532,12 +532,12 @@
 							/><circle cx="12" cy="12" r="3" /></svg
 						>
 						<span
-							class="text-sm text-[rgba(255,255,255,0.6)] group-hover:text-white transition-colors"
+							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Settings</span
 						>
 					</div>
 					<ArrowRight
-						class="h-3.5 w-3.5 text-[rgba(255,255,255,0.15)] group-hover:text-[rgba(255,255,255,0.4)] transition-colors"
+						class="h-3.5 w-3.5 text-text-ghost group-hover:text-text-tertiary transition-colors"
 					/>
 				</a>
 			</div>
@@ -545,15 +545,15 @@
 	</div>
 
 	<!-- Recent Calls -->
-	<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+	<div class="rounded border border-border overflow-hidden">
 		<div
-			class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)] flex items-center justify-between"
+			class="px-5 py-4 border-b border-border flex items-center justify-between"
 		>
 			<div>
 				<h2 class="text-base tracking-wide">Recent Calls</h2>
 				<p class="text-xs text-muted-foreground mt-0.5">Latest call activity.</p>
 			</div>
-			<a href="/calls" class="text-xs text-[#c5a55a] hover:text-[#d4af37] transition-colors"
+			<a href="/calls" class="text-xs text-gold hover:text-gold transition-colors"
 				>View all →</a
 			>
 		</div>
@@ -568,17 +568,17 @@
 				<div class="flex h-40 items-center justify-center">
 					<div class="text-center">
 						<div
-							class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+							class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-glow border border-border"
 						>
 							<Phone class="h-6 w-6 empty-state-icon" />
 						</div>
 						<p
-							class="text-sm font-light text-[rgba(255,255,255,0.35)]"
+							class="text-sm font-light text-text-tertiary"
 							style="font-family: 'Playfair Display', serif;"
 						>
 							No calls yet
 						</p>
-						<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+						<p class="text-xs text-text-ghost mt-1">
 							Call data will appear once Twilio is connected.
 						</p>
 					</div>
@@ -589,7 +589,7 @@
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
-							class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)] border border-transparent hover:border-[rgba(197,165,90,0.1)] {i > 0 ? 'border-t border-t-[rgba(255,255,255,0.06)]' : ''}"
+							class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-gold-glow border border-transparent hover:border-border {i > 0 ? 'border-t border-t-border-subtle' : ''}"
 						>
 							<div class="mt-0.5 shrink-0">
 								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
@@ -609,14 +609,14 @@
 									<div class="flex items-center gap-1.5 min-w-0">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if call.contact_id && call.caller_name}
-												<span class="text-[#C5A55A] text-[10px] shrink-0" title="Contact"
+												<span class="text-gold text-[10px] shrink-0" title="Contact"
 													>&#9670;</span
 												>
-												<span class="text-[rgba(255,255,255,0.9)]">{call.caller_name}</span>
+												<span class="text-text-primary">{call.caller_name}</span>
 											{:else if call.caller_name}
-												<span class="text-[rgba(255,255,255,0.7)]">{call.caller_name}</span>
+												<span class="text-text-secondary">{call.caller_name}</span>
 											{:else}
-												<span class="text-[rgba(255,255,255,0.85)]">{formatPhone(callPhone)}</span>
+												<span class="text-text-primary">{formatPhone(callPhone)}</span>
 											{/if}
 										</p>
 										<!-- Quick actions — right next to name -->
@@ -643,25 +643,25 @@
 											</div>
 										{/if}
 									</div>
-									<span class="text-xs text-[rgba(255,255,255,0.3)] shrink-0"
+									<span class="text-xs text-text-tertiary shrink-0"
 										>{formatRelativeDate(call.started_at)}</span
 									>
 								</div>
 								<div class="mt-0.5">
 									{#if summary.type === 'voicemail'}
 										<span
-											class="text-xs text-[rgba(255,255,255,0.4)] italic flex items-center gap-1.5"
+											class="text-xs text-text-tertiary italic flex items-center gap-1.5"
 										>
-											<Voicemail class="h-3 w-3 shrink-0 text-[#C5A55A]/60" />{summary.text}
+											<Voicemail class="h-3 w-3 shrink-0 text-gold-dim" />{summary.text}
 										</span>
 									{:else if summary.type === 'answered'}
 										<span class="text-xs text-emerald-400/60">{summary.text}</span>
 									{:else if summary.type === 'missed'}
 										<span class="text-xs text-red-400/70">{summary.text}</span>
 									{:else if summary.type === 'abandoned'}
-										<span class="text-xs text-[rgba(255,255,255,0.3)]">{summary.text}</span>
+										<span class="text-xs text-text-tertiary">{summary.text}</span>
 									{:else}
-										<span class="text-xs text-[rgba(255,255,255,0.3)]">{summary.text}</span>
+										<span class="text-xs text-text-tertiary">{summary.text}</span>
 									{/if}
 								</div>
 							</div>

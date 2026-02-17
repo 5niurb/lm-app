@@ -85,42 +85,93 @@ router.get('/', logAction('contacts.list'), async (req, res) => {
 /**
  * GET /api/contacts/stats
  * Get contact statistics including tag and list counts.
+ * Uses raw SQL to avoid Supabase's default 1000-row limit.
  */
 router.get('/stats', logAction('contacts.stats'), async (req, res) => {
-	// Fetch all contacts' tags, lists, and source (lightweight)
-	const { data: contacts } = await supabaseAdmin.from('contacts').select('source, tags, lists');
+	// Use raw SQL for accurate counts — avoids Supabase 1000-row default limit
+	const { data: rows, error } = await supabaseAdmin.rpc('exec_sql', {
+		query: `
+			SELECT
+				count(*) as total,
+				jsonb_object_agg(COALESCE(source, 'unknown'), source_count) as by_source,
+				(
+					SELECT jsonb_object_agg(tag, cnt)
+					FROM (
+						SELECT unnest(tags) as tag, count(*) as cnt
+						FROM contacts
+						WHERE tags IS NOT NULL
+						GROUP BY tag
+					) t
+				) as by_tag,
+				(
+					SELECT jsonb_object_agg(list, cnt)
+					FROM (
+						SELECT unnest(lists) as list, count(*) as cnt
+						FROM contacts
+						WHERE lists IS NOT NULL
+						GROUP BY list
+					) t
+				) as by_list
+			FROM (
+				SELECT source, count(*) as source_count
+				FROM contacts
+				GROUP BY source
+			) s
+		`
+	});
 
-	const total = contacts?.length || 0;
-	const sources = {};
-	const tags = {};
-	const lists = {};
+	// Fallback: if the RPC doesn't exist, use paginated fetch
+	if (error) {
+		// Paginate to get ALL contacts (Supabase default limit is 1000)
+		let allContacts = [];
+		let from = 0;
+		const batchSize = 1000;
+		let keepGoing = true;
 
-	if (contacts) {
-		for (const c of contacts) {
-			// Count by source
-			sources[c.source] = (sources[c.source] || 0) + 1;
+		while (keepGoing) {
+			const { data: batch } = await supabaseAdmin
+				.from('contacts')
+				.select('source, tags, lists')
+				.range(from, from + batchSize - 1);
 
-			// Count by tag
+			if (batch && batch.length > 0) {
+				allContacts = allContacts.concat(batch);
+				from += batchSize;
+				if (batch.length < batchSize) keepGoing = false;
+			} else {
+				keepGoing = false;
+			}
+		}
+
+		const total = allContacts.length;
+		const sources = {};
+		const tags = {};
+		const lists = {};
+
+		for (const c of allContacts) {
+			sources[c.source || 'unknown'] = (sources[c.source || 'unknown'] || 0) + 1;
 			if (c.tags && Array.isArray(c.tags)) {
 				for (const t of c.tags) {
 					tags[t] = (tags[t] || 0) + 1;
 				}
 			}
-
-			// Count by list
 			if (c.lists && Array.isArray(c.lists)) {
 				for (const l of c.lists) {
 					lists[l] = (lists[l] || 0) + 1;
 				}
 			}
 		}
+
+		return res.json({ total, bySource: sources, byTag: tags, byList: lists });
 	}
 
+	// RPC succeeded — parse aggregated result
+	const row = rows?.[0] || {};
 	return res.json({
-		total,
-		bySource: sources,
-		byTag: tags,
-		byList: lists
+		total: parseInt(row.total, 10) || 0,
+		bySource: row.by_source || {},
+		byTag: row.by_tag || {},
+		byList: row.by_list || {}
 	});
 });
 
