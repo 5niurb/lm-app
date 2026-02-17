@@ -598,37 +598,6 @@
 								{expandedContact.metadata?.state || '—'}
 							</p>
 						</div>
-					</div>
-				</div>
-
-				<!-- Patient / Business Info -->
-				<div class="card-elevated rounded-lg p-4">
-					<p
-						class="section-label text-xs font-medium text-text-tertiary mb-3 uppercase tracking-[0.1em]"
-					>
-						Patient Info
-					</p>
-					<div class="grid gap-3 grid-cols-2">
-						<div>
-							<p class="text-xs text-text-tertiary mb-0.5">AR ID</p>
-							<p class="text-sm font-mono text-text-secondary">
-								{expandedContact.metadata?.ar_id || expandedContact.source_id || '—'}
-							</p>
-						</div>
-						<div>
-							<p class="text-xs text-text-tertiary mb-0.5">Last Visited</p>
-							<p class="text-sm text-text-primary">
-								{expandedContact.metadata?.last_visited || '—'}
-							</p>
-						</div>
-						<div>
-							<p class="text-xs text-text-tertiary mb-0.5">Total Sales</p>
-							<p class="text-sm text-text-primary">
-								{expandedContact.metadata?.total_sales
-									? `${Math.round(Number(expandedContact.metadata.total_sales)).toLocaleString()}`
-									: '—'}
-							</p>
-						</div>
 						<div>
 							<p class="text-xs text-text-tertiary mb-0.5">Preferred Contact</p>
 							<p class="text-sm text-text-primary">
@@ -646,6 +615,37 @@
 							<p class="text-sm text-text-primary">
 								{expandedContact.last_synced_at
 									? formatRelativeDate(expandedContact.last_synced_at)
+									: '—'}
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Patient / Business Info -->
+				<div class="card-elevated rounded-lg p-4">
+					<p
+						class="section-label text-xs font-medium text-text-tertiary mb-3 uppercase tracking-[0.1em]"
+					>
+						Patient Info
+					</p>
+					<div class="grid gap-3 grid-cols-2">
+						<div>
+							<p class="text-xs text-text-tertiary mb-0.5">AR ID</p>
+							<p class="text-sm font-mono text-text-secondary">
+								{expandedContact.metadata?.ar_id || '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-text-tertiary mb-0.5">Last Visited</p>
+							<p class="text-sm text-text-primary">
+								{expandedContact.metadata?.last_visited || '—'}
+							</p>
+						</div>
+						<div>
+							<p class="text-xs text-text-tertiary mb-0.5">Total Sales</p>
+							<p class="text-sm text-text-primary">
+								{expandedContact.metadata?.total_sales
+									? `$${Math.round(Number(expandedContact.metadata.total_sales)).toLocaleString()}`
 									: '—'}
 							</p>
 						</div>

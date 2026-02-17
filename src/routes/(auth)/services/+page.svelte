@@ -130,7 +130,7 @@
 	function categoryColor(val) {
 		switch (val) {
 			case 'advanced_aesthetics':
-				return 'bg-[rgba(197,165,90,0.15)] text-[#c5a55a]';
+				return 'bg-gold/15 text-gold';
 			case 'regenerative_wellness':
 				return 'bg-emerald-500/10 text-emerald-400';
 			case 'bespoke_treatments':
@@ -143,7 +143,7 @@
 	function categoryBorderColor(val) {
 		switch (val) {
 			case 'advanced_aesthetics':
-				return 'border-t-[#c5a55a]';
+				return 'border-t-gold';
 			case 'regenerative_wellness':
 				return 'border-t-emerald-400';
 			case 'bespoke_treatments':
@@ -388,7 +388,7 @@
 		{#if $isAdmin}
 			<button
 				onclick={openCreateForm}
-				class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-[#c5a55a] text-[#0a0a0c] hover:bg-[#d4af37] transition-colors font-medium"
+				class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-gold text-primary-foreground hover:bg-gold/80 transition-colors font-medium"
 			>
 				<Plus class="h-4 w-4" /> Add Service
 			</button>
@@ -419,23 +419,23 @@
 			role="dialog"
 		>
 			<div
-				class="w-full max-w-3xl mx-4 mb-12 rounded-lg border border-[rgba(197,165,90,0.2)] bg-[#0e0e10] shadow-2xl"
+				class="w-full max-w-3xl mx-4 mb-12 rounded-lg border border-border bg-card shadow-2xl"
 			>
 				<!-- Editor header -->
 				<div
-					class="flex items-center justify-between px-6 py-4 border-b border-[rgba(197,165,90,0.1)]"
+					class="flex items-center justify-between px-6 py-4 border-b border-border-subtle"
 				>
 					<div>
 						<h2 class="text-base tracking-wide">
 							{editingContent ? 'Edit Content' : 'New Content'}
 						</h2>
-						<p class="text-xs text-[rgba(255,255,255,0.3)] mt-0.5">
-							for <span class="text-[#c5a55a]">{contentServiceName}</span>
+						<p class="text-xs text-text-tertiary mt-0.5">
+							for <span class="text-gold">{contentServiceName}</span>
 						</p>
 					</div>
 					<button
 						onclick={() => (showContentEditor = false)}
-						class="p-1 text-[rgba(255,255,255,0.3)] hover:text-white transition-colors"
+						class="p-1 text-text-tertiary hover:text-white transition-colors"
 					>
 						<X class="h-5 w-5" />
 					</button>
@@ -446,13 +446,13 @@
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<label
-								class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+								class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 								>Content Type *</label
 							>
 							<select
 								bind:value={cType}
 								onchange={autoContentSlug}
-								class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+								class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 							>
 								{#each contentTypes as ct}
 									<option value={ct.value}>{ct.label}</option>
@@ -461,24 +461,24 @@
 						</div>
 						<div>
 							<label
-								class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+								class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 								>Title *</label
 							>
 							<input
 								type="text"
 								bind:value={cTitle}
 								placeholder="e.g. Botox Pre-Treatment Guide"
-								class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+								class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 							/>
 						</div>
 					</div>
 
 					<div>
 						<label
-							class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+							class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>
 							SMS/Email Summary
-							<span class="normal-case tracking-normal text-[rgba(255,255,255,0.2)]"
+							<span class="normal-case tracking-normal text-text-ghost"
 								>— 2-3 sentences sent in messages, links to full page</span
 							>
 						</label>
@@ -486,17 +486,17 @@
 							bind:value={cSummary}
 							rows="2"
 							placeholder="Brief summary for text messages..."
-							class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors resize-none"
+							class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors resize-none"
 						></textarea>
 					</div>
 
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<label
-								class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+								class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 							>
 								Page Slug
-								<span class="normal-case tracking-normal text-[rgba(255,255,255,0.2)]"
+								<span class="normal-case tracking-normal text-text-ghost"
 									>— lemedspa.com/care/</span
 								>
 							</label>
@@ -504,13 +504,13 @@
 								type="text"
 								bind:value={cPageSlug}
 								placeholder="e.g. botox-pre"
-								class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm font-mono focus:border-[#c5a55a] focus:outline-none transition-colors"
+								class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm font-mono focus:border-gold focus:outline-none transition-colors"
 							/>
 						</div>
 						<div class="flex items-end pb-1">
 							<label class="flex items-center gap-2 cursor-pointer">
-								<input type="checkbox" bind:checked={cActive} class="accent-[#c5a55a]" />
-								<span class="text-sm text-[rgba(255,255,255,0.6)]">Active</span>
+								<input type="checkbox" bind:checked={cActive} class="accent-gold" />
+								<span class="text-sm text-text-secondary">Active</span>
 							</label>
 						</div>
 					</div>
@@ -518,15 +518,15 @@
 					<!-- Content sections (accordion builder) -->
 					<div>
 						<div class="flex items-center justify-between mb-3">
-							<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)]">
+							<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary">
 								Content Sections
-								<span class="normal-case tracking-normal text-[rgba(255,255,255,0.2)]"
+								<span class="normal-case tracking-normal text-text-ghost"
 									>— expandable accordion on care page</span
 								>
 							</label>
 							<button
 								onclick={addSection}
-								class="flex items-center gap-1 px-2 py-1 rounded text-xs text-[#c5a55a] hover:bg-[rgba(197,165,90,0.05)] transition-colors"
+								class="flex items-center gap-1 px-2 py-1 rounded text-xs text-gold hover:bg-gold-glow transition-colors"
 							>
 								<Plus class="h-3 w-3" /> Add Section
 							</button>
@@ -535,10 +535,10 @@
 						<div class="space-y-3">
 							{#each cSections as section, idx}
 								<div
-									class="rounded border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.01)] p-4"
+									class="rounded border border-border-subtle bg-surface-subtle p-4"
 								>
 									<div class="flex items-center gap-2 mb-2">
-										<span class="text-[10px] text-[rgba(255,255,255,0.2)] w-5 text-center"
+										<span class="text-[10px] text-text-ghost w-5 text-center"
 											>{idx + 1}</span
 										>
 
@@ -546,14 +546,14 @@
 											type="text"
 											bind:value={section.heading}
 											placeholder="Section heading..."
-											class="flex-1 px-2 py-1.5 rounded border border-[rgba(255,255,255,0.08)] bg-transparent text-sm font-medium focus:border-[#c5a55a] focus:outline-none transition-colors"
+											class="flex-1 px-2 py-1.5 rounded border border-border-subtle bg-transparent text-sm font-medium focus:border-gold focus:outline-none transition-colors"
 										/>
 
 										<div class="flex items-center gap-0.5">
 											<button
 												onclick={() => moveSection(idx, -1)}
 												disabled={idx === 0}
-												class="p-1 text-[rgba(255,255,255,0.15)] hover:text-[rgba(255,255,255,0.5)] disabled:opacity-20 transition-colors"
+												class="p-1 text-text-ghost hover:text-text-secondary disabled:opacity-20 transition-colors"
 												title="Move up"
 											>
 												<ArrowUp class="h-3 w-3" />
@@ -561,7 +561,7 @@
 											<button
 												onclick={() => moveSection(idx, 1)}
 												disabled={idx === cSections.length - 1}
-												class="p-1 text-[rgba(255,255,255,0.15)] hover:text-[rgba(255,255,255,0.5)] disabled:opacity-20 transition-colors"
+												class="p-1 text-text-ghost hover:text-text-secondary disabled:opacity-20 transition-colors"
 												title="Move down"
 											>
 												<ArrowDown class="h-3 w-3" />
@@ -569,7 +569,7 @@
 											<button
 												onclick={() => removeSection(idx)}
 												disabled={cSections.length <= 1}
-												class="p-1 text-[rgba(255,255,255,0.15)] hover:text-red-400 disabled:opacity-20 transition-colors"
+												class="p-1 text-text-ghost hover:text-red-400 disabled:opacity-20 transition-colors"
 												title="Remove"
 											>
 												<Trash2 class="h-3 w-3" />
@@ -581,7 +581,7 @@
 										bind:value={section.body}
 										rows="4"
 										placeholder="Section body — detailed instructions, restrictions, expectations..."
-										class="w-full px-2 py-1.5 rounded border border-[rgba(255,255,255,0.06)] bg-transparent text-xs leading-relaxed focus:border-[#c5a55a] focus:outline-none transition-colors resize-y"
+										class="w-full px-2 py-1.5 rounded border border-border-subtle bg-transparent text-xs leading-relaxed focus:border-gold focus:outline-none transition-colors resize-y"
 									></textarea>
 								</div>
 							{/each}
@@ -591,9 +591,9 @@
 
 				<!-- Editor footer -->
 				<div
-					class="flex items-center justify-between px-6 py-4 border-t border-[rgba(197,165,90,0.1)]"
+					class="flex items-center justify-between px-6 py-4 border-t border-border-subtle"
 				>
-					<div class="text-xs text-[rgba(255,255,255,0.2)]">
+					<div class="text-xs text-text-ghost">
 						{cSections.filter((s) => s.heading.trim() || s.body.trim()).length} section{cSections.filter(
 							(s) => s.heading.trim() || s.body.trim()
 						).length !== 1
@@ -604,13 +604,13 @@
 					<div class="flex items-center gap-3">
 						<button
 							onclick={() => (showContentEditor = false)}
-							class="px-4 py-2 text-sm text-[rgba(255,255,255,0.5)] hover:text-white transition-colors"
+							class="px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors"
 							>Cancel</button
 						>
 						<button
 							onclick={saveContent}
 							disabled={cSaving}
-							class="px-5 py-2 rounded text-sm bg-[#c5a55a] text-[#0a0a0c] hover:bg-[#d4af37] transition-colors font-medium disabled:opacity-50"
+							class="px-5 py-2 rounded text-sm bg-gold text-primary-foreground hover:bg-gold/80 transition-colors font-medium disabled:opacity-50"
 						>
 							{cSaving ? 'Saving...' : editingContent ? 'Update Content' : 'Create Content'}
 						</button>
@@ -623,19 +623,19 @@
 	<!-- ========== SERVICE FORM ========== -->
 	{#if showForm}
 		<div
-			class="rounded border border-[rgba(197,165,90,0.2)] bg-[rgba(197,165,90,0.03)] p-6 space-y-4"
+			class="rounded border border-border bg-gold-glow p-6 space-y-4"
 		>
 			<div class="flex items-center justify-between">
 				<h2 class="text-base tracking-wide">{editingService ? 'Edit Service' : 'New Service'}</h2>
 				<button
 					onclick={() => (showForm = false)}
-					class="text-[rgba(255,255,255,0.3)] hover:text-white transition-colors"
+					class="text-text-tertiary hover:text-white transition-colors"
 					><X class="h-4 w-4" /></button
 				>
 			</div>
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Name *</label
 					>
 					<input
@@ -643,27 +643,27 @@
 						bind:value={formName}
 						oninput={autoSlug}
 						placeholder="e.g. Neuromodulators (Botox/Dysport)"
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					/>
 				</div>
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Slug *</label
 					>
 					<input
 						type="text"
 						bind:value={formSlug}
 						placeholder="e.g. neuromodulators"
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm font-mono focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm font-mono focus:border-gold focus:outline-none transition-colors"
 					/>
 				</div>
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Category *</label
 					>
 					<select
 						bind:value={formCategory}
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						{#each categories as cat}<option value={cat.value}>{cat.label}</option>{/each}
 					</select>
@@ -671,19 +671,19 @@
 				<div class="flex gap-4">
 					<div class="flex-1">
 						<label
-							class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+							class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 							>Duration (min)</label
 						>
 						<input
 							type="number"
 							bind:value={formDuration}
 							placeholder="45"
-							class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+							class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 						/>
 					</div>
 					<div class="flex-1">
 						<label
-							class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+							class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 							>Price From ($)</label
 						>
 						<input
@@ -691,37 +691,37 @@
 							bind:value={formPrice}
 							placeholder="250"
 							step="0.01"
-							class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+							class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 						/>
 					</div>
 				</div>
 			</div>
 			<div>
-				<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+				<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 					>Description</label
 				>
 				<textarea
 					bind:value={formDescription}
 					rows="2"
 					placeholder="Brief service description..."
-					class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors resize-none"
+					class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors resize-none"
 				></textarea>
 			</div>
 			<div class="flex items-center gap-6">
 				<label class="flex items-center gap-2 cursor-pointer">
-					<input type="checkbox" bind:checked={formActive} class="accent-[#c5a55a]" />
-					<span class="text-sm text-[rgba(255,255,255,0.6)]">Active</span>
+					<input type="checkbox" bind:checked={formActive} class="accent-gold" />
+					<span class="text-sm text-text-secondary">Active</span>
 				</label>
 				<div class="flex-1"></div>
 				<button
 					onclick={() => (showForm = false)}
-					class="px-4 py-2 text-sm text-[rgba(255,255,255,0.5)] hover:text-white transition-colors"
+					class="px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors"
 					>Cancel</button
 				>
 				<button
 					onclick={saveService}
 					disabled={formSaving}
-					class="px-4 py-2 rounded text-sm bg-[#c5a55a] text-[#0a0a0c] hover:bg-[#d4af37] transition-colors font-medium disabled:opacity-50"
+					class="px-4 py-2 rounded text-sm bg-gold text-primary-foreground hover:bg-gold/80 transition-colors font-medium disabled:opacity-50"
 				>
 					{formSaving ? 'Saving...' : editingService ? 'Update' : 'Create'}
 				</button>
@@ -737,23 +737,23 @@
 	{:else if services.length === 0}
 		<div class="flex flex-col items-center justify-center h-64 text-center">
 			<div
-				class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+				class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-glow border border-border-subtle"
 			>
 				<Sparkles class="h-7 w-7 empty-state-icon" />
 			</div>
 			<p
-				class="text-base font-light text-[rgba(255,255,255,0.4)] mb-1"
+				class="text-base font-light text-text-tertiary mb-1"
 				style="font-family: 'Playfair Display', serif;"
 			>
 				No services yet
 			</p>
-			<p class="text-xs text-[rgba(255,255,255,0.2)]">
+			<p class="text-xs text-text-ghost">
 				Run the Phase 1C schema migration to seed default services.
 			</p>
 			{#if $isAdmin}
 				<button
 					onclick={openCreateForm}
-					class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-[#C5A55A] border border-[rgba(197,165,90,0.2)] hover:bg-[rgba(197,165,90,0.06)] transition-colors"
+					class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-gold-glow transition-colors"
 				>
 					<Plus class="h-3.5 w-3.5" /> Add your first service
 				</button>
@@ -769,10 +769,10 @@
 							group.value
 						)}">{group.label}</span
 					>
-					<span class="text-xs text-[rgba(255,255,255,0.3)]"
+					<span class="text-xs text-text-tertiary"
 						>{group.services.length} service{group.services.length !== 1 ? 's' : ''}</span
 					>
-					<div class="flex-1 h-px bg-[rgba(197,165,90,0.06)]"></div>
+					<div class="flex-1 h-px bg-gold-glow"></div>
 				</div>
 
 				<!-- Service card grid -->
@@ -801,7 +801,7 @@
 									</span>
 								{:else}
 									<span
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-[rgba(255,255,255,0.35)] border border-white/10"
+										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-text-tertiary border border-white/10"
 									>
 										Inactive
 									</span>
@@ -812,7 +812,7 @@
 							<div class="p-5 flex-1 flex flex-col">
 								<!-- Service name -->
 								<h3
-									class="text-base text-[rgba(255,255,255,0.9)] pr-16 mb-2"
+									class="text-base text-text-primary pr-16 mb-2"
 									style="font-family: 'Playfair Display', serif;"
 								>
 									{service.name}
@@ -821,7 +821,7 @@
 								<!-- Description -->
 								{#if service.description}
 									<p
-										class="text-xs text-[rgba(255,255,255,0.35)] line-clamp-2 leading-relaxed mb-4"
+										class="text-xs text-text-tertiary line-clamp-2 leading-relaxed mb-4"
 									>
 										{service.description}
 									</p>
@@ -834,25 +834,25 @@
 
 								<!-- Footer: duration + price -->
 								<div
-									class="flex items-center justify-between pt-3 border-t border-[rgba(255,255,255,0.04)]"
+									class="flex items-center justify-between pt-3 border-t border-border-subtle"
 								>
 									<div class="flex items-center gap-4">
 										{#if service.duration_min}
-											<span class="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.4)]">
-												<Clock class="h-3.5 w-3.5 text-[rgba(255,255,255,0.2)]" />
+											<span class="flex items-center gap-1.5 text-xs text-text-tertiary">
+												<Clock class="h-3.5 w-3.5 text-text-ghost" />
 												{service.duration_min} min
 											</span>
 										{/if}
 										{#if service.price_from}
-											<span class="flex items-center gap-1.5 text-xs text-[rgba(255,255,255,0.4)]">
-												<DollarSign class="h-3.5 w-3.5 text-[rgba(255,255,255,0.2)]" />
+											<span class="flex items-center gap-1.5 text-xs text-text-tertiary">
+												<DollarSign class="h-3.5 w-3.5 text-text-ghost" />
 												From ${Number(service.price_from).toFixed(0)}
 											</span>
 										{/if}
 									</div>
 									<!-- Expand indicator -->
 									<div
-										class="text-[rgba(255,255,255,0.15)] group-hover/card:text-[#c5a55a] transition-colors"
+										class="text-text-ghost group-hover/card:text-gold transition-colors"
 									>
 										{#if expandedId === service.id}
 											<ChevronDown class="h-4 w-4" />
@@ -873,7 +873,7 @@
 											e.stopPropagation();
 											openEditForm(service);
 										}}
-										class="p-1.5 rounded bg-[rgba(0,0,0,0.5)] text-[rgba(255,255,255,0.4)] hover:text-[#c5a55a] hover:bg-[rgba(197,165,90,0.1)] transition-colors"
+										class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-gold hover:bg-[rgba(197,165,90,0.1)] transition-colors"
 										title="Edit service"
 									>
 										<Pencil class="h-3.5 w-3.5" />
@@ -883,7 +883,7 @@
 											e.stopPropagation();
 											deleteService(service);
 										}}
-										class="p-1.5 rounded bg-[rgba(0,0,0,0.5)] text-[rgba(255,255,255,0.4)] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+										class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
 										title="Delete service"
 									>
 										<Trash2 class="h-3.5 w-3.5" />
@@ -895,24 +895,24 @@
 						<!-- Expanded content blocks (full-width row below the card) -->
 						{#if expandedId === service.id}
 							<div
-								class="col-span-full rounded-lg border border-[rgba(197,165,90,0.12)] bg-[rgba(15,15,18,0.95)] p-5"
+								class="col-span-full rounded-lg border border-border bg-card/95 p-5"
 							>
 								<div class="flex items-center justify-between mb-4">
 									<div class="flex items-center gap-3">
 										<h3
-											class="text-sm text-[rgba(255,255,255,0.7)]"
+											class="text-sm text-text-secondary"
 											style="font-family: 'Playfair Display', serif;"
 										>
 											{service.name}
 										</h3>
-										<span class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.25)]"
+										<span class="text-xs uppercase tracking-[0.12em] text-text-ghost"
 											>Content Blocks</span
 										>
 									</div>
 									{#if $isAdmin}
 										<button
 											onclick={() => openContentCreate(service.id, service.name)}
-											class="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-[#c5a55a] hover:bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.15)] transition-colors"
+											class="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-gold hover:bg-gold-glow border border-border transition-colors"
 										>
 											<Plus class="h-3 w-3" /> Add Content
 										</button>
@@ -923,7 +923,7 @@
 									<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
 										{#each serviceContent[service.id] as content}
 											<div
-												class="group rounded border border-[rgba(255,255,255,0.06)] px-3 py-2.5 bg-[rgba(255,255,255,0.01)] hover:border-[rgba(197,165,90,0.15)] transition-colors cursor-pointer"
+												class="group rounded border border-border-subtle px-3 py-2.5 bg-surface-subtle hover:border-border transition-colors cursor-pointer"
 												role="button"
 												tabindex="0"
 												onclick={() => openContentEdit(content, service.name)}
@@ -934,7 +934,7 @@
 												<div class="flex items-center justify-between">
 													<div class="flex items-center gap-2">
 														<FileText class="h-3 w-3 {contentTypeColor(content.content_type)}" />
-														<span class="text-xs font-medium text-[rgba(255,255,255,0.7)]"
+														<span class="text-xs font-medium text-text-secondary"
 															>{content.title}</span
 														>
 													</div>
@@ -944,7 +944,7 @@
 																e.stopPropagation();
 																deleteContent(content);
 															}}
-															class="p-0.5 opacity-0 group-hover:opacity-100 text-[rgba(255,255,255,0.15)] hover:text-red-400 transition-all"
+															class="p-0.5 opacity-0 group-hover:opacity-100 text-text-ghost hover:text-red-400 transition-all"
 															title="Delete"
 														>
 															<Trash2 class="h-3 w-3" />
@@ -955,11 +955,11 @@
 													<span class="text-[10px] {contentTypeColor(content.content_type)}"
 														>{contentTypeLabel(content.content_type)}</span
 													>
-													<span class="text-[10px] text-[rgba(255,255,255,0.15)]"
+													<span class="text-[10px] text-text-ghost"
 														>v{content.version}</span
 													>
 													{#if Array.isArray(content.content_json)}
-														<span class="text-[10px] text-[rgba(255,255,255,0.12)]"
+														<span class="text-[10px] text-text-ghost"
 															>{content.content_json.length} section{content.content_json.length !==
 															1
 																? 's'
@@ -967,13 +967,13 @@
 														>
 													{/if}
 													{#if content.page_slug}
-														<span class="text-[10px] text-[rgba(255,255,255,0.12)] font-mono"
+														<span class="text-[10px] text-text-ghost font-mono"
 															>/care/{content.page_slug}</span
 														>
 													{/if}
 												</div>
 												{#if content.summary}
-													<p class="text-[10px] text-[rgba(255,255,255,0.2)] mt-1 line-clamp-2">
+													<p class="text-[10px] text-text-ghost mt-1 line-clamp-2">
 														{content.summary}
 													</p>
 												{/if}
@@ -982,8 +982,8 @@
 									</div>
 								{:else}
 									<div class="flex items-center gap-2 py-3">
-										<FileText class="h-4 w-4 text-[rgba(255,255,255,0.1)]" />
-										<span class="text-xs text-[rgba(255,255,255,0.2)]">No content blocks yet.</span>
+										<FileText class="h-4 w-4 text-text-ghost" />
+										<span class="text-xs text-text-ghost">No content blocks yet.</span>
 									</div>
 								{/if}
 
@@ -996,7 +996,7 @@
 										<button
 											class="px-2 py-0.5 rounded text-[10px] border transition-colors {exists
 												? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
-												: 'border-[rgba(255,255,255,0.06)] bg-transparent text-[rgba(255,255,255,0.15)] hover:border-[rgba(197,165,90,0.15)] hover:text-[rgba(255,255,255,0.3)]'}"
+												: 'border-border-subtle bg-transparent text-text-ghost hover:border-border hover:text-text-tertiary'}"
 											onclick={() => {
 												if (!exists && $isAdmin) {
 													cType = ct.value;
@@ -1018,11 +1018,11 @@
 		{/each}
 
 		<!-- Summary -->
-		<div class="flex items-center gap-6 pt-4 border-t border-[rgba(197,165,90,0.06)]">
-			<span class="text-xs text-[rgba(255,255,255,0.25)]"
+		<div class="flex items-center gap-6 pt-4 border-t border-border-subtle">
+			<span class="text-xs text-text-ghost"
 				>{services.length} service{services.length !== 1 ? 's' : ''}</span
 			>
-			<span class="text-xs text-[rgba(255,255,255,0.25)]"
+			<span class="text-xs text-text-ghost"
 				>{services.filter((s) => s.is_active).length} active</span
 			>
 		</div>

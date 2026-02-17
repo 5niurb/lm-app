@@ -293,28 +293,28 @@
 	</div>
 
 	{#if !$isAdmin}
-		<div class="rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-5">
-			<p class="text-[rgba(255,255,255,0.5)]">Only administrators can modify settings.</p>
+		<div class="rounded border border-border bg-surface-subtle p-5">
+			<p class="text-text-secondary">Only administrators can modify settings.</p>
 		</div>
 	{:else if loading}
 		<div class="flex items-center justify-center py-20">
-			<div class="text-[rgba(255,255,255,0.4)] text-sm">Loading settings...</div>
+			<div class="text-text-tertiary text-sm">Loading settings...</div>
 		</div>
 	{:else}
 		<!-- Tab navigation -->
-		<div class="flex gap-1 border-b border-[rgba(197,165,90,0.12)]">
+		<div class="flex gap-1 border-b border-border">
 			{#each tabs as tab}
 				<button
 					class="flex items-center gap-1.5 px-4 py-2.5 text-sm transition-colors relative {activeTab ===
 					tab.id
-						? 'text-[#c5a55a]'
-						: 'text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]'}"
+						? 'text-gold'
+						: 'text-text-tertiary hover:text-text-secondary'}"
 					onclick={() => (activeTab = tab.id)}
 				>
 					<tab.icon class="h-4 w-4" />
 					{tab.label}
 					{#if activeTab === tab.id}
-						<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#c5a55a]"></div>
+						<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gold"></div>
 					{/if}
 				</button>
 			{/each}
@@ -326,25 +326,25 @@
 			{#if activeTab === 'hours'}
 				<div class="space-y-6">
 					<!-- Clinic info -->
-					<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-						<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+					<div class="rounded border border-border overflow-hidden">
+						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">Clinic Information</h2>
 						</div>
 						<div class="p-5 space-y-4">
 							<div class="grid grid-cols-2 gap-4">
 								<div>
-									<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5">Phone Number</Label>
+									<Label class="text-xs text-text-secondary mb-1.5">Phone Number</Label>
 									<Input
 										bind:value={clinicPhone}
 										placeholder="818-463-3772"
-										class="bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+										class="bg-surface-subtle border-border"
 									/>
 								</div>
 								<div>
-									<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5">Timezone</Label>
+									<Label class="text-xs text-text-secondary mb-1.5">Timezone</Label>
 									<select
 										bind:value={clinicTimezone}
-										class="w-full h-9 px-3 rounded-md text-sm bg-[rgba(255,255,255,0.03)] border border-[rgba(197,165,90,0.12)] text-white"
+										class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
 									>
 										<option value="America/Los_Angeles">Pacific (Los Angeles)</option>
 										<option value="America/Denver">Mountain (Denver)</option>
@@ -357,10 +357,10 @@
 					</div>
 
 					<!-- Weekly schedule -->
-					<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-						<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+					<div class="rounded border border-border overflow-hidden">
+						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">Weekly Schedule</h2>
-							<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">
+							<p class="text-xs text-text-tertiary mt-0.5">
 								Set open/close hours for each day. Calls outside these hours go to voicemail.
 							</p>
 						</div>
@@ -370,7 +370,7 @@
 									{@const hours = businessHours[dayKey]}
 									<div
 										class="flex items-center gap-4 py-2 {i < 6
-											? 'border-b border-[rgba(197,165,90,0.06)]'
+											? 'border-b border-border-subtle'
 											: ''}"
 									>
 										<div class="w-28">
@@ -380,12 +380,12 @@
 											>
 												<div
 													class="w-4 h-4 rounded border {hours
-														? 'bg-[#c5a55a] border-[#c5a55a]'
-														: 'border-[rgba(255,255,255,0.2)]'} flex items-center justify-center"
+														? 'bg-gold border-gold'
+														: 'border-border-default'} flex items-center justify-center"
 												>
 													{#if hours}
 														<svg
-															class="w-3 h-3 text-black"
+															class="w-3 h-3 text-primary-foreground"
 															fill="none"
 															viewBox="0 0 24 24"
 															stroke="currentColor"
@@ -399,7 +399,7 @@
 														</svg>
 													{/if}
 												</div>
-												<span class={hours ? 'text-white' : 'text-[rgba(255,255,255,0.35)]'}
+												<span class={hours ? 'text-white' : 'text-text-tertiary'}
 													>{DAYS[i]}</span
 												>
 											</button>
@@ -412,20 +412,20 @@
 													oninput={(e) => {
 														businessHours[dayKey].open = e.target.value;
 													}}
-													class="h-8 px-2 rounded text-sm bg-[rgba(255,255,255,0.05)] border border-[rgba(197,165,90,0.12)] text-white"
+													class="h-8 px-2 rounded text-sm bg-surface-subtle border border-border text-white"
 												/>
-												<span class="text-xs text-[rgba(255,255,255,0.3)]">to</span>
+												<span class="text-xs text-text-tertiary">to</span>
 												<input
 													type="time"
 													value={hours.close}
 													oninput={(e) => {
 														businessHours[dayKey].close = e.target.value;
 													}}
-													class="h-8 px-2 rounded text-sm bg-[rgba(255,255,255,0.05)] border border-[rgba(197,165,90,0.12)] text-white"
+													class="h-8 px-2 rounded text-sm bg-surface-subtle border border-border text-white"
 												/>
 											</div>
 										{:else}
-											<span class="text-xs text-[rgba(255,255,255,0.25)]">Closed</span>
+											<span class="text-xs text-text-ghost">Closed</span>
 										{/if}
 									</div>
 								{/each}
@@ -437,7 +437,7 @@
 						<Button
 							onclick={saveBusinessHours}
 							disabled={saving}
-							class="bg-[#c5a55a] text-black hover:bg-[#d4af37]"
+							class="bg-gold text-primary-foreground hover:bg-gold/80"
 						>
 							{saving ? 'Saving...' : 'Save Business Hours'}
 						</Button>
@@ -447,13 +447,13 @@
 				<!-- ===================== PHONE SYSTEM ===================== -->
 			{:else if activeTab === 'phone'}
 				<div class="space-y-6">
-					<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+					<div class="rounded border border-border overflow-hidden">
 						<div
-							class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)] flex items-center justify-between"
+							class="px-5 py-4 border-b border-border flex items-center justify-between"
 						>
 							<div>
 								<h2 class="text-base tracking-wide">Phone Extensions</h2>
-								<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">
+								<p class="text-xs text-text-tertiary mt-0.5">
 									Manage staff extensions for the Twilio phone system.
 								</p>
 							</div>
@@ -464,7 +464,7 @@
 										showExtForm = true;
 									}}
 									variant="outline"
-									class="border-[rgba(197,165,90,0.2)] text-[#c5a55a] hover:bg-[rgba(197,165,90,0.08)] text-xs"
+									class="border-border text-gold hover:bg-gold-glow text-xs"
 								>
 									+ Add Extension
 								</Button>
@@ -473,38 +473,38 @@
 						<div class="p-5">
 							{#if showExtForm}
 								<div
-									class="rounded border border-[rgba(197,165,90,0.15)] bg-[rgba(197,165,90,0.03)] p-4 mb-4 space-y-4"
+									class="rounded border border-border bg-surface-subtle p-4 mb-4 space-y-4"
 								>
 									<h3 class="text-sm font-medium">
 										{editingExt ? 'Edit Extension' : 'New Extension'}
 									</h3>
 									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5"
+											<Label class="text-xs text-text-secondary mb-1.5"
 												>Extension Number</Label
 											>
 											<Input
 												bind:value={extForm.extension}
 												placeholder="100"
-												class="bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+												class="bg-surface-subtle border-border"
 											/>
 										</div>
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5">Forward To</Label>
+											<Label class="text-xs text-text-secondary mb-1.5">Forward To</Label>
 											<Input
 												bind:value={extForm.forward_number}
 												placeholder="+15551234567"
-												class="bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+												class="bg-surface-subtle border-border"
 											/>
 										</div>
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5"
+											<Label class="text-xs text-text-secondary mb-1.5"
 												>Ring Timeout (sec)</Label
 											>
 											<Input
 												type="number"
 												bind:value={extForm.ring_timeout}
-												class="bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+												class="bg-surface-subtle border-border"
 											/>
 										</div>
 										<div class="flex items-end gap-3">
@@ -516,12 +516,12 @@
 											>
 												<div
 													class="w-4 h-4 rounded border {extForm.voicemail_enabled
-														? 'bg-[#c5a55a] border-[#c5a55a]'
-														: 'border-[rgba(255,255,255,0.2)]'} flex items-center justify-center"
+														? 'bg-gold border-gold'
+														: 'border-border-default'} flex items-center justify-center"
 												>
 													{#if extForm.voicemail_enabled}
 														<svg
-															class="w-3 h-3 text-black"
+															class="w-3 h-3 text-primary-foreground"
 															fill="none"
 															viewBox="0 0 24 24"
 															stroke="currentColor"
@@ -544,7 +544,7 @@
 										<Button
 											onclick={saveExtension}
 											disabled={saving}
-											class="bg-[#c5a55a] text-black hover:bg-[#d4af37] text-xs"
+											class="bg-gold text-primary-foreground hover:bg-gold/80 text-xs"
 										>
 											{saving ? 'Saving...' : editingExt ? 'Update' : 'Create'}
 										</Button>
@@ -555,12 +555,12 @@
 							{#if extensions.length === 0}
 								<div class="flex flex-col items-center py-8">
 									<div
-										class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+										class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gold-glow border border-border"
 									>
-										<Phone class="h-5 w-5 text-[rgba(197,165,90,0.2)]" />
+										<Phone class="h-5 w-5 text-gold-dim" />
 									</div>
-									<p class="text-sm text-[rgba(255,255,255,0.3)]">No extensions configured.</p>
-									<p class="text-xs text-[rgba(255,255,255,0.15)] mt-0.5">
+									<p class="text-sm text-text-tertiary">No extensions configured.</p>
+									<p class="text-xs text-text-ghost mt-0.5">
 										Add staff extensions for the Twilio phone system.
 									</p>
 								</div>
@@ -568,18 +568,18 @@
 								<div class="space-y-2">
 									{#each extensions as ext}
 										<div
-											class="flex items-center justify-between py-3 px-4 rounded bg-[rgba(255,255,255,0.02)] border border-[rgba(197,165,90,0.06)]"
+											class="flex items-center justify-between py-3 px-4 rounded bg-surface-subtle border border-border-subtle"
 										>
 											<div class="flex items-center gap-4">
-												<span class="text-[#c5a55a] font-mono font-medium">Ext {ext.extension}</span
+												<span class="text-gold font-mono font-medium">Ext {ext.extension}</span
 												>
 												{#if ext.user?.full_name}
-													<span class="text-sm text-[rgba(255,255,255,0.6)]"
+													<span class="text-sm text-text-secondary"
 														>{ext.user.full_name}</span
 													>
 												{/if}
 												{#if ext.forward_number}
-													<span class="text-xs text-[rgba(255,255,255,0.3)]"
+													<span class="text-xs text-text-tertiary"
 														>→ {ext.forward_number}</span
 													>
 												{/if}
@@ -588,16 +588,16 @@
 												<span
 													class="text-xs {ext.voicemail_enabled
 														? 'text-green-400'
-														: 'text-[rgba(255,255,255,0.2)]'}"
+														: 'text-text-ghost'}"
 												>
 													{ext.voicemail_enabled ? 'VM on' : 'VM off'}
 												</span>
-												<span class="text-xs text-[rgba(255,255,255,0.3)]"
+												<span class="text-xs text-text-tertiary"
 													>{ext.ring_timeout}s ring</span
 												>
 												<button
 													onclick={() => startEditExt(ext)}
-													class="text-xs text-[rgba(255,255,255,0.4)] hover:text-white cursor-pointer"
+													class="text-xs text-text-tertiary hover:text-white cursor-pointer"
 													>Edit</button
 												>
 												<button
@@ -617,13 +617,13 @@
 				<!-- ===================== CALL ROUTING ===================== -->
 			{:else if activeTab === 'routing'}
 				<div class="space-y-6">
-					<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
+					<div class="rounded border border-border overflow-hidden">
 						<div
-							class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)] flex items-center justify-between"
+							class="px-5 py-4 border-b border-border flex items-center justify-between"
 						>
 							<div>
 								<h2 class="text-base tracking-wide">Call Routing Rules</h2>
-								<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">
+								<p class="text-xs text-text-tertiary mt-0.5">
 									Rules are evaluated in priority order (lowest number first). First matching rule
 									wins.
 								</p>
@@ -635,7 +635,7 @@
 										showRuleForm = true;
 									}}
 									variant="outline"
-									class="border-[rgba(197,165,90,0.2)] text-[#c5a55a] hover:bg-[rgba(197,165,90,0.08)] text-xs"
+									class="border-border text-gold hover:bg-gold-glow text-xs"
 								>
 									+ Add Rule
 								</Button>
@@ -644,35 +644,35 @@
 						<div class="p-5">
 							{#if showRuleForm}
 								<div
-									class="rounded border border-[rgba(197,165,90,0.15)] bg-[rgba(197,165,90,0.03)] p-4 mb-4 space-y-4"
+									class="rounded border border-border bg-surface-subtle p-4 mb-4 space-y-4"
 								>
 									<h3 class="text-sm font-medium">
 										{editingRule ? 'Edit Rule' : 'New Routing Rule'}
 									</h3>
 									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5">Rule Name</Label>
+											<Label class="text-xs text-text-secondary mb-1.5">Rule Name</Label>
 											<Input
 												bind:value={ruleForm.name}
 												placeholder="Business Hours"
-												class="bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+												class="bg-surface-subtle border-border"
 											/>
 										</div>
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5"
+											<Label class="text-xs text-text-secondary mb-1.5"
 												>Priority (lower = first)</Label
 											>
 											<Input
 												type="number"
 												bind:value={ruleForm.priority}
-												class="bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+												class="bg-surface-subtle border-border"
 											/>
 										</div>
 									</div>
 
 									<!-- Day selector -->
 									<div>
-										<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-2 block"
+										<Label class="text-xs text-text-secondary mb-2 block"
 											>Active Days (none = every day)</Label
 										>
 										<div class="flex gap-1.5">
@@ -681,8 +681,8 @@
 													class="px-2.5 py-1.5 rounded text-xs cursor-pointer transition-colors {ruleForm.day_of_week.includes(
 														i
 													)
-														? 'bg-[#c5a55a] text-black'
-														: 'bg-[rgba(255,255,255,0.05)] text-[rgba(255,255,255,0.4)] hover:bg-[rgba(255,255,255,0.08)]'}"
+														? 'bg-gold text-primary-foreground'
+														: 'bg-surface-subtle text-text-tertiary hover:bg-surface-raised'}"
 													onclick={() => toggleRuleDay(i)}
 												>
 													{day.slice(0, 3)}
@@ -694,23 +694,23 @@
 									<!-- Time range -->
 									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5"
+											<Label class="text-xs text-text-secondary mb-1.5"
 												>Start Time (empty = any)</Label
 											>
 											<input
 												type="time"
 												bind:value={ruleForm.start_time}
-												class="w-full h-9 px-3 rounded-md text-sm bg-[rgba(255,255,255,0.03)] border border-[rgba(197,165,90,0.12)] text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
 											/>
 										</div>
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5"
+											<Label class="text-xs text-text-secondary mb-1.5"
 												>End Time (empty = any)</Label
 											>
 											<input
 												type="time"
 												bind:value={ruleForm.end_time}
-												class="w-full h-9 px-3 rounded-md text-sm bg-[rgba(255,255,255,0.03)] border border-[rgba(197,165,90,0.12)] text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
 											/>
 										</div>
 									</div>
@@ -718,10 +718,10 @@
 									<!-- Action -->
 									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5">Action</Label>
+											<Label class="text-xs text-text-secondary mb-1.5">Action</Label>
 											<select
 												bind:value={ruleForm.action_type}
-												class="w-full h-9 px-3 rounded-md text-sm bg-[rgba(255,255,255,0.03)] border border-[rgba(197,165,90,0.12)] text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
 											>
 												{#each ACTION_TYPES as at}
 													<option value={at.value}>{at.label}</option>
@@ -729,25 +729,25 @@
 											</select>
 										</div>
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5"
+											<Label class="text-xs text-text-secondary mb-1.5"
 												>Target (extension # or phone)</Label
 											>
 											<Input
 												bind:value={ruleForm.action_target}
 												placeholder="100"
-												class="bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+												class="bg-surface-subtle border-border"
 											/>
 										</div>
 									</div>
 
 									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<Label class="text-xs text-[rgba(255,255,255,0.5)] mb-1.5"
+											<Label class="text-xs text-text-secondary mb-1.5"
 												>Fallback Action</Label
 											>
 											<select
 												bind:value={ruleForm.fallback_action}
-												class="w-full h-9 px-3 rounded-md text-sm bg-[rgba(255,255,255,0.03)] border border-[rgba(197,165,90,0.12)] text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
 											>
 												<option value="voicemail">Voicemail</option>
 												<option value="ring_extension">Ring Extension</option>
@@ -763,12 +763,12 @@
 											>
 												<div
 													class="w-4 h-4 rounded border {ruleForm.is_active
-														? 'bg-[#c5a55a] border-[#c5a55a]'
-														: 'border-[rgba(255,255,255,0.2)]'} flex items-center justify-center"
+														? 'bg-gold border-gold'
+														: 'border-border-default'} flex items-center justify-center"
 												>
 													{#if ruleForm.is_active}
 														<svg
-															class="w-3 h-3 text-black"
+															class="w-3 h-3 text-primary-foreground"
 															fill="none"
 															viewBox="0 0 24 24"
 															stroke="currentColor"
@@ -792,7 +792,7 @@
 										<Button
 											onclick={saveRoutingRule}
 											disabled={saving}
-											class="bg-[#c5a55a] text-black hover:bg-[#d4af37] text-xs"
+											class="bg-gold text-primary-foreground hover:bg-gold/80 text-xs"
 										>
 											{saving ? 'Saving...' : editingRule ? 'Update' : 'Create'}
 										</Button>
@@ -803,12 +803,12 @@
 							{#if routingRules.length === 0}
 								<div class="flex flex-col items-center py-8">
 									<div
-										class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+										class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gold-glow border border-border"
 									>
-										<GitBranch class="h-5 w-5 text-[rgba(197,165,90,0.2)]" />
+										<GitBranch class="h-5 w-5 text-gold-dim" />
 									</div>
-									<p class="text-sm text-[rgba(255,255,255,0.3)]">No routing rules configured.</p>
-									<p class="text-xs text-[rgba(255,255,255,0.15)] mt-0.5">
+									<p class="text-sm text-text-tertiary">No routing rules configured.</p>
+									<p class="text-xs text-text-ghost mt-0.5">
 										Rules determine how incoming calls are handled.
 									</p>
 								</div>
@@ -816,33 +816,33 @@
 								<div class="space-y-2">
 									{#each routingRules as rule}
 										<div
-											class="flex items-center justify-between py-3 px-4 rounded bg-[rgba(255,255,255,0.02)] border border-[rgba(197,165,90,0.06)]"
+											class="flex items-center justify-between py-3 px-4 rounded bg-surface-subtle border border-border-subtle"
 										>
 											<div class="flex items-center gap-4">
-												<span class="text-xs font-mono text-[rgba(255,255,255,0.3)]"
+												<span class="text-xs font-mono text-text-tertiary"
 													>#{rule.priority}</span
 												>
 												<span
 													class="text-sm {rule.is_active
 														? 'text-white'
-														: 'text-[rgba(255,255,255,0.3)] line-through'}">{rule.name}</span
+														: 'text-text-tertiary line-through'}">{rule.name}</span
 												>
-												<span class="text-xs text-[rgba(255,255,255,0.3)]"
+												<span class="text-xs text-text-tertiary"
 													>{formatDays(rule.day_of_week)}</span
 												>
 												{#if rule.start_time && rule.end_time}
-													<span class="text-xs text-[rgba(255,255,255,0.3)]"
+													<span class="text-xs text-text-tertiary"
 														>{rule.start_time}–{rule.end_time}</span
 													>
 												{/if}
 											</div>
 											<div class="flex items-center gap-3">
-												<span class="text-xs text-[#c5a55a]"
+												<span class="text-xs text-gold"
 													>{ACTION_TYPES.find((a) => a.value === rule.action_type)?.label ||
 														rule.action_type}</span
 												>
 												{#if rule.action_target}
-													<span class="text-xs text-[rgba(255,255,255,0.3)]"
+													<span class="text-xs text-text-tertiary"
 														>→ {rule.action_target}</span
 													>
 												{/if}
@@ -850,13 +850,13 @@
 													onclick={() => toggleRuleActive(rule)}
 													class="text-xs cursor-pointer {rule.is_active
 														? 'text-green-400'
-														: 'text-[rgba(255,255,255,0.3)]'}"
+														: 'text-text-tertiary'}"
 												>
 													{rule.is_active ? 'Active' : 'Inactive'}
 												</button>
 												<button
 													onclick={() => startEditRule(rule)}
-													class="text-xs text-[rgba(255,255,255,0.4)] hover:text-white cursor-pointer"
+													class="text-xs text-text-tertiary hover:text-white cursor-pointer"
 													>Edit</button
 												>
 												<button
@@ -876,10 +876,10 @@
 				<!-- ===================== SECURITY ===================== -->
 			{:else if activeTab === 'security'}
 				<div class="space-y-6">
-					<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-						<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+					<div class="rounded border border-border overflow-hidden">
+						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">Security Status</h2>
-							<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">
+							<p class="text-xs text-text-tertiary mt-0.5">
 								HIPAA-ready security infrastructure. Features are enabled progressively.
 							</p>
 						</div>
@@ -906,7 +906,7 @@
 									<span class="text-sm">Row-Level Security (RLS) on all tables</span>
 									<span class="text-xs text-green-400 ml-auto">Active</span>
 								</div>
-								<Separator class="bg-[rgba(197,165,90,0.08)]" />
+								<Separator class="bg-gold-glow" />
 								<div class="flex items-center gap-3 py-2">
 									<div class="w-2 h-2 rounded-full bg-yellow-400"></div>
 									<span class="text-sm">Two-factor authentication (OTP)</span>
@@ -931,29 +931,29 @@
 									<span class="text-sm">Business hours access control</span>
 									<span class="text-xs text-yellow-400 ml-auto">Ready — not enabled</span>
 								</div>
-								<Separator class="bg-[rgba(197,165,90,0.08)]" />
+								<Separator class="bg-gold-glow" />
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-[rgba(255,255,255,0.15)]"></div>
-									<span class="text-sm text-[rgba(255,255,255,0.4)]"
+									<div class="w-2 h-2 rounded-full bg-surface-raised"></div>
+									<span class="text-sm text-text-tertiary"
 										>HIPAA BAA (Supabase Teams)</span
 									>
-									<span class="text-xs text-[rgba(255,255,255,0.25)] ml-auto">Phase 5</span>
+									<span class="text-xs text-text-ghost ml-auto">Phase 5</span>
 								</div>
 							</div>
 						</div>
 					</div>
 
 					<!-- MFA Settings (display only for now) -->
-					<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-						<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+					<div class="rounded border border-border overflow-hidden">
+						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">MFA Configuration</h2>
 						</div>
 						<div class="p-5 space-y-3">
 							<div class="flex items-center justify-between">
-								<span class="text-sm text-[rgba(255,255,255,0.6)]">Device trust duration</span>
+								<span class="text-sm text-text-secondary">Device trust duration</span>
 								<span class="text-sm">{mfaTrustDays} days</span>
 							</div>
-							<p class="text-xs text-[rgba(255,255,255,0.25)]">
+							<p class="text-xs text-text-ghost">
 								When 2FA is enabled, trusted devices won't need to re-verify for this many days.
 								Configure this value when you're ready to enable 2FA.
 							</p>

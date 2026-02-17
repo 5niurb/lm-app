@@ -506,7 +506,7 @@
 					<span class="relative inline-flex h-2.5 w-2.5 rounded-full {statusColor(deviceStatus)}"
 					></span>
 				</span>
-				<span class="text-[rgba(255,255,255,0.5)]">{statusMessage}</span>
+				<span class="text-text-secondary">{statusMessage}</span>
 			</span>
 			{#if deviceStatus === 'offline' || deviceStatus === 'error'}
 				<Button size="sm" onclick={connectDevice} disabled={isConnecting}>
@@ -536,10 +536,10 @@
 
 	<div class="grid gap-6 lg:grid-cols-2">
 		<!-- Softphone Panel -->
-		<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-			<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+		<div class="rounded border border-border overflow-hidden">
+			<div class="px-5 py-4 border-b border-border">
 				<div class="flex items-center gap-2">
-					<Headset class="h-5 w-5 text-[#C5A55A]" />
+					<Headset class="h-5 w-5 text-gold" />
 					<h2 class="text-base tracking-wide">Phone</h2>
 				</div>
 			</div>
@@ -558,7 +558,7 @@
 							</div>
 
 							<p
-								class="text-3xl font-light text-[rgba(255,255,255,0.95)]"
+								class="text-3xl font-light text-text-primary"
 								style="font-family: 'Playfair Display', serif;"
 							>
 								{formatPhone(callerInfo)}
@@ -600,17 +600,17 @@
 								<span class="text-lg font-medium">Connecting...</span>
 							</div>
 							<p
-								class="text-2xl font-light text-[rgba(255,255,255,0.9)]"
+								class="text-2xl font-light text-text-primary"
 								style="font-family: 'Playfair Display', serif;"
 							>
 								{formatPhone(callerInfo)}
 							</p>
-							<p class="text-xs text-[rgba(255,255,255,0.35)]">Setting up audio...</p>
+							<p class="text-xs text-text-tertiary">Setting up audio...</p>
 						</div>
 					{:else}
 						<!-- Connecting / Connected state -->
 						<div
-							class="rounded-lg bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.15)] p-5 text-center space-y-3"
+							class="rounded-lg bg-gold-glow border border-border p-5 text-center space-y-3"
 						>
 							{#if callState === 'connecting'}
 								<div class="flex items-center justify-center gap-2 text-yellow-400">
@@ -625,14 +625,14 @@
 							{/if}
 
 							<p
-								class="text-xl font-light text-[rgba(255,255,255,0.9)]"
+								class="text-xl font-light text-text-primary"
 								style="font-family: 'Playfair Display', serif;"
 							>
 								{formatPhone(callerInfo)}
 							</p>
 
 							{#if callState === 'connected'}
-								<div class="flex items-center justify-center gap-1 text-[rgba(255,255,255,0.4)]">
+								<div class="flex items-center justify-center gap-1 text-text-tertiary">
 									<Clock class="h-3.5 w-3.5" />
 									<span class="text-sm font-mono">{formatCallDuration(callDuration)}</span>
 								</div>
@@ -683,7 +683,7 @@
 						{#each dialPad as row}
 							{#each row as digit}
 								<button
-									class="dial-btn h-16 w-16 mx-auto rounded-full bg-[rgba(197,165,90,0.06)] border border-[rgba(197,165,90,0.1)] hover:bg-[rgba(197,165,90,0.12)] hover:border-[rgba(197,165,90,0.25)] text-xl font-light transition-all duration-150 text-[rgba(255,255,255,0.85)]"
+									class="dial-btn h-16 w-16 mx-auto rounded-full bg-gold-glow border border-border hover:bg-gold-glow hover:border-border text-xl font-light transition-all duration-150 text-text-primary"
 									style="font-family: 'Playfair Display', serif;"
 									onclick={() => sendDigit(digit)}
 								>
@@ -695,7 +695,7 @@
 
 					{#if callState === 'idle'}
 						<Button
-							class="w-full bg-[#C5A55A] hover:bg-[#d4af37] text-[#1A1A1A] h-12 text-base font-medium tracking-wide shadow-lg shadow-[rgba(197,165,90,0.15)] transition-all duration-200 hover:shadow-xl hover:shadow-[rgba(197,165,90,0.2)]"
+							class="w-full bg-gold hover:bg-gold/80 text-primary-foreground h-12 text-base font-medium tracking-wide shadow-lg shadow-gold/15 transition-all duration-200 hover:shadow-xl hover:shadow-gold/20"
 							onclick={makeCall}
 							disabled={!dialNumber || deviceStatus !== 'registered'}
 						>
@@ -713,13 +713,13 @@
 		</div>
 
 		<!-- Call History Panel -->
-		<div class="rounded border border-[rgba(197,165,90,0.12)] overflow-hidden">
-			<div class="px-5 py-4 border-b border-[rgba(197,165,90,0.08)]">
+		<div class="rounded border border-border overflow-hidden">
+			<div class="px-5 py-4 border-b border-border">
 				<div class="flex items-center gap-2">
-					<Clock class="h-5 w-5 text-[#C5A55A]" />
+					<Clock class="h-5 w-5 text-gold" />
 					<h2 class="text-base tracking-wide">Session Activity</h2>
 				</div>
-				<p class="text-xs text-[rgba(255,255,255,0.35)] mt-0.5">
+				<p class="text-xs text-text-tertiary mt-0.5">
 					Calls during this browser session
 				</p>
 			</div>
@@ -728,17 +728,17 @@
 					<div class="flex h-48 items-center justify-center">
 						<div class="text-center">
 							<div
-								class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgba(197,165,90,0.05)] border border-[rgba(197,165,90,0.08)]"
+								class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-glow border border-border"
 							>
 								<Headset class="h-6 w-6 empty-state-icon" />
 							</div>
 							<p
-								class="text-sm font-light text-[rgba(255,255,255,0.4)] mb-1"
+								class="text-sm font-light text-text-tertiary mb-1"
 								style="font-family: 'Playfair Display', serif;"
 							>
 								No calls yet
 							</p>
-							<p class="text-xs text-[rgba(255,255,255,0.2)]">
+							<p class="text-xs text-text-ghost">
 								Incoming calls will ring here once connected.
 							</p>
 						</div>
@@ -747,7 +747,7 @@
 					<div class="space-y-2 max-h-[400px] overflow-y-auto">
 						{#each callHistory as entry}
 							<div
-								class="flex items-center gap-3 rounded-md border border-[rgba(197,165,90,0.08)] p-3 transition-all duration-200 hover:bg-[rgba(197,165,90,0.04)]"
+								class="flex items-center gap-3 rounded-md border border-border p-3 transition-all duration-200 hover:bg-gold-glow"
 							>
 								{#if entry.type === 'incoming'}
 									<PhoneIncoming class="h-4 w-4 shrink-0 text-blue-400" />
@@ -756,12 +756,12 @@
 								{:else if entry.type === 'ended'}
 									<PhoneOff class="h-4 w-4 shrink-0 text-zinc-400" />
 								{:else}
-									<Headset class="h-4 w-4 shrink-0 text-[rgba(197,165,90,0.4)]" />
+									<Headset class="h-4 w-4 shrink-0 text-gold-dim" />
 								{/if}
 								<div class="min-w-0 flex-1">
-									<p class="text-sm text-[rgba(255,255,255,0.7)]">{entry.info}</p>
+									<p class="text-sm text-text-secondary">{entry.info}</p>
 								</div>
-								<span class="text-xs text-[rgba(255,255,255,0.3)] shrink-0">{entry.time}</span>
+								<span class="text-xs text-text-tertiary shrink-0">{entry.time}</span>
 							</div>
 						{/each}
 					</div>

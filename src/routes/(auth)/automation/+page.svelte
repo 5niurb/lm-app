@@ -221,7 +221,7 @@
 			case 'email':
 				return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
 			case 'both':
-				return 'bg-[rgba(197,165,90,0.1)] text-[#c5a55a] border-[rgba(197,165,90,0.2)]';
+				return 'bg-gold/10 text-gold border-border';
 			default:
 				return 'bg-white/5 text-white/50 border-white/10';
 		}
@@ -470,7 +470,7 @@
 				{#if activeTab === 'log'}
 					<button
 						onclick={processQueue}
-						class="flex items-center gap-2 px-3 py-2 rounded text-sm border border-[rgba(197,165,90,0.2)] text-[rgba(255,255,255,0.5)] hover:text-[#c5a55a] hover:border-[rgba(197,165,90,0.4)] transition-colors"
+						class="flex items-center gap-2 px-3 py-2 rounded text-sm border border-border text-text-secondary hover:text-gold hover:border-border transition-colors"
 						title="Process all scheduled entries"
 					>
 						<Play class="h-3.5 w-3.5" />
@@ -487,7 +487,7 @@
 				{#if activeTab === 'sequences'}
 					<button
 						onclick={openCreateForm}
-						class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-[#c5a55a] text-[#0a0a0c] hover:bg-[#d4af37] transition-colors font-medium"
+						class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-gold text-primary-foreground hover:bg-gold/80 transition-colors font-medium"
 					>
 						<Plus class="h-4 w-4" />
 						Add Sequence
@@ -511,47 +511,47 @@
 	<!-- Stats cards -->
 	{#if stats}
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-			<div class="rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-4">
-				<span class="text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.35)]"
+			<div class="rounded border border-border bg-gold-glow p-4">
+				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
 					>Total Sent (30d)</span
 				>
 				<div
-					class="text-2xl font-light text-[rgba(255,255,255,0.9)] mt-1"
+					class="text-2xl font-light text-text-primary mt-1"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.total}
 				</div>
 			</div>
-			<div class="rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-4">
-				<span class="text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.35)]"
+			<div class="rounded border border-border bg-gold-glow p-4">
+				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
 					>Delivery Rate</span
 				>
 				<div
-					class="text-2xl font-light text-[rgba(255,255,255,0.9)] mt-1"
+					class="text-2xl font-light text-text-primary mt-1"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.deliveryRate}%
 				</div>
 			</div>
-			<div class="rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-4">
-				<span class="text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.35)]"
+			<div class="rounded border border-border bg-gold-glow p-4">
+				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
 					>Open Rate</span
 				>
 				<div
-					class="text-2xl font-light text-[rgba(255,255,255,0.9)] mt-1"
+					class="text-2xl font-light text-text-primary mt-1"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.openRate}%
 				</div>
 			</div>
-			<div class="rounded border border-[rgba(197,165,90,0.12)] bg-[rgba(197,165,90,0.03)] p-4">
-				<span class="text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.35)]"
+			<div class="rounded border border-border bg-gold-glow p-4">
+				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
 					>Failed</span
 				>
 				<div
 					class="text-2xl font-light {stats.failed > 0
 						? 'text-red-400'
-						: 'text-[rgba(255,255,255,0.9)]'} mt-1"
+						: 'text-text-primary'} mt-1"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.failed}
@@ -561,27 +561,27 @@
 	{/if}
 
 	<!-- Tabs -->
-	<div class="flex gap-1 border-b border-[rgba(197,165,90,0.08)]">
+	<div class="flex gap-1 border-b border-border-subtle">
 		<button
 			onclick={() => (activeTab = 'sequences')}
 			class="px-4 py-2.5 text-sm transition-colors relative {activeTab === 'sequences'
-				? 'text-[#c5a55a]'
-				: 'text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.6)]'}"
+				? 'text-gold'
+				: 'text-text-tertiary hover:text-text-secondary'}"
 		>
 			Sequences
 			{#if activeTab === 'sequences'}
-				<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#c5a55a]"></div>
+				<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gold"></div>
 			{/if}
 		</button>
 		<button
 			onclick={() => (activeTab = 'log')}
 			class="px-4 py-2.5 text-sm transition-colors relative {activeTab === 'log'
-				? 'text-[#c5a55a]'
-				: 'text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.6)]'}"
+				? 'text-gold'
+				: 'text-text-tertiary hover:text-text-secondary'}"
 		>
 			Execution Log
 			{#if activeTab === 'log'}
-				<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-[#c5a55a]"></div>
+				<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gold"></div>
 			{/if}
 		</button>
 	</div>
@@ -589,13 +589,13 @@
 	<!-- Sequence Form -->
 	{#if showForm}
 		<div
-			class="rounded border border-[rgba(197,165,90,0.2)] bg-[rgba(197,165,90,0.03)] p-6 space-y-4"
+			class="rounded border border-border bg-gold-glow p-6 space-y-4"
 		>
 			<div class="flex items-center justify-between">
 				<h2 class="text-base tracking-wide">{editingSeq ? 'Edit Sequence' : 'New Sequence'}</h2>
 				<button
 					onclick={() => (showForm = false)}
-					class="text-[rgba(255,255,255,0.3)] hover:text-white transition-colors"
+					class="text-text-tertiary hover:text-white transition-colors"
 				>
 					<X class="h-4 w-4" />
 				</button>
@@ -603,24 +603,24 @@
 
 			<div class="grid gap-4 sm:grid-cols-2">
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Name *</label
 					>
 					<input
 						type="text"
 						bind:value={formName}
 						placeholder="e.g. Day-Before Reminder"
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					/>
 				</div>
 
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Trigger Event *</label
 					>
 					<select
 						bind:value={formTrigger}
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						{#each triggerEvents as t}
 							<option value={t.value}>{t.icon} {t.label}</option>
@@ -629,27 +629,27 @@
 				</div>
 
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Timing Offset *</label
 					>
 					<input
 						type="text"
 						bind:value={formTiming}
 						placeholder="-3 days, +1 day, 0 seconds"
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm font-mono focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm font-mono focus:border-gold focus:outline-none transition-colors"
 					/>
-					<p class="text-[10px] text-[rgba(255,255,255,0.2)] mt-0.5">
+					<p class="text-[10px] text-text-ghost mt-0.5">
 						Negative = before event, positive = after. Use PostgreSQL interval syntax.
 					</p>
 				</div>
 
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Channel</label
 					>
 					<select
 						bind:value={formChannel}
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						<option value="both">Both (SMS + Email)</option>
 						<option value="sms">SMS only</option>
@@ -658,12 +658,12 @@
 				</div>
 
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Template Type *</label
 					>
 					<select
 						bind:value={formTemplate}
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						{#each templateTypes as t}
 							<option value={t.value}>{t.label}</option>
@@ -672,12 +672,12 @@
 				</div>
 
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Service (optional)</label
 					>
 					<select
 						bind:value={formServiceId}
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						<option value="">All Services (Global)</option>
 						{#each services as s}
@@ -689,17 +689,17 @@
 
 			<!-- Content Block Link (only when service selected) -->
 			{#if formServiceId}
-				<div class="rounded border border-[rgba(197,165,90,0.1)] bg-[rgba(197,165,90,0.02)] p-4">
+				<div class="rounded border border-border-subtle bg-gold-glow p-4">
 					<div class="flex items-center gap-2 mb-2">
-						<Link2 class="h-3.5 w-3.5 text-[#c5a55a]" />
-						<label class="text-xs uppercase tracking-[0.12em] text-[rgba(197,165,90,0.6)]"
+						<Link2 class="h-3.5 w-3.5 text-gold" />
+						<label class="text-xs uppercase tracking-[0.12em] text-gold-dim"
 							>Link Content Block</label
 						>
 					</div>
 					{#if serviceContentBlocks.length > 0}
 						<select
 							bind:value={formContentRef}
-							class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+							class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 						>
 							<option value="">No linked content (use custom body)</option>
 							{#each serviceContentBlocks as block}
@@ -711,17 +711,17 @@
 						{#if formContentRef}
 							{@const linked = serviceContentBlocks.find((b) => b.id === formContentRef)}
 							{#if linked?.summary}
-								<p class="text-[10px] text-[rgba(255,255,255,0.25)] mt-1.5 leading-relaxed">
-									<span class="text-[rgba(197,165,90,0.4)]">SMS preview:</span>
+								<p class="text-[10px] text-text-ghost mt-1.5 leading-relaxed">
+									<span class="text-gold-dim">SMS preview:</span>
 									{linked.summary}
 								</p>
 							{/if}
 						{/if}
 					{:else}
-						<p class="text-xs text-[rgba(255,255,255,0.25)]">
+						<p class="text-xs text-text-ghost">
 							No content blocks for this service. <a
 								href="/services"
-								class="text-[#c5a55a] hover:underline">Create content →</a
+								class="text-gold hover:underline">Create content →</a
 							>
 						</p>
 					{/if}
@@ -729,44 +729,44 @@
 			{/if}
 
 			<div>
-				<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+				<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 					>Email Subject (optional)</label
 				>
 				<input
 					type="text"
 					bind:value={formSubject}
 					placeholder="Auto-generated if blank"
-					class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+					class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 				/>
 			</div>
 
 			<div>
-				<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+				<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 					>Custom SMS Body (optional)</label
 				>
 				<textarea
 					bind:value={formBody}
 					rows="2"
 					placeholder="Leave blank to use service content summary"
-					class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors resize-none"
+					class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors resize-none"
 				></textarea>
 			</div>
 
 			<div class="flex items-center gap-6">
 				<label class="flex items-center gap-2 cursor-pointer">
-					<input type="checkbox" bind:checked={formActive} class="accent-[#c5a55a]" />
-					<span class="text-sm text-[rgba(255,255,255,0.6)]">Active</span>
+					<input type="checkbox" bind:checked={formActive} class="accent-gold" />
+					<span class="text-sm text-text-secondary">Active</span>
 				</label>
 				<div class="flex-1"></div>
 				<button
 					onclick={() => (showForm = false)}
-					class="px-4 py-2 text-sm text-[rgba(255,255,255,0.5)] hover:text-white transition-colors"
+					class="px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors"
 					>Cancel</button
 				>
 				<button
 					onclick={saveSequence}
 					disabled={formSaving}
-					class="px-4 py-2 rounded text-sm bg-[#c5a55a] text-[#0a0a0c] hover:bg-[#d4af37] transition-colors font-medium disabled:opacity-50"
+					class="px-4 py-2 rounded text-sm bg-gold text-primary-foreground hover:bg-gold/80 transition-colors font-medium disabled:opacity-50"
 				>
 					{formSaving ? 'Saving...' : editingSeq ? 'Update' : 'Create'}
 				</button>
@@ -784,9 +784,9 @@
 			</div>
 		{:else if sequences.length === 0}
 			<div class="flex flex-col items-center justify-center h-48 text-center">
-				<Zap class="h-10 w-10 text-[rgba(197,165,90,0.2)] mb-3" />
-				<p class="text-sm text-[rgba(255,255,255,0.35)]">No automation sequences yet.</p>
-				<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+				<Zap class="h-10 w-10 text-gold-dim mb-3" />
+				<p class="text-sm text-text-tertiary">No automation sequences yet.</p>
+				<p class="text-xs text-text-ghost mt-1">
 					Run the Phase 1C schema migration to seed default sequences.
 				</p>
 			</div>
@@ -799,25 +799,25 @@
 						class="flex items-center gap-2 mb-2 w-full text-left group"
 					>
 						{#if expandedTrigger === group.value}
-							<ChevronDown class="h-3.5 w-3.5 text-[rgba(255,255,255,0.25)]" />
+							<ChevronDown class="h-3.5 w-3.5 text-text-ghost" />
 						{:else}
-							<ChevronRight class="h-3.5 w-3.5 text-[rgba(255,255,255,0.25)]" />
+							<ChevronRight class="h-3.5 w-3.5 text-text-ghost" />
 						{/if}
 						<span class="text-sm">{group.icon}</span>
 						<span
-							class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.5)] group-hover:text-[rgba(255,255,255,0.7)] transition-colors"
+							class="text-xs uppercase tracking-[0.12em] text-text-secondary group-hover:text-text-secondary transition-colors"
 						>
 							{group.label}
 						</span>
-						<span class="text-[10px] text-[rgba(255,255,255,0.2)]">{group.sequences.length}</span>
-						<div class="flex-1 border-b border-[rgba(255,255,255,0.04)]"></div>
+						<span class="text-[10px] text-text-ghost">{group.sequences.length}</span>
+						<div class="flex-1 border-b border-border-subtle"></div>
 					</button>
 
 					{#if expandedTrigger === group.value || expandedTrigger === ''}
 						<div class="space-y-1 ml-5 mb-4">
 							{#each group.sequences as seq}
 								<div
-									class="flex items-center gap-3 px-3 py-2.5 rounded border border-[rgba(197,165,90,0.06)] hover:border-[rgba(197,165,90,0.12)] transition-colors group/row"
+									class="flex items-center gap-3 px-3 py-2.5 rounded border border-border-subtle hover:border-border transition-colors group/row"
 								>
 									<!-- Active toggle -->
 									<button
@@ -837,12 +837,12 @@
 										<div class="flex items-center gap-2 flex-wrap">
 											<span
 												class="text-sm {seq.is_active
-													? 'text-[rgba(255,255,255,0.85)]'
-													: 'text-[rgba(255,255,255,0.35)]'}">{seq.name}</span
+													? 'text-text-primary'
+													: 'text-text-tertiary'}">{seq.name}</span
 											>
 											{#if seq.service?.name}
 												<span
-													class="text-[10px] px-1.5 py-0.5 rounded border border-[rgba(197,165,90,0.1)] text-[rgba(197,165,90,0.5)]"
+													class="text-[10px] px-1.5 py-0.5 rounded border border-border-subtle text-gold-dim"
 													>{seq.service.name}</span
 												>
 											{/if}
@@ -856,14 +856,14 @@
 											{/if}
 										</div>
 										<div class="flex items-center gap-2 mt-0.5">
-											<Clock class="h-3 w-3 text-[rgba(255,255,255,0.15)]" />
-											<span class="text-[10px] text-[rgba(255,255,255,0.3)] font-mono">
+											<Clock class="h-3 w-3 text-text-ghost" />
+											<span class="text-[10px] text-text-tertiary font-mono">
 												{formatTiming(seq.timing_offset)}
 												{formatTimingDirection(seq.timing_offset)}
 											</span>
 											{#if seq.content?.summary}
 												<span
-													class="text-[10px] text-[rgba(255,255,255,0.15)] hidden lg:inline truncate max-w-xs"
+													class="text-[10px] text-text-ghost hidden lg:inline truncate max-w-xs"
 												>
 													· SMS: {seq.content.summary.slice(0, 60)}...
 												</span>
@@ -879,7 +879,7 @@
 									</span>
 
 									<!-- Template type -->
-									<span class="text-[10px] text-[rgba(255,255,255,0.25)] w-24 text-right"
+									<span class="text-[10px] text-text-ghost w-24 text-right"
 										>{seq.template_type}</span
 									>
 
@@ -890,21 +890,21 @@
 										>
 											<button
 												onclick={() => openTestSend(seq)}
-												class="p-1 rounded text-[rgba(255,255,255,0.2)] hover:text-emerald-400 transition-colors"
+												class="p-1 rounded text-text-ghost hover:text-emerald-400 transition-colors"
 												title="Test send"
 											>
 												<Send class="h-3.5 w-3.5" />
 											</button>
 											<button
 												onclick={() => openEditForm(seq)}
-												class="p-1 rounded text-[rgba(255,255,255,0.2)] hover:text-[#c5a55a] transition-colors"
+												class="p-1 rounded text-text-ghost hover:text-gold transition-colors"
 												title="Edit"
 											>
 												<Pencil class="h-3.5 w-3.5" />
 											</button>
 											<button
 												onclick={() => deleteSequence(seq)}
-												class="p-1 rounded text-[rgba(255,255,255,0.2)] hover:text-red-400 transition-colors"
+												class="p-1 rounded text-text-ghost hover:text-red-400 transition-colors"
 												title="Delete"
 											>
 												<Trash2 class="h-3.5 w-3.5" />
@@ -919,14 +919,14 @@
 			{/each}
 
 			<!-- Summary -->
-			<div class="flex items-center gap-4 pt-3 border-t border-[rgba(197,165,90,0.06)]">
-				<span class="text-xs text-[rgba(255,255,255,0.25)]"
+			<div class="flex items-center gap-4 pt-3 border-t border-border-subtle">
+				<span class="text-xs text-text-ghost"
 					>{sequences.length} sequence{sequences.length !== 1 ? 's' : ''}</span
 				>
 				<span class="text-xs text-emerald-400/50"
 					>{sequences.filter((s) => s.is_active).length} active</span
 				>
-				<span class="text-xs text-[rgba(255,255,255,0.15)]"
+				<span class="text-xs text-text-ghost"
 					>{sequences.filter((s) => !s.is_active).length} paused</span
 				>
 			</div>
@@ -943,20 +943,20 @@
 			</div>
 		{:else if logEntries.length === 0}
 			<div class="flex flex-col items-center justify-center h-48 text-center">
-				<Clock class="h-10 w-10 text-[rgba(197,165,90,0.2)] mb-3" />
-				<p class="text-sm text-[rgba(255,255,255,0.35)]">No automation messages sent yet.</p>
-				<p class="text-xs text-[rgba(255,255,255,0.2)] mt-1">
+				<Clock class="h-10 w-10 text-gold-dim mb-3" />
+				<p class="text-sm text-text-tertiary">No automation messages sent yet.</p>
+				<p class="text-xs text-text-ghost mt-1">
 					Messages will appear here once automation sequences fire.
 				</p>
 			</div>
 		{:else}
 			<!-- Log table -->
-			<div class="rounded border border-[rgba(197,165,90,0.08)] overflow-hidden">
+			<div class="rounded border border-border-subtle overflow-hidden">
 				<div class="overflow-x-auto">
 					<table class="w-full text-sm">
 						<thead>
 							<tr
-								class="border-b border-[rgba(197,165,90,0.08)] text-[10px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.3)]"
+								class="border-b border-border-subtle text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
 							>
 								<th class="text-left px-4 py-2.5 font-normal">Client</th>
 								<th class="text-left px-4 py-2.5 font-normal">Sequence</th>
@@ -968,19 +968,19 @@
 						<tbody>
 							{#each logEntries as entry}
 								<tr
-									class="border-b border-[rgba(255,255,255,0.03)] hover:bg-[rgba(197,165,90,0.02)] transition-colors"
+									class="border-b border-border-subtle hover:bg-gold-glow transition-colors"
 								>
 									<td class="px-4 py-2.5">
-										<span class="text-[rgba(255,255,255,0.7)]"
+										<span class="text-text-secondary"
 											>{entry.client?.full_name || '—'}</span
 										>
 										{#if entry.client?.phone}
-											<span class="text-[10px] text-[rgba(255,255,255,0.2)] ml-1"
+											<span class="text-[10px] text-text-ghost ml-1"
 												>{entry.client.phone}</span
 											>
 										{/if}
 									</td>
-									<td class="px-4 py-2.5 text-[rgba(255,255,255,0.5)]">
+									<td class="px-4 py-2.5 text-text-secondary">
 										{entry.sequence?.name || '—'}
 									</td>
 									<td class="px-4 py-2.5">
@@ -995,7 +995,7 @@
 									<td class="px-4 py-2.5">
 										<Badge variant={statusColor(entry.status)}>{entry.status}</Badge>
 									</td>
-									<td class="px-4 py-2.5 text-xs text-[rgba(255,255,255,0.3)]">
+									<td class="px-4 py-2.5 text-xs text-text-tertiary">
 										{formatDate(entry.sent_at || entry.scheduled_at)}
 									</td>
 								</tr>
@@ -1008,7 +1008,7 @@
 			<!-- Pagination -->
 			{#if logCount > 25}
 				<div class="flex items-center justify-between pt-2">
-					<span class="text-xs text-[rgba(255,255,255,0.25)]">{logCount} total entries</span>
+					<span class="text-xs text-text-ghost">{logCount} total entries</span>
 					<div class="flex gap-2">
 						<button
 							onclick={() => {
@@ -1016,11 +1016,11 @@
 								loadLog();
 							}}
 							disabled={logPage === 1}
-							class="px-3 py-1 rounded text-xs border border-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.4)] hover:text-white disabled:opacity-30 transition-colors"
+							class="px-3 py-1 rounded text-xs border border-border-default text-text-tertiary hover:text-white disabled:opacity-30 transition-colors"
 						>
 							Prev
 						</button>
-						<span class="px-3 py-1 text-xs text-[rgba(255,255,255,0.3)]">
+						<span class="px-3 py-1 text-xs text-text-tertiary">
 							Page {logPage} of {Math.ceil(logCount / 25)}
 						</span>
 						<button
@@ -1029,7 +1029,7 @@
 								loadLog();
 							}}
 							disabled={logPage >= Math.ceil(logCount / 25)}
-							class="px-3 py-1 rounded text-xs border border-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.4)] hover:text-white disabled:opacity-30 transition-colors"
+							class="px-3 py-1 rounded text-xs border border-border-default text-text-tertiary hover:text-white disabled:opacity-30 transition-colors"
 						>
 							Next
 						</button>
@@ -1048,7 +1048,7 @@
 			}}
 		>
 			<div
-				class="w-full max-w-md rounded-lg border border-[rgba(197,165,90,0.2)] bg-[#111113] p-6 shadow-2xl space-y-4"
+				class="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-2xl space-y-4"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2">
@@ -1057,25 +1057,25 @@
 					</div>
 					<button
 						onclick={() => (showTestSend = false)}
-						class="text-[rgba(255,255,255,0.3)] hover:text-white transition-colors"
+						class="text-text-tertiary hover:text-white transition-colors"
 					>
 						<X class="h-4 w-4" />
 					</button>
 				</div>
 
-				<p class="text-xs text-[rgba(255,255,255,0.3)]">
+				<p class="text-xs text-text-tertiary">
 					Send a real SMS/email to a contact using an automation sequence. This will actually
 					deliver the message.
 				</p>
 
 				<!-- Sequence select -->
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Sequence</label
 					>
 					<select
 						bind:value={testSeqId}
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						<option value="">Select a sequence...</option>
 						{#each sequences as seq}
@@ -1086,7 +1086,7 @@
 
 				<!-- Contact search -->
 				<div>
-					<label class="text-xs uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-1 block"
+					<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 						>Recipient</label
 					>
 					<input
@@ -1094,24 +1094,24 @@
 						bind:value={testClientSearch}
 						oninput={onTestClientSearch}
 						placeholder="Search contacts by name or phone..."
-						class="w-full px-3 py-2 rounded border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-sm focus:border-[#c5a55a] focus:outline-none transition-colors"
+						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					/>
 
 					{#if testSearching}
-						<p class="text-[10px] text-[rgba(255,255,255,0.2)] mt-1">Searching...</p>
+						<p class="text-[10px] text-text-ghost mt-1">Searching...</p>
 					{/if}
 
 					{#if testClientResults.length > 0}
 						<div
-							class="mt-1 rounded border border-[rgba(255,255,255,0.1)] bg-[#0a0a0c] max-h-40 overflow-y-auto"
+							class="mt-1 rounded border border-border-default bg-background max-h-40 overflow-y-auto"
 						>
 							{#each testClientResults as c}
 								<button
 									onclick={() => selectTestClient(c)}
-									class="w-full text-left px-3 py-2 text-sm hover:bg-[rgba(197,165,90,0.05)] transition-colors flex items-center justify-between"
+									class="w-full text-left px-3 py-2 text-sm hover:bg-gold-glow transition-colors flex items-center justify-between"
 								>
-									<span class="text-[rgba(255,255,255,0.7)]">{c.full_name || 'Unknown'}</span>
-									<span class="text-[10px] text-[rgba(255,255,255,0.25)]"
+									<span class="text-text-secondary">{c.full_name || 'Unknown'}</span>
+									<span class="text-[10px] text-text-ghost"
 										>{c.phone || c.email || ''}</span
 									>
 								</button>
@@ -1128,14 +1128,14 @@
 						</div>
 						{#if testClient.phone}
 							<div class="flex items-center gap-2 text-[10px]">
-								<MessageSquare class="h-3 w-3 text-[rgba(255,255,255,0.2)]" />
-								<span class="text-[rgba(255,255,255,0.4)]">{testClient.phone}</span>
+								<MessageSquare class="h-3 w-3 text-text-ghost" />
+								<span class="text-text-tertiary">{testClient.phone}</span>
 							</div>
 						{/if}
 						{#if testClient.email}
 							<div class="flex items-center gap-2 text-[10px]">
-								<Mail class="h-3 w-3 text-[rgba(255,255,255,0.2)]" />
-								<span class="text-[rgba(255,255,255,0.4)]">{testClient.email}</span>
+								<Mail class="h-3 w-3 text-text-ghost" />
+								<span class="text-text-tertiary">{testClient.email}</span>
 							</div>
 						{/if}
 					</div>
@@ -1153,12 +1153,12 @@
 						{:else}
 							<span>{testResult.message}</span>
 							{#if testResult.sms?.twilioSid}
-								<p class="text-[10px] text-[rgba(255,255,255,0.25)] mt-1">
+								<p class="text-[10px] text-text-ghost mt-1">
 									SMS SID: {testResult.sms.twilioSid}
 								</p>
 							{/if}
 							{#if testResult.email?.resendId}
-								<p class="text-[10px] text-[rgba(255,255,255,0.25)] mt-1">
+								<p class="text-[10px] text-text-ghost mt-1">
 									Email ID: {testResult.email.resendId}
 								</p>
 							{/if}
@@ -1170,7 +1170,7 @@
 				<div class="flex items-center justify-end gap-2 pt-2">
 					<button
 						onclick={() => (showTestSend = false)}
-						class="px-4 py-2 text-sm text-[rgba(255,255,255,0.5)] hover:text-white transition-colors"
+						class="px-4 py-2 text-sm text-text-secondary hover:text-white transition-colors"
 					>
 						{testResult ? 'Close' : 'Cancel'}
 					</button>

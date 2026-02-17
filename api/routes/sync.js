@@ -133,6 +133,16 @@ router.post('/textmagic', async (req, res) => {
 					.maybeSingle();
 				existing = data;
 			}
+			if (!existing && tm.id) {
+				const { data } = await supabaseAdmin
+					.from('contacts')
+					.select('id, source, metadata, tags, first_name, last_name, full_name, email')
+					.eq('source', 'textmagic')
+					.eq('source_id', tm.id.toString())
+					.limit(1)
+					.maybeSingle();
+				existing = data;
+			}
 
 			if (existing) {
 				const mergedMeta = { ...(existing.metadata || {}), ...metadata };
