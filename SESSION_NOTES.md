@@ -1,3 +1,61 @@
+## Session — 2026-02-17 (Session 32)
+**Focus:** Complete theme token migration — all hardcoded rgba/hex colors → semantic CSS variables
+
+**Accomplished:**
+- **All 10 page files cleaned** — replaced every hardcoded `rgba(255,255,255,...)`, `rgba(197,165,90,...)`, `#c5a55a`, `#C5A55A`, `#0a0a0c`, `#0e0e10`, `#1A1A1A`, `#d4af37`, `#1b1f22`, `#111113` with semantic token classes
+- **Pages completed:** dashboard, contacts, messages, calls, softphone, settings, services, automation, login (voicemails is just a redirect)
+- **Token mapping used:**
+  - Text: 0.85-0.95→`text-text-primary`, 0.5-0.7→`text-text-secondary`, 0.3-0.4→`text-text-tertiary`, 0.1-0.25→`text-text-ghost`
+  - Borders: gold rgba→`border-border`/`border-border-subtle`, white rgba→`border-border-default`/`border-border-subtle`
+  - Backgrounds: `bg-surface-subtle`, `bg-surface-raised`, `bg-gold-glow`, `bg-card`, `bg-background`
+  - Gold: `text-gold`, `bg-gold`, `text-gold-dim`, `text-primary-foreground`
+- **Build verified** — `npx vite build` passes clean (only pre-existing a11y warnings)
+
+---
+
+## Session — 2026-02-17 (Session 31)
+**Focus:** Fix contact duplication, AR ID display, section reorganization
+
+**Accomplished:**
+- **Deleted 824 duplicate contacts** — TextMagic sync was creating new rows every 15 min for contacts without phone/email (Naomi Fox had 207 copies, Nikki Kaufman had 208). Database went from 1,369 → 545 contacts.
+- **Fixed sync code** — Added `source_id` matching as third fallback (phone → email → TextMagic ID) to prevent future duplicates
+- **Added unique DB index** on `(source, source_id)` as a safety net
+- **Fixed AR ID display** — Removed `source_id` fallback that was showing TextMagic IDs (like 349751557) as Aesthetic Record IDs. AR ID now only shows real AR IDs (short numbers like 467 from the patient CSV)
+- **Reorganized contact detail card** — Source + Last Synced moved to Contact Details section; Patient Info now contains only Aesthetic Record data (AR ID, Last Visited, Total Sales)
+- **Theme tokens applied** to automation, services, settings, softphone pages
+
+**Diagram:**
+```
+Sync Dedup Fix:
+┌──────────┐  every 15m  ┌──────────┐
+│ TextMagic │ ──────────► │ contacts │  Match: phone → email → source_id
+└──────────┘             └──────────┘  + UNIQUE INDEX (source, source_id)
+
+Contact Detail Card:
+┌─────────────────────┐
+│  Contact Details     │ ← Name, Phone, Email, City, State,
+│                      │   Preferred Contact, Source, Last Synced
+├─────────────────────┤
+│  Patient Info (AR)   │ ← AR ID, Last Visited, Total Sales
+├─────────────────────┤
+│  Additional Info     │ ← TextMagic ID, other metadata
+└─────────────────────┘
+```
+
+**Current State:**
+- 545 contacts (deduplicated), ~398 tagged as patient
+- Sync running every 15 min, now dedup-safe
+- Frontend deployed to Cloudflare Pages, API auto-deploys via Render push
+
+**Issues:**
+- None currently
+
+**Next Steps:**
+- Verify live site shows correct AR IDs and no duplicates
+- Consider importing AR IDs from the patient CSV for contacts that don't have them yet
+
+---
+
 ## Session — 2026-02-15 (Session 30)
 **Focus:** Multi-theme system — Midnight, Dusk, Champagne + auto mode
 

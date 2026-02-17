@@ -828,7 +828,7 @@
 										{#if seq.is_active}
 											<div class="w-2 h-2 rounded-full bg-emerald-400"></div>
 										{:else}
-											<div class="w-2 h-2 rounded-full bg-[rgba(255,255,255,0.15)]"></div>
+											<div class="w-2 h-2 rounded-full bg-surface-raised"></div>
 										{/if}
 									</button>
 

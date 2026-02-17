@@ -60,10 +60,10 @@
 
 <div class="relative flex min-h-screen">
 	<!-- Left panel — Brand / Visual -->
-	<div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#0a0a0c]">
+	<div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-background">
 		<!-- Decorative gradient background -->
 		<div
-			class="absolute inset-0 bg-gradient-to-br from-[rgba(197,165,90,0.08)] via-transparent to-[rgba(197,165,90,0.04)]"
+			class="absolute inset-0 bg-gradient-to-br from-gold/8 via-transparent to-gold/4"
 		></div>
 		<!-- Subtle noise overlay -->
 		<div
@@ -72,13 +72,13 @@
 		></div>
 		<!-- Gold accent lines -->
 		<div
-			class="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-[rgba(197,165,90,0.2)] to-transparent"
+			class="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-gold/20 to-transparent"
 		></div>
 		<div
-			class="absolute top-1/4 left-16 w-24 h-px bg-gradient-to-r from-[rgba(197,165,90,0.3)] to-transparent"
+			class="absolute top-1/4 left-16 w-24 h-px bg-gradient-to-r from-gold/30 to-transparent"
 		></div>
 		<div
-			class="absolute top-2/3 left-24 w-16 h-px bg-gradient-to-r from-[rgba(197,165,90,0.2)] to-transparent"
+			class="absolute top-2/3 left-24 w-16 h-px bg-gradient-to-r from-gold/20 to-transparent"
 		></div>
 
 		<!-- Content -->
@@ -87,17 +87,17 @@
 				<!-- Logo mark -->
 				<div class="flex items-center gap-4 mb-20">
 					<div
-						class="flex h-12 w-12 items-center justify-center rounded bg-[#C5A55A] text-[#1A1A1A] text-lg font-semibold tracking-wider"
+						class="flex h-12 w-12 items-center justify-center rounded bg-gold text-primary-foreground text-lg font-semibold tracking-wider"
 						style="font-family: 'Playfair Display', serif;"
 					>
 						LM
 					</div>
 					<div class="flex flex-col">
 						<span
-							class="text-base font-medium tracking-wide text-[rgba(255,255,255,0.85)]"
+							class="text-base font-medium tracking-wide text-text-primary"
 							style="font-family: 'Playfair Display', serif;">Le Med Spa</span
 						>
-						<span class="text-[10px] uppercase tracking-[0.25em] text-[rgba(197,165,90,0.5)]"
+						<span class="text-[10px] uppercase tracking-[0.25em] text-gold-dim"
 							>Operations</span
 						>
 					</div>
@@ -106,13 +106,13 @@
 				<!-- Tagline -->
 				<div class="max-w-sm">
 					<h1
-						class="text-4xl font-light text-[rgba(255,255,255,0.9)] leading-tight mb-6"
+						class="text-4xl font-light text-text-primary leading-tight mb-6"
 						style="font-family: 'Playfair Display', serif;"
 					>
 						Private. Intimate.<br />
-						<span class="text-[#C5A55A]">Exclusive.</span>
+						<span class="text-gold">Exclusive.</span>
 					</h1>
-					<p class="text-sm leading-relaxed text-[rgba(255,255,255,0.35)]">
+					<p class="text-sm leading-relaxed text-text-tertiary">
 						Your command center for patient communications, scheduling, and clinic management.
 					</p>
 				</div>
@@ -122,18 +122,18 @@
 				<!-- Decorative gold ornament -->
 				<div class="flex items-center gap-3 mb-6">
 					<div
-						class="h-px flex-1 bg-gradient-to-r from-[rgba(197,165,90,0.2)] to-transparent"
+						class="h-px flex-1 bg-gradient-to-r from-gold/20 to-transparent"
 					></div>
-					<div class="h-1.5 w-1.5 rotate-45 bg-[rgba(197,165,90,0.3)]"></div>
-					<div class="h-px w-8 bg-[rgba(197,165,90,0.2)]"></div>
-					<div class="h-1.5 w-1.5 rotate-45 bg-[rgba(197,165,90,0.3)]"></div>
+					<div class="h-1.5 w-1.5 rotate-45 bg-gold/30"></div>
+					<div class="h-px w-8 bg-gold/20"></div>
+					<div class="h-1.5 w-1.5 rotate-45 bg-gold/30"></div>
 					<div
-						class="h-px flex-1 bg-gradient-to-l from-[rgba(197,165,90,0.2)] to-transparent"
+						class="h-px flex-1 bg-gradient-to-l from-gold/20 to-transparent"
 					></div>
 				</div>
 
-				<p class="text-[10px] uppercase tracking-[0.2em] text-[rgba(255,255,255,0.15)] text-center">
-					LEMEDSPA<span class="text-[rgba(197,165,90,0.3)]">&reg;</span> &middot; 17414 Ventura Blvd &middot;
+				<p class="text-[10px] uppercase tracking-[0.2em] text-text-ghost text-center">
+					LEMEDSPA<span class="text-gold-dim">&reg;</span> &middot; 17414 Ventura Blvd &middot;
 					Encino, CA
 				</p>
 			</div>
@@ -141,10 +141,10 @@
 	</div>
 
 	<!-- Right panel — Login form -->
-	<div class="flex-1 flex items-center justify-center bg-[#1b1f22] p-6 relative">
+	<div class="flex-1 flex items-center justify-center bg-card p-6 relative">
 		<!-- Subtle radial glow -->
 		<div
-			class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(197,165,90,0.04)_0%,_transparent_70%)]"
+			class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--gold-glow)_0%,_transparent_70%)]"
 		></div>
 		<!-- Noise texture -->
 		<div
@@ -156,17 +156,17 @@
 			<!-- Mobile logo (hidden on lg+) -->
 			<div class="flex items-center justify-center gap-3 mb-10 lg:hidden">
 				<div
-					class="flex h-10 w-10 items-center justify-center rounded bg-[#C5A55A] text-[#1A1A1A] text-base font-semibold tracking-wider"
+					class="flex h-10 w-10 items-center justify-center rounded bg-gold text-primary-foreground text-base font-semibold tracking-wider"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					LM
 				</div>
 				<div class="flex flex-col">
 					<span
-						class="text-sm font-medium tracking-wide text-[rgba(255,255,255,0.85)]"
+						class="text-sm font-medium tracking-wide text-text-primary"
 						style="font-family: 'Playfair Display', serif;">Le Med Spa</span
 					>
-					<span class="text-[9px] uppercase tracking-[0.2em] text-[rgba(197,165,90,0.5)]"
+					<span class="text-[9px] uppercase tracking-[0.2em] text-gold-dim"
 						>Operations</span
 					>
 				</div>
@@ -174,12 +174,12 @@
 
 			<div class="mb-8">
 				<h2
-					class="text-2xl font-light text-[rgba(255,255,255,0.9)] mb-1"
+					class="text-2xl font-light text-text-primary mb-1"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{step === 'credentials' ? 'Welcome back' : 'Verify identity'}
 				</h2>
-				<p class="text-sm text-[rgba(255,255,255,0.35)]">
+				<p class="text-sm text-text-tertiary">
 					{step === 'credentials'
 						? 'Sign in to your operations dashboard'
 						: 'Enter the verification code sent to your email'}
@@ -205,7 +205,7 @@
 					<div class="space-y-2">
 						<Label
 							for="email"
-							class="text-xs uppercase tracking-[0.1em] text-[rgba(255,255,255,0.4)]">Email</Label
+							class="text-xs uppercase tracking-[0.1em] text-text-tertiary">Email</Label
 						>
 						<Input
 							id="email"
@@ -213,13 +213,13 @@
 							placeholder="you@lemedspa.com"
 							bind:value={email}
 							required
-							class="h-11 bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)] focus:border-[#C5A55A] transition-colors"
+							class="h-11 bg-surface-subtle border-border focus:border-gold transition-colors"
 						/>
 					</div>
 					<div class="space-y-2">
 						<Label
 							for="password"
-							class="text-xs uppercase tracking-[0.1em] text-[rgba(255,255,255,0.4)]"
+							class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
 							>Password</Label
 						>
 						<Input
@@ -227,12 +227,12 @@
 							type="password"
 							bind:value={password}
 							required
-							class="h-11 bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)] focus:border-[#C5A55A] transition-colors"
+							class="h-11 bg-surface-subtle border-border focus:border-gold transition-colors"
 						/>
 					</div>
 					<Button
 						type="submit"
-						class="w-full h-11 bg-[#C5A55A] hover:bg-[#d4af37] text-[#1A1A1A] font-medium tracking-wide transition-all duration-200 hover:shadow-lg hover:shadow-[rgba(197,165,90,0.15)]"
+						class="w-full h-11 bg-gold hover:bg-gold/80 text-primary-foreground font-medium tracking-wide transition-all duration-200 hover:shadow-lg hover:shadow-gold/15"
 						disabled={submitting}
 					>
 						{submitting ? 'Signing in...' : 'Sign in'}
@@ -247,7 +247,7 @@
 					class="space-y-5"
 				>
 					<div class="space-y-2">
-						<Label for="otp" class="text-xs uppercase tracking-[0.1em] text-[rgba(255,255,255,0.4)]"
+						<Label for="otp" class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
 							>Verification code</Label
 						>
 						<Input
@@ -258,12 +258,12 @@
 							placeholder="000000"
 							bind:value={otp}
 							required
-							class="h-11 text-center text-xl tracking-[0.5em] font-mono bg-[rgba(255,255,255,0.03)] border-[rgba(197,165,90,0.12)]"
+							class="h-11 text-center text-xl tracking-[0.5em] font-mono bg-surface-subtle border-border"
 						/>
 					</div>
 					<Button
 						type="submit"
-						class="w-full h-11 bg-[#C5A55A] hover:bg-[#d4af37] text-[#1A1A1A] font-medium tracking-wide"
+						class="w-full h-11 bg-gold hover:bg-gold/80 text-primary-foreground font-medium tracking-wide"
 						disabled={submitting}
 					>
 						{submitting ? 'Verifying...' : 'Verify'}
@@ -271,7 +271,7 @@
 					<Button
 						type="button"
 						variant="ghost"
-						class="w-full text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]"
+						class="w-full text-text-tertiary hover:text-text-secondary"
 						onclick={() => {
 							step = 'credentials';
 							error = '';
@@ -284,12 +284,12 @@
 
 			<!-- Bottom ornament -->
 			<div class="mt-12 flex items-center gap-3">
-				<div class="h-px flex-1 bg-gradient-to-r from-transparent to-[rgba(197,165,90,0.12)]"></div>
-				<div class="h-1 w-1 rotate-45 bg-[rgba(197,165,90,0.2)]"></div>
-				<div class="h-px flex-1 bg-gradient-to-l from-transparent to-[rgba(197,165,90,0.12)]"></div>
+				<div class="h-px flex-1 bg-gradient-to-r from-transparent to-gold/12"></div>
+				<div class="h-1 w-1 rotate-45 bg-gold/20"></div>
+				<div class="h-px flex-1 bg-gradient-to-l from-transparent to-gold/12"></div>
 			</div>
 			<p
-				class="mt-4 text-center text-[10px] text-[rgba(255,255,255,0.15)] uppercase tracking-[0.15em]"
+				class="mt-4 text-center text-[10px] text-text-ghost uppercase tracking-[0.15em]"
 			>
 				Secure access &middot; Staff only
 			</p>

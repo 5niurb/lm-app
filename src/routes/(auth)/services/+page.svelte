@@ -873,7 +873,7 @@
 											e.stopPropagation();
 											openEditForm(service);
 										}}
-										class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-gold hover:bg-[rgba(197,165,90,0.1)] transition-colors"
+										class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-gold hover:bg-gold/10 transition-colors"
 										title="Edit service"
 									>
 										<Pencil class="h-3.5 w-3.5" />
