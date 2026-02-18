@@ -9,9 +9,9 @@
 		PhoneOutgoing,
 		MessageSquare,
 		ArrowRight,
-		PhoneCall
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
+	import { resolve } from '$app/paths';
 	import { formatPhone, formatDuration, formatRelativeDate } from '$lib/utils/formatters.js';
 
 	let stats = $state(null);
@@ -331,7 +331,7 @@
 			<div class="p-5">
 				{#if dailyStats && dailyStats.length > 0}
 					<div class="flex items-end gap-2 h-48">
-						{#each dailyStats as day}
+						{#each dailyStats as day (day.date)}
 							{@const max = chartMax()}
 							{@const pct = Math.max(4, (day.total / max) * 100)}
 							<div class="flex-1 flex flex-col items-center gap-1">
@@ -411,7 +411,7 @@
 			</div>
 			<div class="p-3 divide-y divide-border-subtle">
 				<a
-					href="/calls?filter=voicemail"
+					href={resolve('/calls?filter=voicemail')}
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
@@ -434,7 +434,7 @@
 				</a>
 
 				<a
-					href="/messages"
+					href={resolve('/messages')}
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
@@ -459,7 +459,7 @@
 				</a>
 
 				<a
-					href="/calls"
+					href={resolve('/calls')}
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
@@ -474,7 +474,7 @@
 				</a>
 
 				<a
-					href="/softphone"
+					href={resolve('/softphone')}
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
@@ -491,7 +491,7 @@
 				</a>
 
 				<a
-					href="/settings"
+					href={resolve('/settings')}
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
@@ -524,12 +524,12 @@
 				<h2 class="text-base tracking-wide">Recent Calls</h2>
 				<p class="text-xs text-muted-foreground mt-0.5">Latest call activity.</p>
 			</div>
-			<a href="/calls" class="text-xs text-gold hover:text-gold transition-colors">View all →</a>
+			<a href={resolve('/calls')} class="text-xs text-gold hover:text-gold transition-colors">View all →</a>
 		</div>
 		<div class="p-5">
 			{#if recentCalls === null}
 				<div class="space-y-3">
-					{#each Array(5) as _}
+					{#each Array(5) as _, i (i)}
 						<Skeleton class="h-12 w-full" />
 					{/each}
 				</div>
@@ -554,7 +554,7 @@
 				</div>
 			{:else}
 				<div>
-					{#each recentCalls as call, i}
+					{#each recentCalls as call, i (call.id)}
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
@@ -595,16 +595,14 @@
 												class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
 											>
 												<a
-													href="/softphone?call={encodeURIComponent(callPhone)}"
+													href={resolve(`/softphone?call=${encodeURIComponent(callPhone)}`)}
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
 													title="Call back"
 												>
 													<PhoneOutgoing class="h-3.5 w-3.5" />
 												</a>
 												<a
-													href="/messages?phone={encodeURIComponent(callPhone)}{call.caller_name
-														? '&name=' + encodeURIComponent(call.caller_name)
-														: ''}&new=true"
+													href={resolve(`/messages?phone=${encodeURIComponent(callPhone)}${call.caller_name ? '&name=' + encodeURIComponent(call.caller_name) : ''}&new=true`)}
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 													title="Send message"
 												>

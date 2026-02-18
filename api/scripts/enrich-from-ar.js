@@ -162,17 +162,17 @@ async function main() {
 
 		// Find matching contact: prefer AR ID, then phone, then email
 		let contact = null;
-		let matchMethod = '';
+		let _matchMethod = '';
 
 		if (arId && byArId.has(arId)) {
 			contact = byArId.get(arId);
-			matchMethod = 'AR ID';
+			_matchMethod = 'AR ID';
 		} else if (arPhone && byPhone.has(arPhone)) {
 			contact = byPhone.get(arPhone);
-			matchMethod = 'phone';
+			_matchMethod = 'phone';
 		} else if (arEmail && byEmail.has(arEmail)) {
 			contact = byEmail.get(arEmail);
-			matchMethod = 'email';
+			_matchMethod = 'email';
 		}
 
 		if (!contact) {

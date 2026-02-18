@@ -73,7 +73,7 @@
 				});
 				responses = r;
 			}
-		} catch (e) {
+		} catch {
 			error = 'Unable to connect to server';
 		} finally {
 			loading = false;
@@ -252,7 +252,7 @@
 			}
 
 			submitted = true;
-		} catch (e) {
+		} catch {
 			submitError = 'Unable to connect to server. Please try again.';
 		} finally {
 			submitting = false;
@@ -353,7 +353,7 @@
 		<!-- Content Sections -->
 		{#if content.content_json && content.content_json.length > 0}
 			<div class="sections">
-				{#each content.content_json as section, i}
+				{#each content.content_json as section, i (i)}
 					{#if getSectionType(section) === 'info'}
 						<div class="section" style="animation-delay: {i * 0.08}s">
 							<div class="section-number">{i + 1}</div>
@@ -395,7 +395,7 @@
 									></textarea>
 								{:else if section.type === 'radio' && section.options}
 									<div class="radio-group">
-										{#each section.options as option}
+										{#each section.options as option (option)}
 											<label class="radio-label">
 												<input
 													type="radio"

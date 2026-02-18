@@ -30,7 +30,7 @@
 			}
 			const json = await res.json();
 			content = json.data;
-		} catch (e) {
+		} catch {
 			error = 'Unable to connect to server';
 		} finally {
 			loading = false;
@@ -125,7 +125,7 @@
 		<!-- Sections -->
 		{#if content.content_json && content.content_json.length > 0}
 			<div class="sections">
-				{#each content.content_json as section, i}
+				{#each content.content_json as section, i (i)}
 					<div class="section" style="animation-delay: {i * 0.1}s">
 						<div class="section-number">{i + 1}</div>
 						<div class="section-content">

@@ -4,7 +4,6 @@
 	import {
 		Zap,
 		Play,
-		Pause,
 		Plus,
 		Pencil,
 		Trash2,
@@ -20,6 +19,7 @@
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { isAdmin } from '$lib/stores/auth.js';
+	import { resolve } from '$app/paths';
 
 	// Tab state
 	let activeTab = $state('sequences');
@@ -28,7 +28,7 @@
 	/** @type {any[]} */
 	let sequences = $state([]);
 	let seqLoading = $state(true);
-	let seqError = $state('');
+	let _seqError = $state('');
 
 	// Log
 	/** @type {any[]} */
@@ -107,7 +107,7 @@
 		{ value: 'custom', label: 'Custom' }
 	];
 
-	const channelIcons = {
+	const _channelIcons = {
 		sms: MessageSquare,
 		email: Mail,
 		both: Send
@@ -141,7 +141,7 @@
 			const res = await api('/api/automation/sequences');
 			sequences = res.data || [];
 		} catch (e) {
-			seqError = e.message;
+			_seqError = e.message;
 		} finally {
 			seqLoading = false;
 		}
@@ -204,14 +204,6 @@
 		setTimeout(() => {
 			toast = '';
 		}, 3000);
-	}
-
-	function triggerLabel(val) {
-		return triggerEvents.find((t) => t.value === val)?.label || val;
-	}
-
-	function triggerIcon(val) {
-		return triggerEvents.find((t) => t.value === val)?.icon || '⚡';
 	}
 
 	function channelBadgeColor(ch) {
@@ -613,7 +605,7 @@
 						bind:value={formTrigger}
 						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
-						{#each triggerEvents as t}
+						{#each triggerEvents as t (t.value)}
 							<option value={t.value}>{t.icon} {t.label}</option>
 						{/each}
 					</select>
@@ -656,7 +648,7 @@
 						bind:value={formTemplate}
 						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
-						{#each templateTypes as t}
+						{#each templateTypes as t (t.value)}
 							<option value={t.value}>{t.label}</option>
 						{/each}
 					</select>
@@ -671,7 +663,7 @@
 						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						<option value="">All Services (Global)</option>
-						{#each services as s}
+						{#each services as s (s.id)}
 							<option value={s.id}>{s.name}</option>
 						{/each}
 					</select>
@@ -693,7 +685,7 @@
 							class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 						>
 							<option value="">No linked content (use custom body)</option>
-							{#each serviceContentBlocks as block}
+							{#each serviceContentBlocks as block (block.id)}
 								<option value={block.id}
 									>[{contentTypeLabel(block.content_type)}] {block.title}</option
 								>
@@ -711,7 +703,7 @@
 					{:else}
 						<p class="text-xs text-text-ghost">
 							No content blocks for this service. <a
-								href="/services"
+								href={resolve('/services')}
 								class="text-gold hover:underline">Create content →</a
 							>
 						</p>
@@ -769,7 +761,7 @@
 	{#if activeTab === 'sequences'}
 		{#if seqLoading}
 			<div class="space-y-3">
-				{#each Array(5) as _}
+				{#each Array(5) as _, i (i)}
 					<Skeleton class="h-14 w-full" />
 				{/each}
 			</div>
@@ -783,7 +775,7 @@
 			</div>
 		{:else}
 			<!-- Grouped by trigger event -->
-			{#each groupedSequences as group}
+			{#each groupedSequences as group (group.value)}
 				<div>
 					<button
 						onclick={() => (expandedTrigger = expandedTrigger === group.value ? '' : group.value)}
@@ -806,7 +798,7 @@
 
 					{#if expandedTrigger === group.value || expandedTrigger === ''}
 						<div class="space-y-1 ml-5 mb-4">
-							{#each group.sequences as seq}
+							{#each group.sequences as seq (seq.id)}
 								<div
 									class="flex items-center gap-3 px-3 py-2.5 rounded border border-border-subtle hover:border-border transition-colors group/row"
 								>
@@ -927,7 +919,7 @@
 	{#if activeTab === 'log'}
 		{#if logLoading}
 			<div class="space-y-2">
-				{#each Array(8) as _}
+				{#each Array(8) as _, i (i)}
 					<Skeleton class="h-10 w-full" />
 				{/each}
 			</div>
@@ -956,7 +948,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each logEntries as entry}
+							{#each logEntries as entry (entry.id)}
 								<tr class="border-b border-border-subtle hover:bg-gold-glow transition-colors">
 									<td class="px-4 py-2.5">
 										<span class="text-text-secondary">{entry.client?.full_name || '—'}</span>
@@ -1060,7 +1052,7 @@
 						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
 						<option value="">Select a sequence...</option>
-						{#each sequences as seq}
+						{#each sequences as seq (seq.id)}
 							<option value={seq.id}>{seq.name} ({seq.channel})</option>
 						{/each}
 					</select>
@@ -1087,7 +1079,7 @@
 						<div
 							class="mt-1 rounded border border-border-default bg-background max-h-40 overflow-y-auto"
 						>
-							{#each testClientResults as c}
+							{#each testClientResults as c (c.id)}
 								<button
 									onclick={() => selectTestClient(c)}
 									class="w-full text-left px-3 py-2 text-sm hover:bg-gold-glow transition-colors flex items-center justify-between"

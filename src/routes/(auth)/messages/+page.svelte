@@ -1,9 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Input } from '$lib/components/ui/input/index.ts';
-	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
 	import {
 		MessageSquare,
@@ -14,6 +12,7 @@
 		PhoneOutgoing,
 		RefreshCw
 	} from '@lucide/svelte';
+	import { resolve } from '$app/paths';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 
@@ -46,7 +45,7 @@
 	let twilioNumbers = $state([]);
 	/** @type {string} Currently selected Twilio number filter ('' = all) */
 	let selectedNumber = $state('');
-	let loadingNumbers = $state(true);
+	let _loadingNumbers = $state(true);
 
 	// ─── Sync state ───
 	let syncing = $state(false);
@@ -127,7 +126,7 @@
 		} catch (e) {
 			console.error('Failed to load Twilio numbers:', e);
 		} finally {
-			loadingNumbers = false;
+			_loadingNumbers = false;
 		}
 	}
 
@@ -329,7 +328,7 @@
 					>
 						All Lines
 					</button>
-					{#each twilioNumbers as num}
+					{#each twilioNumbers as num (num.sid)}
 						<button
 							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
 							num.phoneNumber
@@ -388,7 +387,7 @@
 		<div class="flex-1 overflow-y-auto">
 			{#if conversations === null}
 				<div class="p-4 space-y-3">
-					{#each Array(6) as _}
+					{#each Array(6) as _, i (i)}
 						<Skeleton class="h-16 w-full" />
 					{/each}
 				</div>
@@ -416,7 +415,7 @@
 					</div>
 				</div>
 			{:else}
-				{#each conversations as convo}
+				{#each conversations as convo (convo.id)}
 					<div
 						class="group border-b border-border-subtle transition-all duration-200 hover:bg-gold-glow {selectedConvo?.id ===
 						convo.id
@@ -440,7 +439,7 @@
 										<!-- Quick call action — right next to name, visible on hover -->
 										{#if convo.phone_number}
 											<a
-												href="/softphone?call={encodeURIComponent(convo.phone_number)}"
+												href={resolve(`/softphone?call=${encodeURIComponent(convo.phone_number)}`)}
 												class="shrink-0 opacity-0 group-hover:opacity-100 inline-flex items-center justify-center h-6 w-6 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
 												title="Call {convo.display_name || formatPhone(convo.phone_number)}"
 												onclick={(e) => e.stopPropagation()}
@@ -515,14 +514,14 @@
 				</div>
 				<div class="flex items-center gap-1.5 shrink-0 ml-auto">
 					<a
-						href="/softphone?call={encodeURIComponent(selectedConvo.phone_number)}"
+						href={resolve(`/softphone?call=${encodeURIComponent(selectedConvo.phone_number)}`)}
 						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
 						title="Call {selectedConvo.display_name || formatPhone(selectedConvo.phone_number)}"
 					>
 						<PhoneOutgoing class="h-4 w-4" />
 					</a>
 					<a
-						href="/calls?search={encodeURIComponent(selectedConvo.phone_number)}"
+						href={resolve(`/calls?search=${encodeURIComponent(selectedConvo.phone_number)}`)}
 						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border-default text-text-tertiary hover:bg-surface-subtle hover:text-text-secondary hover:border-border-default transition-all"
 						title="View call history"
 					>
@@ -535,7 +534,7 @@
 			<div id="message-scroll" class="flex-1 overflow-y-auto p-4 space-y-3">
 				{#if loadingMessages}
 					<div class="space-y-3">
-						{#each Array(5) as _}
+						{#each Array(5) as _, i (i)}
 							<Skeleton class="h-10 w-3/4" />
 						{/each}
 					</div>
@@ -544,7 +543,7 @@
 						<p class="text-sm text-text-tertiary">No messages in this conversation yet.</p>
 					</div>
 				{:else}
-					{#each messages as msg}
+					{#each messages as msg (msg.id)}
 						{@const senderName = getSenderName(msg)}
 						<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
 							<div
@@ -636,7 +635,7 @@
 						<div class="flex items-center justify-center gap-1.5">
 							<span class="text-[10px] text-text-tertiary uppercase tracking-wider">Send from:</span
 							>
-							{#each twilioNumbers as num}
+							{#each twilioNumbers as num (num.sid)}
 								<button
 									class="px-2 py-0.5 rounded text-[10px] font-mono transition-all {selectedNumber ===
 									num.phoneNumber

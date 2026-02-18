@@ -115,7 +115,7 @@
 				})
 			});
 			toast.success('Business hours saved');
-		} catch (err) {
+		} catch (_err) {
 			toast.error('Failed to save business hours');
 		} finally {
 			saving = false;
@@ -171,7 +171,7 @@
 			await api(`/api/settings/extensions/${id}`, { method: 'DELETE' });
 			toast.success('Extension deleted');
 			await loadSettings();
-		} catch (err) {
+		} catch (_err) {
 			toast.error('Failed to delete extension');
 		}
 	}
@@ -254,7 +254,7 @@
 			await api(`/api/settings/routing/${id}`, { method: 'DELETE' });
 			toast.success('Routing rule deleted');
 			await loadSettings();
-		} catch (err) {
+		} catch (_err) {
 			toast.error('Failed to delete routing rule');
 		}
 	}
@@ -266,7 +266,7 @@
 				body: JSON.stringify({ is_active: !rule.is_active })
 			});
 			await loadSettings();
-		} catch (err) {
+		} catch (_err) {
 			toast.error('Failed to toggle rule');
 		}
 	}
@@ -303,7 +303,7 @@
 	{:else}
 		<!-- Tab navigation -->
 		<div class="flex gap-1 border-b border-border">
-			{#each tabs as tab}
+			{#each tabs as tab (tab.id)}
 				<button
 					class="flex items-center gap-1.5 px-4 py-2.5 text-sm transition-colors relative {activeTab ===
 					tab.id
@@ -366,7 +366,7 @@
 						</div>
 						<div class="p-5">
 							<div class="space-y-3">
-								{#each DAY_KEYS as dayKey, i}
+								{#each DAY_KEYS as dayKey, i (dayKey)}
 									{@const hours = businessHours[dayKey]}
 									<div
 										class="flex items-center gap-4 py-2 {i < 6
@@ -556,7 +556,7 @@
 								</div>
 							{:else}
 								<div class="space-y-2">
-									{#each extensions as ext}
+									{#each extensions as ext (ext.id)}
 										<div
 											class="flex items-center justify-between py-3 px-4 rounded bg-surface-subtle border border-border-subtle"
 										>
@@ -655,7 +655,7 @@
 											>Active Days (none = every day)</Label
 										>
 										<div class="flex gap-1.5">
-											{#each DAYS as day, i}
+											{#each DAYS as day, i (i)}
 												<button
 													class="px-2.5 py-1.5 rounded text-xs cursor-pointer transition-colors {ruleForm.day_of_week.includes(
 														i
@@ -702,7 +702,7 @@
 												bind:value={ruleForm.action_type}
 												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
 											>
-												{#each ACTION_TYPES as at}
+												{#each ACTION_TYPES as at (at.value)}
 													<option value={at.value}>{at.label}</option>
 												{/each}
 											</select>
@@ -791,7 +791,7 @@
 								</div>
 							{:else}
 								<div class="space-y-2">
-									{#each routingRules as rule}
+									{#each routingRules as rule (rule.id)}
 										<div
 											class="flex items-center justify-between py-3 px-4 rounded bg-surface-subtle border border-border-subtle"
 										>

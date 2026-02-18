@@ -42,7 +42,7 @@
 		</DropdownMenu.Label>
 
 		<!-- Theme options -->
-		{#each themes as t}
+		{#each themes as t (t.id)}
 			{@const isActive = $themeChoice === t.id}
 			<DropdownMenu.Item
 				class="flex items-center gap-3 rounded-md px-2 py-2.5 cursor-pointer {isActive

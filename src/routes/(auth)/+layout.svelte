@@ -1,5 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { session, loading } from '$lib/stores/auth.js';
 	import { onMount } from 'svelte';
 	import { SidebarProvider, SidebarInset } from '$lib/components/ui/sidebar/index.ts';
@@ -11,7 +12,7 @@
 	onMount(() => {
 		const unsub = loading.subscribe((isLoading) => {
 			if (isLoading) return;
-			if (!$session) goto('/login');
+			if (!$session) goto(resolve('/login'));
 		});
 		return unsub;
 	});

@@ -1,7 +1,7 @@
 <script>
 	import { supabase } from '$lib/utils/supabase.js';
 	import { goto } from '$app/navigation';
-	import { session } from '$lib/stores/auth.js';
+	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Label } from '$lib/components/ui/label/index.ts';
@@ -18,7 +18,7 @@
 		submitting = true;
 
 		try {
-			const { data, error: authError } = await supabase.auth.signInWithPassword({
+			const { data: _data, error: authError } = await supabase.auth.signInWithPassword({
 				email,
 				password
 			});
@@ -30,11 +30,11 @@
 
 			// Check for trusted device cookie
 			// TODO: Implement trusted device check via API
-			const trusted = false;
+			const _trusted = false;
 
 			// MVP: Skip OTP, go straight to dashboard
 			// TODO: Implement trusted device check + OTP flow
-			goto('/dashboard');
+			goto(resolve('/dashboard'));
 		} finally {
 			submitting = false;
 		}
@@ -48,7 +48,7 @@
 			// TODO: Verify OTP via API and set trust cookie
 			// For now, accept any 6-digit code
 			if (otp.length === 6) {
-				goto('/dashboard');
+				goto(resolve('/dashboard'));
 			} else {
 				error = 'Please enter a valid 6-digit code';
 			}

@@ -1,10 +1,11 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 
 	// Redirect to phone log (voicemails now shown inline)
 	onMount(() => {
-		goto('/calls?filter=voicemail', { replaceState: true });
+		goto(resolve('/calls?filter=voicemail'), { replaceState: true });
 	});
 </script>
 

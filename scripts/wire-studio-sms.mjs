@@ -59,7 +59,7 @@ if (fcnIdx !== -1) {
 // 3. Make play_MsgSentGoodbye terminal (remove next → fcn_NewSMSEmailNotify)
 const goodbyeState = flow.states.find((s) => s.name === 'play_MsgSentGoodbye');
 if (goodbyeState) {
-	const before = goodbyeState.transitions.length;
+	const _before = goodbyeState.transitions.length;
 	goodbyeState.transitions = goodbyeState.transitions.map((t) => {
 		if (t.next === 'fcn_NewSMSEmailNotify') {
 			console.log(

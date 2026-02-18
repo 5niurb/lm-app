@@ -1,5 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { session, loading } from '$lib/stores/auth.js';
 	import { onMount } from 'svelte';
 
@@ -7,9 +8,9 @@
 		const unsub = loading.subscribe((isLoading) => {
 			if (isLoading) return;
 			if ($session) {
-				goto('/dashboard');
+				goto(resolve('/dashboard'));
 			} else {
-				goto('/login');
+				goto(resolve('/login'));
 			}
 		});
 		return unsub;

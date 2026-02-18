@@ -2,12 +2,13 @@
 	import { profile } from '$lib/stores/auth.js';
 	import { supabase } from '$lib/utils/supabase.js';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { SidebarTrigger } from '$lib/components/ui/sidebar/index.ts';
 	import { Separator } from '$lib/components/ui/separator/index.ts';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.ts';
 	import * as Avatar from '$lib/components/ui/avatar/index.ts';
-	import { LogOut, Phone, Clock, Bell, Search, Command } from '@lucide/svelte';
+	import { LogOut, Phone, Bell, Search, Command } from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
@@ -135,7 +136,7 @@
 
 	async function handleLogout() {
 		await supabase.auth.signOut();
-		goto('/login');
+		goto(resolve('/login'));
 	}
 
 	/**
@@ -206,7 +207,7 @@
 		variant="ghost"
 		size="sm"
 		class="h-8 gap-1.5 text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A]"
-		onclick={() => goto('/softphone')}
+		onclick={() => goto(resolve('/softphone'))}
 	>
 		<Phone class="h-3.5 w-3.5" />
 		<span class="text-xs hidden sm:inline">Dial</span>
@@ -242,12 +243,12 @@
 			{#if notifications.length === 0}
 				<div class="py-6 text-center text-xs text-muted-foreground">No new notifications</div>
 			{:else}
-				{#each notifications as notif}
+				{#each notifications as notif (notif.id)}
 					<DropdownMenu.Item
 						class="flex flex-col items-start gap-0.5 py-2.5"
 						onclick={() => {
-							if (notif.type === 'missed_call') goto('/calls');
-							else if (notif.type === 'voicemail') goto('/calls');
+							if (notif.type === 'missed_call') goto(resolve('/calls'));
+							else if (notif.type === 'voicemail') goto(resolve('/calls'));
 						}}
 					>
 						<span class="text-xs leading-snug">{notif.title}</span>

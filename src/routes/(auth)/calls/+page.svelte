@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Input } from '$lib/components/ui/input/index.ts';
-	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
 	import {
 		Phone,
@@ -18,10 +17,10 @@
 		MessageSquare
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
+	import { resolve } from '$app/paths';
 	import {
 		formatPhone,
 		formatDuration,
-		formatDate,
 		formatRelativeDate
 	} from '$lib/utils/formatters.js';
 
@@ -326,7 +325,7 @@
 					>
 						All Lines
 					</button>
-					{#each twilioNumbers as num}
+					{#each twilioNumbers as num (num.sid)}
 						<button
 							class="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-200 {selectedNumber ===
 							num.phoneNumber
@@ -350,7 +349,7 @@
 		<div class="p-5">
 			{#if calls === null}
 				<div class="space-y-3">
-					{#each Array(10) as _}
+					{#each Array(10) as _, i (i)}
 						<Skeleton class="h-16 w-full" />
 					{/each}
 				</div>
@@ -370,7 +369,7 @@
 				</div>
 			{:else}
 				<div>
-					{#each calls as call, i}
+					{#each calls as call, i (call.id)}
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
@@ -419,16 +418,16 @@
 												class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
 											>
 												<a
-													href="/softphone?call={encodeURIComponent(callPhone)}"
+													href={resolve(`/softphone?call=${encodeURIComponent(callPhone)}`)}
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
 													title="Call back"
 												>
 													<PhoneOutgoing class="h-3.5 w-3.5" />
 												</a>
 												<a
-													href="/messages?phone={encodeURIComponent(callPhone)}{call.caller_name
+													href={resolve(`/messages?phone=${encodeURIComponent(callPhone)}${call.caller_name
 														? '&name=' + encodeURIComponent(call.caller_name)
-														: ''}&new=true"
+														: ''}&new=true`)}
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 													title="Send message"
 												>

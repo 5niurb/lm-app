@@ -1,5 +1,6 @@
 <script>
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.ts';
 	import {
 		LayoutDashboard,
@@ -51,7 +52,7 @@
 			]);
 			badges.unreadMessages = msgStats.unreadConversations || 0;
 			badges.unheardVoicemails = vmStats.total_unheard || 0;
-		} catch (e) {
+		} catch (_e) {
 			// Silent — badges are non-critical
 		}
 	}
@@ -96,7 +97,7 @@
 					<Sidebar.MenuItem>
 						<Sidebar.MenuButton isActive={page.url.pathname === '/dashboard'}>
 							{#snippet child({ props })}
-								<a href="/dashboard" {...props} class="flex items-center gap-2 w-full">
+								<a href={resolve('/dashboard')} {...props} class="flex items-center gap-2 w-full">
 									<LayoutDashboard class="h-4 w-4" />
 									<span>Dashboard</span>
 								</a>
@@ -108,18 +109,18 @@
 		</Sidebar.Group>
 
 		<!-- Grouped navigation sections -->
-		{#each navGroups as group}
+		{#each navGroups as group (group.label)}
 			<Sidebar.Group>
 				<Sidebar.GroupLabel class="section-label-gold px-3 pb-1 pt-3">
 					{group.label}
 				</Sidebar.GroupLabel>
 				<Sidebar.GroupContent>
 					<Sidebar.Menu>
-						{#each group.items as item}
+						{#each group.items as item (item.href)}
 							<Sidebar.MenuItem>
 								<Sidebar.MenuButton isActive={page.url.pathname.startsWith(item.href)}>
 									{#snippet child({ props })}
-										<a href={item.href} {...props} class="flex items-center justify-between w-full">
+										<a href={resolve(item.href)} {...props} class="flex items-center justify-between w-full">
 											<span class="flex items-center gap-2">
 												<item.icon class="h-4 w-4" />
 												<span>{item.label}</span>

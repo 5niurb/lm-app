@@ -1,5 +1,4 @@
 <script>
-	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
 	import {
 		Sparkles,
@@ -10,7 +9,6 @@
 		ChevronRight,
 		FileText,
 		X,
-		GripVertical,
 		ArrowUp,
 		ArrowDown,
 		Clock,
@@ -449,7 +447,7 @@
 								onchange={autoContentSlug}
 								class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 							>
-								{#each contentTypes as ct}
+								{#each contentTypes as ct (ct.value)}
 									<option value={ct.value}>{ct.label}</option>
 								{/each}
 							</select>
@@ -522,7 +520,7 @@
 						</div>
 
 						<div class="space-y-3">
-							{#each cSections as section, idx}
+							{#each cSections as section, idx (idx)}
 								<div class="rounded border border-border-subtle bg-surface-subtle p-4">
 									<div class="flex items-center gap-2 mb-2">
 										<span class="text-[10px] text-text-ghost w-5 text-center">{idx + 1}</span>
@@ -646,7 +644,7 @@
 						bind:value={formCategory}
 						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
-						{#each categories as cat}<option value={cat.value}>{cat.label}</option>{/each}
+						{#each categories as cat (cat.value)}<option value={cat.value}>{cat.label}</option>{/each}
 					</select>
 				</div>
 				<div class="flex gap-4">
@@ -711,7 +709,7 @@
 	<!-- ========== SERVICE LIST ========== -->
 	{#if loading}
 		<div class="space-y-3">
-			{#each Array(4) as _}<Skeleton class="h-16 w-full" />{/each}
+			{#each Array(4) as _, i (i)}<Skeleton class="h-16 w-full" />{/each}
 		</div>
 	{:else if services.length === 0}
 		<div class="flex flex-col items-center justify-center h-64 text-center">
@@ -739,7 +737,7 @@
 			{/if}
 		</div>
 	{:else}
-		{#each grouped as group}
+		{#each grouped as group (group.value)}
 			<div>
 				<!-- Category header -->
 				<div class="flex items-center gap-3 mb-4">
@@ -756,7 +754,7 @@
 
 				<!-- Service card grid -->
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each group.services as service}
+					{#each group.services as service (service.id)}
 						<!-- Service card -->
 						<div
 							class="group/card card-elevated rounded-lg border border-t-2 {categoryBorderColor(
@@ -892,7 +890,7 @@
 
 								{#if serviceContent[service.id]?.length > 0}
 									<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-										{#each serviceContent[service.id] as content}
+										{#each serviceContent[service.id] as content (content.id)}
 											<div
 												class="group rounded border border-border-subtle px-3 py-2.5 bg-surface-subtle hover:border-border transition-colors cursor-pointer"
 												role="button"
@@ -958,7 +956,7 @@
 
 								<!-- Content type checklist -->
 								<div class="mt-3 flex flex-wrap gap-1.5">
-									{#each contentTypes as ct}
+									{#each contentTypes as ct (ct.value)}
 										{@const exists = serviceContent[service.id]?.some(
 											(c) => c.content_type === ct.value
 										)}

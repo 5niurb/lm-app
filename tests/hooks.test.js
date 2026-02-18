@@ -3,7 +3,7 @@
  * Verifies the build guard and other hooks work correctly.
  */
 import { describe, it, expect } from 'vitest';
-import { execSync, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import { resolve } from 'path';
 import { writeFileSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';

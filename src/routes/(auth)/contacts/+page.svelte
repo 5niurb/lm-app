@@ -1,5 +1,4 @@
 <script>
-	import * as Card from '$lib/components/ui/card/index.ts';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Input } from '$lib/components/ui/input/index.ts';
 	import { Badge } from '$lib/components/ui/badge/index.ts';
@@ -8,7 +7,6 @@
 		Users,
 		Search,
 		Phone,
-		Mail,
 		ChevronLeft,
 		ChevronRight,
 		Tag,
@@ -20,6 +18,7 @@
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
+	import { resolve } from '$app/paths';
 
 	let search = $state('');
 	let contacts = $state(null);
@@ -231,7 +230,7 @@
 					style="font-family: 'Playfair Display', serif;">{stats.total}</span
 				>
 			</button>
-			{#each Object.entries(tagConfig) as [key, config]}
+			{#each Object.entries(tagConfig) as [key, config] (key)}
 				{#if stats.byTag?.[key]}
 					<button
 						class="group rounded border px-4 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 {tagFilter ===
@@ -280,7 +279,7 @@
 		<div class="p-5">
 			{#if contacts === null}
 				<div class="space-y-3">
-					{#each Array(8) as _}
+					{#each Array(8) as _, i (i)}
 						<Skeleton class="h-14 w-full" />
 					{/each}
 				</div>
@@ -309,7 +308,7 @@
 				</div>
 			{:else}
 				<div class="list-enter">
-					{#each contacts as contact, i}
+					{#each contacts as contact, i (contact.id)}
 						<div
 							class="group rounded-md border transition-all duration-200 hover:bg-gold-glow hover:border-border {expandedId ===
 								contact.id && drawerOpen
@@ -343,7 +342,7 @@
 											class="flex items-center gap-1.5 shrink-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100"
 										>
 											<a
-												href="/softphone?call={encodeURIComponent(contact.phone)}"
+												href={resolve(`/softphone?call=${encodeURIComponent(contact.phone)}`)}
 												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-emerald-500/40 text-emerald-400/60 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
 												title="Call {contact.full_name || 'contact'}"
 												onclick={(e) => e.stopPropagation()}
@@ -351,9 +350,7 @@
 												<PhoneOutgoing class="h-4 w-4" />
 											</a>
 											<a
-												href="/messages?phone={encodeURIComponent(contact.phone)}{contact.full_name
-													? '&name=' + encodeURIComponent(contact.full_name)
-													: ''}&new=true"
+												href={resolve(`/messages?phone=${encodeURIComponent(contact.phone)}${contact.full_name ? '&name=' + encodeURIComponent(contact.full_name) : ''}&new=true`)}
 												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-blue-500/40 text-blue-400/60 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 												title="Message {contact.full_name || 'contact'}"
 												onclick={(e) => e.stopPropagation()}
@@ -365,7 +362,7 @@
 								</div>
 								<div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap justify-end">
 									{#if contact.tags && contact.tags.length > 0}
-										{#each contact.tags as tag}
+										{#each contact.tags as tag (tag)}
 											<span
 												class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium {getTagClasses(
 													tag
@@ -471,18 +468,14 @@
 			{#if expandedContact?.phone}
 				<div class="flex items-center gap-2 mt-3">
 					<a
-						href="/softphone?call={encodeURIComponent(expandedContact.phone)}"
+						href={resolve(`/softphone?call=${encodeURIComponent(expandedContact.phone)}`)}
 						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 transition-all text-sm font-medium"
 					>
 						<PhoneOutgoing class="h-4 w-4" />
 						Call
 					</a>
 					<a
-						href="/messages?phone={encodeURIComponent(
-							expandedContact.phone
-						)}{expandedContact.full_name
-							? '&name=' + encodeURIComponent(expandedContact.full_name)
-							: ''}&new=true"
+						href={resolve(`/messages?phone=${encodeURIComponent(expandedContact.phone)}${expandedContact.full_name ? '&name=' + encodeURIComponent(expandedContact.full_name) : ''}&new=true`)}
 						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-blue-500/40 text-blue-400 hover:bg-blue-500/15 hover:border-blue-400 transition-all text-sm font-medium"
 					>
 						<MessageSquare class="h-4 w-4" />
@@ -503,7 +496,7 @@
 						<Tag class="h-3.5 w-3.5" /> Tags
 					</p>
 					<div class="flex flex-wrap items-center gap-1.5">
-						{#each expandedContact.tags || [] as tag}
+						{#each expandedContact.tags || [] as tag (tag)}
 							<span
 								class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium {getTagClasses(
 									tag
@@ -659,7 +652,7 @@
 					</p>
 					{#if expandedContact.recent_calls && expandedContact.recent_calls.length > 0}
 						<div class="space-y-1.5">
-							{#each expandedContact.recent_calls.slice(0, 5) as call}
+							{#each expandedContact.recent_calls.slice(0, 5) as call (call.id)}
 								<div
 									class="flex items-center justify-between text-sm bg-gold-glow rounded-md px-3 py-2 border border-border"
 								>
@@ -689,7 +682,7 @@
 							<FileText class="h-3.5 w-3.5" /> Website Inquiries
 						</p>
 						<div class="space-y-2">
-							{#each expandedContact.form_submissions as sub}
+							{#each expandedContact.form_submissions as sub (sub.id)}
 								<div class="bg-gold-glow rounded-md px-3 py-2.5 border border-border">
 									<div class="flex items-center justify-between mb-1">
 										<div class="flex items-center gap-2">
@@ -738,7 +731,7 @@
 							<div
 								class="grid gap-1.5 text-xs bg-gold-glow rounded-md p-3 mt-2 border border-border"
 							>
-								{#each Object.entries(expandedContact.metadata) as [key, val]}
+								{#each Object.entries(expandedContact.metadata) as [key, val] (key)}
 									<div class="flex gap-2">
 										<span class="font-medium capitalize whitespace-nowrap text-text-secondary"
 											>{key.replace(/_/g, ' ')}:</span

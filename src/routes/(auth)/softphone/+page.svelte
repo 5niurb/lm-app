@@ -1,9 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import * as Card from '$lib/components/ui/card/index.ts';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Input } from '$lib/components/ui/input/index.ts';
-	import { Badge } from '$lib/components/ui/badge/index.ts';
 	import {
 		Phone,
 		PhoneOff,
@@ -62,7 +60,7 @@
 	/** @type {AudioContext|null} */
 	let audioCtx = null;
 	/** @type {OscillatorNode|null} */
-	let ringOscillator = null;
+	let _ringOscillator = null;
 	/** @type {any} Ring interval */
 	let ringInterval = null;
 
@@ -678,8 +676,8 @@
 					</div>
 
 					<div class="grid grid-cols-3 gap-3 px-4">
-						{#each dialPad as row}
-							{#each row as digit}
+						{#each dialPad as row, rowIdx (rowIdx)}
+							{#each row as digit (digit)}
 								<button
 									class="dial-btn h-16 w-16 mx-auto rounded-full bg-gold-glow border border-border hover:bg-gold-glow hover:border-border text-xl font-light transition-all duration-150 text-text-primary"
 									style="font-family: 'Playfair Display', serif;"
@@ -739,7 +737,7 @@
 					</div>
 				{:else}
 					<div class="space-y-2 max-h-[400px] overflow-y-auto">
-						{#each callHistory as entry}
+						{#each callHistory as entry, entryIdx (entryIdx)}
 							<div
 								class="flex items-center gap-3 rounded-md border border-border p-3 transition-all duration-200 hover:bg-gold-glow"
 							>
