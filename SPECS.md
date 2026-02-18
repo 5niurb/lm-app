@@ -2,7 +2,7 @@
 
 > **Auto-maintained by Claude.** Updated after each feature, design change, or component implementation.
 > Detailed enough to rebuild the entire platform from scratch.
-> Last updated: Session 25–26 (2026-02-15)
+> Last updated: Session 32 (2026-02-17)
 
 ---
 
@@ -29,31 +29,71 @@
 
 ## Design System
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| Background | `#0a0a0c` | Page backgrounds, cards |
-| Surface | `rgba(255,255,255,0.03)` | Card backgrounds, inputs |
-| Border | `rgba(255,255,255,0.06)` | Dividers, card edges |
-| Gold primary | `#c5a55a` | Accents, links, highlights |
-| Gold hover | `#d4af37` | Hover states |
-| Gold muted | `rgba(197,165,90,0.5)` | Secondary text, labels |
-| Text primary | `white` | Headings |
-| Text secondary | `rgba(255,255,255,0.6)` | Body text |
-| Text muted | `rgba(255,255,255,0.3)` | Captions, timestamps |
-| Heading font | Playfair Display (300–600) | h1–h3, branding |
-| Body font | Inter (300–500) | Body, UI, labels |
-| Success | `#4ade80` | Status badges, checkmarks |
-| Error | `#ef4444` / `#f87171` | Error text, alerts |
-| Warning | `#fbbf24` | Warning indicators |
+### Multi-Theme Architecture
 
-**Global CSS classes** (`src/app.css`):
+Three themes defined in `src/app.css` via CSS custom properties. All pages use semantic tokens — **zero hardcoded rgba/hex color values** in page files.
+
+| Theme | Class | Description |
+|-------|-------|-------------|
+| Midnight | `:root` (default) | Deep black + warm gold. Production default. |
+| Dusk | `.theme-dusk` | Soft navy + rose gold. Warmer, softer feel. |
+| Champagne | `.theme-champagne` | Light cream + muted gold. Light-mode option. |
+
+Theme is toggled via `<html class="theme-dusk">` etc. Stored in localStorage.
+
+### Semantic Design Tokens
+
+| CSS Variable | Tailwind Class | Midnight Value | Usage |
+|-------------|---------------|----------------|-------|
+| `--background` | `bg-background` | `#0a0a0c` | Page backgrounds |
+| `--card` | `bg-card` | `#111113` | Cards, modals, panels |
+| `--gold` | `text-gold` / `bg-gold` | `#c5a55a` | Primary accent, buttons, links |
+| `--gold-dim` | `text-gold-dim` | `rgba(197,165,90,0.5)` | Muted gold labels, secondary accents |
+| `--gold-glow` | `bg-gold-glow` | `rgba(197,165,90,0.04)` | Subtle radial glows, hover tints |
+| `--primary-foreground` | `text-primary-foreground` | `#1A1A1A` | Dark text on gold backgrounds |
+| `--text-primary` | `text-text-primary` | `rgba(255,255,255,0.92)` | Headings, primary content |
+| `--text-secondary` | `text-text-secondary` | `rgba(255,255,255,0.6)` | Body text, descriptions |
+| `--text-tertiary` | `text-text-tertiary` | `rgba(255,255,255,0.35)` | Captions, timestamps, labels |
+| `--text-ghost` | `text-text-ghost` | `rgba(255,255,255,0.15)` | Decorative text, ornaments |
+| `--surface-subtle` | `bg-surface-subtle` | `rgba(255,255,255,0.03)` | Input backgrounds, subtle fills |
+| `--surface-raised` | `bg-surface-raised` | `rgba(255,255,255,0.15)` | Raised elements, active states |
+| `--border` | `border-border` | `rgba(197,165,90,0.12)` | Gold-tinted borders (default) |
+| `--border-subtle` | `border-border-subtle` | `rgba(197,165,90,0.06)` | Very subtle gold borders |
+| `--border-default` | `border-border-default` | `rgba(255,255,255,0.08)` | Neutral white borders |
+| `--success` | — | `#4ade80` | Status badges, checkmarks |
+| `--error` | — | `#ef4444` | Error text, alerts |
+| `--warning` | — | `#fbbf24` | Warning indicators |
+
+### Token Mapping (Tailwind v4)
+
+Tokens are mapped in `src/app.css` via `@theme inline` block:
+```css
+@theme inline {
+  --color-gold: var(--gold);
+  --color-gold-dim: var(--gold-dim);
+  --color-gold-glow: var(--gold-glow);
+  --color-text-primary: var(--text-primary);
+  /* ... etc */
+}
+```
+
+### Global CSS Classes (`src/app.css`)
 - `.card-elevated` — gradient surface + shadow + gold border
 - `.noise-texture` — subtle noise overlay via SVG data URI
 - `.page-enter` — fade-up animation (translateY 10px → 0, 0.3s)
 - `.empty-state-icon` — gold glow container for empty state icons
 
-**Typography hierarchy:**
+### Typography
+| Font | Weight Range | Usage |
+|------|-------------|-------|
+| Playfair Display | 300–600 | h1–h3, branding, logo |
+| Inter | 300–500 | Body, UI, labels |
+
 - h1: `font-weight: 300` (light), h2: `400` (regular), h3: `500` (medium)
+
+### Design Decision Log
+- **Session 30 (2026-02-16):** Implemented multi-theme system with CSS custom properties. Three themes: Midnight (default), Dusk, Champagne.
+- **Session 31–32 (2026-02-16–17):** Migrated all 10 page files from hardcoded rgba/hex values to semantic tokens. Zero hardcoded color values remain in any page file. Build verified clean.
 
 ---
 
