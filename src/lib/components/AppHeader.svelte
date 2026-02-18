@@ -12,6 +12,9 @@
 	import { api } from '$lib/api/client.js';
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
+	/** @type {{ onOpenCommandPalette?: () => void }} */
+	let { onOpenCommandPalette } = $props();
+
 	let clinicOpen = $state(null);
 	let nextChange = $state('');
 
@@ -189,9 +192,7 @@
 		variant="ghost"
 		size="sm"
 		class="h-8 gap-1.5 text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.6)] hidden sm:flex"
-		onclick={() => {
-			/* TODO: wire up global search modal */
-		}}
+		onclick={() => onOpenCommandPalette?.()}
 	>
 		<Search class="h-3.5 w-3.5" />
 		<span class="text-xs">Search</span>

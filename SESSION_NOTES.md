@@ -1,3 +1,48 @@
+## Session — 2026-02-18 (Session 33)
+**Focus:** ESLint cleanup + Appointments/Schedule page from Google Calendar
+
+**Accomplished:**
+- **Fixed 120 ESLint warnings** across 22 files (unused imports, missing {#each} keys, goto without resolve). Committed as `60da163`.
+- **Built full Appointments feature** — read-only schedule from Google Calendar (AR syncs appointments → GCal → our app):
+  - `api/services/google-calendar.js` — JWT auth, event fetching, AR event title parsing, 5-min TTL cache
+  - `api/routes/appointments.js` — GET /, /today, /stats with verifyToken + logAction middleware
+  - `src/routes/(auth)/appointments/+page.svelte` — Day view (time grid 9AM–7PM, 30-min slots), Week view (7-column grid), detail drawer, date navigation, current-time gold indicator
+  - Sidebar: "Schedule" with CalendarDays icon in Operations group
+  - Dashboard: "Today's Schedule" widget showing next 5 upcoming appointments
+  - Formatter utilities: formatTime, formatDateHeader, getDurationMinutes
+
+**Diagram:**
+```
+┌──────────────────┐  one-way sync   ┌──────────────────┐  Google Calendar API   ┌───────────────┐
+│ Aesthetic Record │ ──────────────► │ Google Calendar   │ ◄───────────────────── │ lm-app API    │
+│ (EMR / booking)  │                 │ (accounts@lem...) │    JWT service acct     │ /appointments │
+└──────────────────┘                 └──────────────────┘                         └───────┬───────┘
+                                                                                          │
+                                                                                    ┌─────▼─────┐
+                                                                                    │ Schedule   │
+                                                                                    │ page + dash│
+                                                                                    │ widget     │
+                                                                                    └───────────┘
+```
+
+**Current State:**
+- Build passes clean, ESLint 0 warnings on new code
+- Committed `24c4605` and pushed to GitHub
+- Feature needs GCP service account setup before it can fetch real data (one-time manual step)
+
+**Issues:**
+- Env vars not yet set: `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`, `GOOGLE_CALENDAR_ID`
+- 13 ESLint warnings in untracked `design-test/` page (pre-existing, not part of this work)
+
+**Next Steps:**
+- One-time GCP setup: create service account, share AR calendar, set env vars in Render + .env
+- Deploy frontend to Cloudflare Pages
+- Deploy API (auto-deploys on push to Render)
+- Visual verification once GCal credentials are configured
+- Cmd+K command palette, consent form testing, Studio flow deployment
+
+---
+
 ## Session — 2026-02-17 (Session 32)
 **Focus:** Complete theme token migration — all hardcoded rgba/hex colors → semantic CSS variables
 

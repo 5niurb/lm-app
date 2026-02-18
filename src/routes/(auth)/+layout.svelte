@@ -6,6 +6,10 @@
 	import { SidebarProvider, SidebarInset } from '$lib/components/ui/sidebar/index.ts';
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
+	import CommandPalette from '$lib/components/CommandPalette.svelte';
+
+	/** @type {import('$lib/components/CommandPalette.svelte').default|null} */
+	let commandPalette = $state(null);
 
 	let { children } = $props();
 
@@ -26,10 +30,11 @@
 	<SidebarProvider>
 		<AppSidebar />
 		<SidebarInset>
-			<AppHeader />
+			<AppHeader onOpenCommandPalette={() => commandPalette?.show()} />
 			<main class="flex-1 p-6 page-enter relative">
 				{@render children()}
 			</main>
 		</SidebarInset>
 	</SidebarProvider>
+	<CommandPalette bind:this={commandPalette} />
 {/if}
