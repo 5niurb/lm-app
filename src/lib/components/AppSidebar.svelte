@@ -10,7 +10,8 @@
 		Users,
 		Settings,
 		Sparkles,
-		Zap
+		Zap,
+		CalendarDays
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 
@@ -27,6 +28,7 @@
 		{
 			label: 'Operations',
 			items: [
+				{ href: '/appointments', label: 'Schedule', icon: CalendarDays },
 				{ href: '/contacts', label: 'Contacts', icon: Users },
 				{ href: '/services', label: 'Services', icon: Sparkles },
 				{ href: '/automation', label: 'Automation', icon: Zap }

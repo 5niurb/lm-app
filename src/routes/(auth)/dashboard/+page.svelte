@@ -9,6 +9,7 @@
 		PhoneOutgoing,
 		MessageSquare,
 		ArrowRight,
+		CalendarDays,
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
@@ -19,6 +20,8 @@
 	let dailyStats = $state(null);
 	let businessHours = $state(null);
 	let messageStats = $state(null);
+	let upcomingAppointments = $state(null);
+	let appointmentCount = $state(0);
 	let error = $state('');
 
 	$effect(() => {
@@ -44,6 +47,18 @@
 				messageStats = msgRes;
 			} catch {
 				messageStats = null;
+			}
+
+			// Try to load today's appointments from Google Calendar
+			try {
+				const apptRes = await api('/api/appointments/today');
+				const now = new Date();
+				appointmentCount = apptRes.count || 0;
+				upcomingAppointments = (apptRes.data || [])
+					.filter((a) => new Date(a.start) > now)
+					.slice(0, 5);
+			} catch {
+				upcomingAppointments = null;
 			}
 		} catch (e) {
 			error = e.message;
@@ -516,6 +531,60 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Today's Schedule -->
+	{#if upcomingAppointments !== null}
+		<div class="rounded border border-border overflow-hidden">
+			<div class="px-5 py-4 border-b border-border flex items-center justify-between">
+				<div>
+					<h2 class="text-base tracking-wide">Today's Schedule</h2>
+					<p class="text-xs text-muted-foreground mt-0.5">
+						{appointmentCount} appointment{appointmentCount !== 1 ? 's' : ''} today
+					</p>
+				</div>
+				<a
+					href={resolve('/appointments')}
+					class="text-xs text-gold hover:text-gold/80 transition-colors flex items-center gap-1"
+				>
+					View all <ArrowRight class="h-3 w-3" />
+				</a>
+			</div>
+			<div class="divide-y divide-border-subtle">
+				{#if upcomingAppointments.length > 0}
+					{#each upcomingAppointments as appt (appt.id)}
+						<div class="px-5 py-3 flex items-center gap-4">
+							<div class="text-right min-w-[50px]">
+								<span class="text-sm text-gold font-medium">
+									{new Date(appt.start).toLocaleTimeString('en-US', {
+										hour: 'numeric',
+										minute: '2-digit',
+										hour12: true,
+									})}
+								</span>
+							</div>
+							<div class="flex-1 min-w-0">
+								<p class="text-sm text-text-primary truncate">
+									{appt.patient_name || appt.title}
+								</p>
+								{#if appt.service}
+									<p class="text-xs text-text-tertiary truncate">{appt.service}</p>
+								{/if}
+							</div>
+						</div>
+					{/each}
+				{:else}
+					<div class="px-5 py-6 text-center">
+						<div
+							class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gold-glow border border-border"
+						>
+							<CalendarDays class="h-4 w-4 empty-state-icon" />
+						</div>
+						<p class="text-sm text-text-tertiary">No more appointments today</p>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
 
 	<!-- Recent Calls -->
 	<div class="rounded border border-border overflow-hidden">

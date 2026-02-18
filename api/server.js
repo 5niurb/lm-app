@@ -88,6 +88,7 @@ import serviceRoutes from './routes/services.js';
 import automationRoutes from './routes/automation.js';
 import twilioHistoryRoutes from './routes/twilio-history.js';
 import syncRoutes from './routes/sync.js';
+import appointmentRoutes from './routes/appointments.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/calls', callRoutes);
@@ -97,6 +98,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/automation', automationRoutes);
+app.use('/api/appointments', appointmentRoutes);
 app.use('/api/twilio-history', twilioHistoryRoutes);
 app.use('/api/sync', syncRoutes);
 

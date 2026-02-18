@@ -61,3 +61,40 @@ export function formatDate(date) {
 		minute: '2-digit'
 	});
 }
+
+/**
+ * Format a time for appointment display (e.g. "10:30 AM")
+ * @param {string | Date} dateTime
+ * @returns {string}
+ */
+export function formatTime(dateTime) {
+	return new Date(dateTime).toLocaleTimeString('en-US', {
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true,
+	});
+}
+
+/**
+ * Format a date for the appointments page header (e.g. "Tuesday, February 18")
+ * @param {string} dateStr - YYYY-MM-DD
+ * @returns {string}
+ */
+export function formatDateHeader(dateStr) {
+	const d = new Date(dateStr + 'T12:00:00');
+	return d.toLocaleDateString('en-US', {
+		weekday: 'long',
+		month: 'long',
+		day: 'numeric',
+	});
+}
+
+/**
+ * Calculate duration in minutes between two datetime strings
+ * @param {string} start
+ * @param {string} end
+ * @returns {number}
+ */
+export function getDurationMinutes(start, end) {
+	return Math.round((new Date(end) - new Date(start)) / 60000);
+}
