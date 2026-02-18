@@ -418,13 +418,9 @@
 			class="fixed inset-0 z-40 bg-black/70 flex items-start justify-center pt-12 overflow-y-auto"
 			role="dialog"
 		>
-			<div
-				class="w-full max-w-3xl mx-4 mb-12 rounded-lg border border-border bg-card shadow-2xl"
-			>
+			<div class="w-full max-w-3xl mx-4 mb-12 rounded-lg border border-border bg-card shadow-2xl">
 				<!-- Editor header -->
-				<div
-					class="flex items-center justify-between px-6 py-4 border-b border-border-subtle"
-				>
+				<div class="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
 					<div>
 						<h2 class="text-base tracking-wide">
 							{editingContent ? 'Edit Content' : 'New Content'}
@@ -445,8 +441,7 @@
 					<!-- Meta fields -->
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label
-								class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
+							<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 								>Content Type *</label
 							>
 							<select
@@ -460,8 +455,7 @@
 							</select>
 						</div>
 						<div>
-							<label
-								class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
+							<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 								>Title *</label
 							>
 							<input
@@ -474,9 +468,7 @@
 					</div>
 
 					<div>
-						<label
-							class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
-						>
+						<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block">
 							SMS/Email Summary
 							<span class="normal-case tracking-normal text-text-ghost"
 								>— 2-3 sentences sent in messages, links to full page</span
@@ -492,12 +484,9 @@
 
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
-							<label
-								class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
-							>
+							<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block">
 								Page Slug
-								<span class="normal-case tracking-normal text-text-ghost"
-									>— lemedspa.com/care/</span
+								<span class="normal-case tracking-normal text-text-ghost">— lemedspa.com/care/</span
 								>
 							</label>
 							<input
@@ -534,13 +523,9 @@
 
 						<div class="space-y-3">
 							{#each cSections as section, idx}
-								<div
-									class="rounded border border-border-subtle bg-surface-subtle p-4"
-								>
+								<div class="rounded border border-border-subtle bg-surface-subtle p-4">
 									<div class="flex items-center gap-2 mb-2">
-										<span class="text-[10px] text-text-ghost w-5 text-center"
-											>{idx + 1}</span
-										>
+										<span class="text-[10px] text-text-ghost w-5 text-center">{idx + 1}</span>
 
 										<input
 											type="text"
@@ -590,9 +575,7 @@
 				</div>
 
 				<!-- Editor footer -->
-				<div
-					class="flex items-center justify-between px-6 py-4 border-t border-border-subtle"
-				>
+				<div class="flex items-center justify-between px-6 py-4 border-t border-border-subtle">
 					<div class="text-xs text-text-ghost">
 						{cSections.filter((s) => s.heading.trim() || s.body.trim()).length} section{cSections.filter(
 							(s) => s.heading.trim() || s.body.trim()
@@ -622,9 +605,7 @@
 
 	<!-- ========== SERVICE FORM ========== -->
 	{#if showForm}
-		<div
-			class="rounded border border-border bg-gold-glow p-6 space-y-4"
-		>
+		<div class="rounded border border-border bg-gold-glow p-6 space-y-4">
 			<div class="flex items-center justify-between">
 				<h2 class="text-base tracking-wide">{editingService ? 'Edit Service' : 'New Service'}</h2>
 				<button
@@ -670,8 +651,7 @@
 				</div>
 				<div class="flex gap-4">
 					<div class="flex-1">
-						<label
-							class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
+						<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 							>Duration (min)</label
 						>
 						<input
@@ -682,8 +662,7 @@
 						/>
 					</div>
 					<div class="flex-1">
-						<label
-							class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
+						<label class="text-xs uppercase tracking-[0.12em] text-text-tertiary mb-1 block"
 							>Price From ($)</label
 						>
 						<input
@@ -820,9 +799,7 @@
 
 								<!-- Description -->
 								{#if service.description}
-									<p
-										class="text-xs text-text-tertiary line-clamp-2 leading-relaxed mb-4"
-									>
+									<p class="text-xs text-text-tertiary line-clamp-2 leading-relaxed mb-4">
 										{service.description}
 									</p>
 								{:else}
@@ -833,9 +810,7 @@
 								<div class="flex-1"></div>
 
 								<!-- Footer: duration + price -->
-								<div
-									class="flex items-center justify-between pt-3 border-t border-border-subtle"
-								>
+								<div class="flex items-center justify-between pt-3 border-t border-border-subtle">
 									<div class="flex items-center gap-4">
 										{#if service.duration_min}
 											<span class="flex items-center gap-1.5 text-xs text-text-tertiary">
@@ -851,9 +826,7 @@
 										{/if}
 									</div>
 									<!-- Expand indicator -->
-									<div
-										class="text-text-ghost group-hover/card:text-gold transition-colors"
-									>
+									<div class="text-text-ghost group-hover/card:text-gold transition-colors">
 										{#if expandedId === service.id}
 											<ChevronDown class="h-4 w-4" />
 										{:else}
@@ -894,9 +867,7 @@
 
 						<!-- Expanded content blocks (full-width row below the card) -->
 						{#if expandedId === service.id}
-							<div
-								class="col-span-full rounded-lg border border-border bg-card/95 p-5"
-							>
+							<div class="col-span-full rounded-lg border border-border bg-card/95 p-5">
 								<div class="flex items-center justify-between mb-4">
 									<div class="flex items-center gap-3">
 										<h3
@@ -955,9 +926,7 @@
 													<span class="text-[10px] {contentTypeColor(content.content_type)}"
 														>{contentTypeLabel(content.content_type)}</span
 													>
-													<span class="text-[10px] text-text-ghost"
-														>v{content.version}</span
-													>
+													<span class="text-[10px] text-text-ghost">v{content.version}</span>
 													{#if Array.isArray(content.content_json)}
 														<span class="text-[10px] text-text-ghost"
 															>{content.content_json.length} section{content.content_json.length !==

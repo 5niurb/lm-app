@@ -523,8 +523,7 @@
 				</div>
 			</div>
 			<div class="rounded border border-border bg-gold-glow p-4">
-				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
-					>Delivery Rate</span
+				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary">Delivery Rate</span
 				>
 				<div
 					class="text-2xl font-light text-text-primary mt-1"
@@ -534,9 +533,7 @@
 				</div>
 			</div>
 			<div class="rounded border border-border bg-gold-glow p-4">
-				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
-					>Open Rate</span
-				>
+				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary">Open Rate</span>
 				<div
 					class="text-2xl font-light text-text-primary mt-1"
 					style="font-family: 'Playfair Display', serif;"
@@ -545,13 +542,9 @@
 				</div>
 			</div>
 			<div class="rounded border border-border bg-gold-glow p-4">
-				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
-					>Failed</span
-				>
+				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary">Failed</span>
 				<div
-					class="text-2xl font-light {stats.failed > 0
-						? 'text-red-400'
-						: 'text-text-primary'} mt-1"
+					class="text-2xl font-light {stats.failed > 0 ? 'text-red-400' : 'text-text-primary'} mt-1"
 					style="font-family: 'Playfair Display', serif;"
 				>
 					{stats.failed}
@@ -588,9 +581,7 @@
 
 	<!-- Sequence Form -->
 	{#if showForm}
-		<div
-			class="rounded border border-border bg-gold-glow p-6 space-y-4"
-		>
+		<div class="rounded border border-border bg-gold-glow p-6 space-y-4">
 			<div class="flex items-center justify-between">
 				<h2 class="text-base tracking-wide">{editingSeq ? 'Edit Sequence' : 'New Sequence'}</h2>
 				<button
@@ -836,9 +827,8 @@
 									<div class="flex-1 min-w-0">
 										<div class="flex items-center gap-2 flex-wrap">
 											<span
-												class="text-sm {seq.is_active
-													? 'text-text-primary'
-													: 'text-text-tertiary'}">{seq.name}</span
+												class="text-sm {seq.is_active ? 'text-text-primary' : 'text-text-tertiary'}"
+												>{seq.name}</span
 											>
 											{#if seq.service?.name}
 												<span
@@ -967,17 +957,11 @@
 						</thead>
 						<tbody>
 							{#each logEntries as entry}
-								<tr
-									class="border-b border-border-subtle hover:bg-gold-glow transition-colors"
-								>
+								<tr class="border-b border-border-subtle hover:bg-gold-glow transition-colors">
 									<td class="px-4 py-2.5">
-										<span class="text-text-secondary"
-											>{entry.client?.full_name || '—'}</span
-										>
+										<span class="text-text-secondary">{entry.client?.full_name || '—'}</span>
 										{#if entry.client?.phone}
-											<span class="text-[10px] text-text-ghost ml-1"
-												>{entry.client.phone}</span
-											>
+											<span class="text-[10px] text-text-ghost ml-1">{entry.client.phone}</span>
 										{/if}
 									</td>
 									<td class="px-4 py-2.5 text-text-secondary">
@@ -1047,9 +1031,7 @@
 				if (e.target === e.currentTarget) showTestSend = false;
 			}}
 		>
-			<div
-				class="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-2xl space-y-4"
-			>
+			<div class="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-2xl space-y-4">
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2">
 						<Send class="h-4 w-4 text-emerald-400" />
@@ -1111,9 +1093,7 @@
 									class="w-full text-left px-3 py-2 text-sm hover:bg-gold-glow transition-colors flex items-center justify-between"
 								>
 									<span class="text-text-secondary">{c.full_name || 'Unknown'}</span>
-									<span class="text-[10px] text-text-ghost"
-										>{c.phone || c.email || ''}</span
-									>
+									<span class="text-[10px] text-text-ghost">{c.phone || c.email || ''}</span>
 								</button>
 							{/each}
 						</div>

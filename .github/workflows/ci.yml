@@ -32,7 +32,7 @@ jobs:
 
       - name: Build
         env:
-          PUBLIC_API_URL: https://lm-app-api.onrender.com
+          PUBLIC_API_URL: https://api.lemedspa.app
           PUBLIC_SUPABASE_URL: https://skvsjcckissnyxcafwyr.supabase.co
           PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrdnNqY2NraXNzbnl4Y2Fmd3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MjU0NjksImV4cCI6MjA4NjAwMTQ2OX0.1M3iIC6eOgEwxliGKB4zSYRbWmf1_82RhW1Vg8PMyCA
         run: npm run build
@@ -43,4 +43,4 @@ jobs:
       - name: API integration tests
         run: npm run test:api
         env:
-          API_URL: https://lm-app-api.onrender.com
+          API_URL: https://api.lemedspa.app

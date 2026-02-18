@@ -399,9 +399,7 @@
 														</svg>
 													{/if}
 												</div>
-												<span class={hours ? 'text-white' : 'text-text-tertiary'}
-													>{DAYS[i]}</span
-												>
+												<span class={hours ? 'text-white' : 'text-text-tertiary'}>{DAYS[i]}</span>
 											</button>
 										</div>
 										{#if hours}
@@ -448,9 +446,7 @@
 			{:else if activeTab === 'phone'}
 				<div class="space-y-6">
 					<div class="rounded border border-border overflow-hidden">
-						<div
-							class="px-5 py-4 border-b border-border flex items-center justify-between"
-						>
+						<div class="px-5 py-4 border-b border-border flex items-center justify-between">
 							<div>
 								<h2 class="text-base tracking-wide">Phone Extensions</h2>
 								<p class="text-xs text-text-tertiary mt-0.5">
@@ -472,17 +468,13 @@
 						</div>
 						<div class="p-5">
 							{#if showExtForm}
-								<div
-									class="rounded border border-border bg-surface-subtle p-4 mb-4 space-y-4"
-								>
+								<div class="rounded border border-border bg-surface-subtle p-4 mb-4 space-y-4">
 									<h3 class="text-sm font-medium">
 										{editingExt ? 'Edit Extension' : 'New Extension'}
 									</h3>
 									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<Label class="text-xs text-text-secondary mb-1.5"
-												>Extension Number</Label
-											>
+											<Label class="text-xs text-text-secondary mb-1.5">Extension Number</Label>
 											<Input
 												bind:value={extForm.extension}
 												placeholder="100"
@@ -498,9 +490,7 @@
 											/>
 										</div>
 										<div>
-											<Label class="text-xs text-text-secondary mb-1.5"
-												>Ring Timeout (sec)</Label
-											>
+											<Label class="text-xs text-text-secondary mb-1.5">Ring Timeout (sec)</Label>
 											<Input
 												type="number"
 												bind:value={extForm.ring_timeout}
@@ -571,17 +561,12 @@
 											class="flex items-center justify-between py-3 px-4 rounded bg-surface-subtle border border-border-subtle"
 										>
 											<div class="flex items-center gap-4">
-												<span class="text-gold font-mono font-medium">Ext {ext.extension}</span
-												>
+												<span class="text-gold font-mono font-medium">Ext {ext.extension}</span>
 												{#if ext.user?.full_name}
-													<span class="text-sm text-text-secondary"
-														>{ext.user.full_name}</span
-													>
+													<span class="text-sm text-text-secondary">{ext.user.full_name}</span>
 												{/if}
 												{#if ext.forward_number}
-													<span class="text-xs text-text-tertiary"
-														>→ {ext.forward_number}</span
-													>
+													<span class="text-xs text-text-tertiary">→ {ext.forward_number}</span>
 												{/if}
 											</div>
 											<div class="flex items-center gap-3">
@@ -592,9 +577,7 @@
 												>
 													{ext.voicemail_enabled ? 'VM on' : 'VM off'}
 												</span>
-												<span class="text-xs text-text-tertiary"
-													>{ext.ring_timeout}s ring</span
-												>
+												<span class="text-xs text-text-tertiary">{ext.ring_timeout}s ring</span>
 												<button
 													onclick={() => startEditExt(ext)}
 													class="text-xs text-text-tertiary hover:text-white cursor-pointer"
@@ -618,9 +601,7 @@
 			{:else if activeTab === 'routing'}
 				<div class="space-y-6">
 					<div class="rounded border border-border overflow-hidden">
-						<div
-							class="px-5 py-4 border-b border-border flex items-center justify-between"
-						>
+						<div class="px-5 py-4 border-b border-border flex items-center justify-between">
 							<div>
 								<h2 class="text-base tracking-wide">Call Routing Rules</h2>
 								<p class="text-xs text-text-tertiary mt-0.5">
@@ -643,9 +624,7 @@
 						</div>
 						<div class="p-5">
 							{#if showRuleForm}
-								<div
-									class="rounded border border-border bg-surface-subtle p-4 mb-4 space-y-4"
-								>
+								<div class="rounded border border-border bg-surface-subtle p-4 mb-4 space-y-4">
 									<h3 class="text-sm font-medium">
 										{editingRule ? 'Edit Rule' : 'New Routing Rule'}
 									</h3>
@@ -742,9 +721,7 @@
 
 									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<Label class="text-xs text-text-secondary mb-1.5"
-												>Fallback Action</Label
-											>
+											<Label class="text-xs text-text-secondary mb-1.5">Fallback Action</Label>
 											<select
 												bind:value={ruleForm.fallback_action}
 												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
@@ -819,9 +796,7 @@
 											class="flex items-center justify-between py-3 px-4 rounded bg-surface-subtle border border-border-subtle"
 										>
 											<div class="flex items-center gap-4">
-												<span class="text-xs font-mono text-text-tertiary"
-													>#{rule.priority}</span
-												>
+												<span class="text-xs font-mono text-text-tertiary">#{rule.priority}</span>
 												<span
 													class="text-sm {rule.is_active
 														? 'text-white'
@@ -842,9 +817,7 @@
 														rule.action_type}</span
 												>
 												{#if rule.action_target}
-													<span class="text-xs text-text-tertiary"
-														>→ {rule.action_target}</span
-													>
+													<span class="text-xs text-text-tertiary">→ {rule.action_target}</span>
 												{/if}
 												<button
 													onclick={() => toggleRuleActive(rule)}
@@ -934,9 +907,7 @@
 								<Separator class="bg-gold-glow" />
 								<div class="flex items-center gap-3 py-2">
 									<div class="w-2 h-2 rounded-full bg-surface-raised"></div>
-									<span class="text-sm text-text-tertiary"
-										>HIPAA BAA (Supabase Teams)</span
-									>
+									<span class="text-sm text-text-tertiary">HIPAA BAA (Supabase Teams)</span>
 									<span class="text-xs text-text-ghost ml-auto">Phase 5</span>
 								</div>
 							</div>

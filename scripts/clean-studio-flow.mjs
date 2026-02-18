@@ -46,7 +46,7 @@ if (accountsCallIdx !== -1) {
 		name: 'connect_call_accounts',
 		type: 'add-twiml-redirect',
 		properties: {
-			url: 'https://lm-app-api.onrender.com/api/twilio/connect-operator',
+			url: 'https://api.lemedspa.app/api/twilio/connect-operator',
 			method: 'POST',
 			offset: {
 				x: flow.states[accountsCallIdx].properties?.offset?.x || 1340,

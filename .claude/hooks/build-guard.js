@@ -46,7 +46,7 @@ console.error(
 	'BUILD GUARD: vite build detected without PUBLIC_API_URL set to production URL.\n' +
 		'This would bake localhost:3001 into the production bundle.\n\n' +
 		'Fix: Prefix the command with the production URL:\n' +
-		'  PUBLIC_API_URL=https://lm-app-api.onrender.com npx vite build\n\n' +
+		'  PUBLIC_API_URL=https://api.lemedspa.app npx vite build\n\n' +
 		'Or use /deploy which handles this automatically.'
 );
 process.exit(2);

@@ -12,7 +12,7 @@ const flowPath = resolve(__dirname, '..', 'twilio', 'flows', 'test-ivr.json');
 
 const flow = JSON.parse(readFileSync(flowPath, 'utf8'));
 
-const RENDER_URL = 'https://lm-app-api.onrender.com/api/twilio/connect-operator';
+const RENDER_URL = 'https://api.lemedspa.app/api/twilio/connect-operator';
 
 // 1. Replace connect_call_HighLevel with TwiML Redirect
 const idx = flow.states.findIndex((s) => s.name === 'connect_call_HighLevel');

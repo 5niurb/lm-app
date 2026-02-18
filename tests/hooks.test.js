@@ -52,7 +52,7 @@ describe('build-guard hook', () => {
 	it('allows vite build with PUBLIC_API_URL inline', () => {
 		const result = runHook(hookPath, {
 			tool_name: 'Bash',
-			tool_input: { command: 'PUBLIC_API_URL=https://lm-app-api.onrender.com npx vite build' }
+			tool_input: { command: 'PUBLIC_API_URL=https://api.lemedspa.app npx vite build' }
 		});
 		expect(result.exitCode).toBe(0);
 	});
@@ -74,7 +74,7 @@ describe('build-guard hook', () => {
 	it('allows npm run build with PUBLIC_API_URL', () => {
 		const result = runHook(hookPath, {
 			tool_name: 'Bash',
-			tool_input: { command: 'PUBLIC_API_URL=https://lm-app-api.onrender.com npm run build' }
+			tool_input: { command: 'PUBLIC_API_URL=https://api.lemedspa.app npm run build' }
 		});
 		expect(result.exitCode).toBe(0);
 	});

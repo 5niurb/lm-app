@@ -15,7 +15,7 @@ const flowPath = resolve(__dirname, '..', 'twilio', 'flows', 'test-ivr.json');
 
 const flow = JSON.parse(readFileSync(flowPath, 'utf8'));
 
-const RENDER_URL = 'https://lm-app-api.onrender.com/api/webhooks/sms/studio-send';
+const RENDER_URL = 'https://api.lemedspa.app/api/webhooks/sms/studio-send';
 
 // 1. Replace send_message_accounts with make-http-request
 const smsIdx = flow.states.findIndex((s) => s.name === 'send_message_accounts');

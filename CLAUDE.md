@@ -171,7 +171,7 @@ npm run dev          # localhost:3001 (uses --watch)
 ```bash
 # IMPORTANT: Must set PUBLIC_API_URL for production build
 # SvelteKit bakes $env/static/public vars at BUILD TIME, not runtime
-PUBLIC_API_URL=https://lm-app-api.onrender.com npx vite build
+PUBLIC_API_URL=https://api.lemedspa.app npx vite build
 npx wrangler pages deploy .svelte-kit/cloudflare --project-name lm-app --branch main --commit-dirty=true
 ```
 
@@ -185,13 +185,13 @@ npx wrangler pages deploy .svelte-kit/cloudflare --project-name lm-app --branch 
 
 1. **Build check:** Run `npx vite build` — confirm no errors
 2. **If deploying to CF Pages:** Verify the deployed bundle contains the correct API URL (not localhost)
-3. **CORS check:** After API changes, verify with: `curl -s -D - -H "Origin: https://lm-app.pages.dev" https://lm-app-api.onrender.com/api/health | grep access-control-allow-origin`
-4. **API health check:** `curl -s https://lm-app-api.onrender.com/api/health` — should return `{"status":"ok"}`
+3. **CORS check:** After API changes, verify with: `curl -s -D - -H "Origin: https://lemedspa.app" https://api.lemedspa.app/api/health | grep access-control-allow-origin`
+4. **API health check:** `curl -s https://api.lemedspa.app/api/health` — should return `{"status":"ok"}`
 5. **After Render redeploy:** Wait ~2-3 min, then re-verify CORS and health
 
 **Production URLs:**
-- Frontend: https://lm-app.pages.dev
-- API: https://lm-app-api.onrender.com
+- Frontend: https://lemedspa.app
+- API: https://api.lemedspa.app
 - Supabase: https://skvsjcckissnyxcafwyr.supabase.co
 
 **Prefer testing on the hosted site** (lm-app.pages.dev) over localhost. Localhost is only for active code changes with hot-reload.

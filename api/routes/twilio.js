@@ -199,7 +199,7 @@ router.post('/connect-operator', (req, res) => {
 	const baseUrl =
 		process.env.RENDER_EXTERNAL_URL ||
 		process.env.FRONTEND_URL_PUBLIC ||
-		'https://lm-app-api.onrender.com';
+		'https://api.lemedspa.app';
 
 	const dial = twiml.dial({
 		callerId: callerNumber,
@@ -240,7 +240,7 @@ router.post('/connect-operator-status', (req, res) => {
 	const baseUrl =
 		process.env.RENDER_EXTERNAL_URL ||
 		process.env.FRONTEND_URL_PUBLIC ||
-		'https://lm-app-api.onrender.com';
+		'https://api.lemedspa.app';
 
 	if (dialStatus === 'no-answer' || dialStatus === 'busy' || dialStatus === 'failed') {
 		twiml.say(

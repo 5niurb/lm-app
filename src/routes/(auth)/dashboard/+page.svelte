@@ -159,9 +159,7 @@
 					: 'border-border-default bg-surface-subtle'}"
 			>
 				<div
-					class="w-2 h-2 rounded-full {clinicOpen
-						? 'bg-green-400 animate-pulse'
-						: 'bg-text-ghost'}"
+					class="w-2 h-2 rounded-full {clinicOpen ? 'bg-green-400 animate-pulse' : 'bg-text-ghost'}"
 				></div>
 				<span class="text-xs {clinicOpen ? 'text-green-400' : 'text-text-tertiary'}">
 					{clinicOpen ? 'Clinic Open' : 'Closed'}
@@ -186,12 +184,8 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
-					>Total Calls</span
-				>
-				<Phone
-					class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity"
-				/>
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Total Calls</span>
+				<Phone class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity" />
 			</div>
 			{#if stats}
 				<div
@@ -238,9 +232,7 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
-					>Missed Calls</span
-				>
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Missed Calls</span>
 				<PhoneMissed
 					class="h-4 w-4 text-red-400 opacity-50 group-hover:opacity-100 transition-opacity"
 				/>
@@ -290,9 +282,7 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
-					>Voicemails</span
-				>
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Voicemails</span>
 				<Voicemail
 					class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity"
 				/>
@@ -304,9 +294,7 @@
 				>
 					{stats.unheardVoicemails}
 				</div>
-				<p class="text-[10px] uppercase tracking-[0.12em] text-gold-dim mt-1">
-					unheard
-				</p>
+				<p class="text-[10px] uppercase tracking-[0.12em] text-gold-dim mt-1">unheard</p>
 			{:else}
 				<Skeleton class="h-9 w-16" />
 			{/if}
@@ -316,12 +304,8 @@
 			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
 		>
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary"
-					>Avg Duration</span
-				>
-				<Clock
-					class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity"
-				/>
+				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Avg Duration</span>
+				<Clock class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity" />
 			</div>
 			{#if stats}
 				<div
@@ -383,9 +367,7 @@
 										{/if}
 									</div>
 								</div>
-								<span class="text-[10px] text-text-tertiary mt-1"
-									>{dayLabel(day.date)}</span
-								>
+								<span class="text-[10px] text-text-tertiary mt-1">{dayLabel(day.date)}</span>
 							</div>
 						{/each}
 					</div>
@@ -433,11 +415,8 @@
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
-						<Voicemail
-							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
-						/>
-						<span
-							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
+						<Voicemail class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors" />
+						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Voicemails</span
 						>
 					</div>
@@ -462,8 +441,7 @@
 						<MessageSquare
 							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
 						/>
-						<span
-							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
+						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Messages</span
 						>
 					</div>
@@ -485,11 +463,8 @@
 					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
 				>
 					<div class="flex items-center gap-3">
-						<Phone
-							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
-						/>
-						<span
-							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
+						<Phone class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors" />
+						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Call Log</span
 						>
 					</div>
@@ -506,8 +481,7 @@
 						<PhoneOutgoing
 							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
 						/>
-						<span
-							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
+						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Softphone</span
 						>
 					</div>
@@ -531,8 +505,7 @@
 								d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
 							/><circle cx="12" cy="12" r="3" /></svg
 						>
-						<span
-							class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
+						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Settings</span
 						>
 					</div>
@@ -546,16 +519,12 @@
 
 	<!-- Recent Calls -->
 	<div class="rounded border border-border overflow-hidden">
-		<div
-			class="px-5 py-4 border-b border-border flex items-center justify-between"
-		>
+		<div class="px-5 py-4 border-b border-border flex items-center justify-between">
 			<div>
 				<h2 class="text-base tracking-wide">Recent Calls</h2>
 				<p class="text-xs text-muted-foreground mt-0.5">Latest call activity.</p>
 			</div>
-			<a href="/calls" class="text-xs text-gold hover:text-gold transition-colors"
-				>View all →</a
-			>
+			<a href="/calls" class="text-xs text-gold hover:text-gold transition-colors">View all →</a>
 		</div>
 		<div class="p-5">
 			{#if recentCalls === null}
@@ -589,7 +558,10 @@
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
-							class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-gold-glow border border-transparent hover:border-border {i > 0 ? 'border-t border-t-border-subtle' : ''}"
+							class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-gold-glow border border-transparent hover:border-border {i >
+							0
+								? 'border-t border-t-border-subtle'
+								: ''}"
 						>
 							<div class="mt-0.5 shrink-0">
 								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
@@ -609,9 +581,7 @@
 									<div class="flex items-center gap-1.5 min-w-0">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if call.contact_id && call.caller_name}
-												<span class="text-gold text-[10px] shrink-0" title="Contact"
-													>&#9670;</span
-												>
+												<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
 												<span class="text-text-primary">{call.caller_name}</span>
 											{:else if call.caller_name}
 												<span class="text-text-secondary">{call.caller_name}</span>
@@ -649,9 +619,7 @@
 								</div>
 								<div class="mt-0.5">
 									{#if summary.type === 'voicemail'}
-										<span
-											class="text-xs text-text-tertiary italic flex items-center gap-1.5"
-										>
+										<span class="text-xs text-text-tertiary italic flex items-center gap-1.5">
 											<Voicemail class="h-3 w-3 shrink-0 text-gold-dim" />{summary.text}
 										</span>
 									{:else if summary.type === 'answered'}

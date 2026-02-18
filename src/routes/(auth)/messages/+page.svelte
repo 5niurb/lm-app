@@ -351,9 +351,7 @@
 			{/if}
 
 			{#if syncResult}
-				<div
-					class="rounded bg-gold-glow border border-border px-3 py-2"
-				>
+				<div class="rounded bg-gold-glow border border-border px-3 py-2">
 					<p class="text-[11px] text-text-secondary">
 						Synced: {syncResult.newMessages} new messages, {syncResult.newCalls} new calls
 					</p>
@@ -431,20 +429,12 @@
 									<div class="flex items-center gap-1.5">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if convo.contact_id && convo.display_name}
-												<span class="text-gold text-[10px] shrink-0" title="Contact"
-													>&#9670;</span
-												>
-												<span class="text-text-primary truncate"
-													>{convo.display_name}</span
-												>
+												<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
+												<span class="text-text-primary truncate">{convo.display_name}</span>
 											{:else if convo.display_name}
-												<span class="text-text-secondary truncate"
-													>{convo.display_name}</span
-												>
+												<span class="text-text-secondary truncate">{convo.display_name}</span>
 											{:else}
-												<span class="text-text-primary"
-													>{formatPhone(convo.phone_number)}</span
-												>
+												<span class="text-text-primary">{formatPhone(convo.phone_number)}</span>
 											{/if}
 										</p>
 										<!-- Quick call action — right next to name, visible on hover -->
@@ -505,15 +495,11 @@
 					<p class="text-sm font-medium truncate flex items-center gap-1.5">
 						{#if selectedConvo.contact_id && selectedConvo.display_name}
 							<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
-							<span class="text-text-primary truncate">{selectedConvo.display_name}</span
-							>
+							<span class="text-text-primary truncate">{selectedConvo.display_name}</span>
 						{:else if selectedConvo.display_name}
-							<span class="text-text-secondary truncate">{selectedConvo.display_name}</span
-							>
+							<span class="text-text-secondary truncate">{selectedConvo.display_name}</span>
 						{:else}
-							<span class="text-text-primary"
-								>{formatPhone(selectedConvo.phone_number)}</span
-							>
+							<span class="text-text-primary">{formatPhone(selectedConvo.phone_number)}</span>
 						{/if}
 					</p>
 					{#if selectedConvo.display_name}
@@ -555,9 +541,7 @@
 					</div>
 				{:else if messages.length === 0}
 					<div class="flex h-full items-center justify-center">
-						<p class="text-sm text-text-tertiary">
-							No messages in this conversation yet.
-						</p>
+						<p class="text-sm text-text-tertiary">No messages in this conversation yet.</p>
 					</div>
 				{:else}
 					{#each messages as msg}
@@ -650,8 +634,7 @@
 					{/if}
 					{#if twilioNumbers.length > 1 && !selectedNumber}
 						<div class="flex items-center justify-center gap-1.5">
-							<span class="text-[10px] text-text-tertiary uppercase tracking-wider"
-								>Send from:</span
+							<span class="text-[10px] text-text-tertiary uppercase tracking-wider">Send from:</span
 							>
 							{#each twilioNumbers as num}
 								<button

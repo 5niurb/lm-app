@@ -26,7 +26,7 @@ Target: $ARGUMENTS
 
 2. **Build with correct API URL:**
    ```bash
-   PUBLIC_API_URL=https://lm-app-api.onrender.com npx vite build
+   PUBLIC_API_URL=https://api.lemedspa.app npx vite build
    ```
    - **CRITICAL:** Always use the production API URL. Never build without it.
    - If build fails, stop and report the error. Do NOT deploy a broken build.
@@ -40,9 +40,9 @@ Target: $ARGUMENTS
 
 4. **Post-deploy verification:**
    - Wait 10 seconds for propagation
-   - Check `https://lm-app.pages.dev` responds (WebFetch or curl)
-   - Check API health: `curl -s https://lm-app-api.onrender.com/api/health`
-   - Check CORS: `curl -s -D - -H "Origin: https://lm-app.pages.dev" https://lm-app-api.onrender.com/api/health 2>&1 | grep -i access-control-allow-origin`
+   - Check `https://lemedspa.app` responds (WebFetch or curl)
+   - Check API health: `curl -s https://api.lemedspa.app/api/health`
+   - Check CORS: `curl -s -D - -H "Origin: https://lemedspa.app" https://api.lemedspa.app/api/health 2>&1 | grep -i access-control-allow-origin`
 
 5. **Report results** in a clear table format
 
@@ -50,7 +50,7 @@ Target: $ARGUMENTS
 
 1. Push current branch to GitHub: `git push origin main`
 2. Wait 2-3 minutes for Render auto-deploy
-3. Verify health endpoint: `curl -s https://lm-app-api.onrender.com/api/health`
+3. Verify health endpoint: `curl -s https://api.lemedspa.app/api/health`
 4. Verify CORS from CF Pages origin
 
 ## Important

@@ -77,7 +77,9 @@
 			<div class="flex flex-col">
 				<span
 					class="text-sm font-medium tracking-wide text-[rgba(255,255,255,0.85)]"
-					style="font-family: 'Playfair Display', serif;">LEMEDSPA<span class="text-[8px] align-super text-[rgba(197,165,90,0.6)]">&reg;</span></span
+					style="font-family: 'Playfair Display', serif;"
+					>LEMEDSPA<span class="text-[8px] align-super text-[rgba(197,165,90,0.6)]">&reg;</span
+					></span
 				>
 				<span class="text-[10px] uppercase tracking-[0.2em] text-[rgba(197,165,90,0.5)]"
 					>Operations</span

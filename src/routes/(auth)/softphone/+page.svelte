@@ -609,9 +609,7 @@
 						</div>
 					{:else}
 						<!-- Connecting / Connected state -->
-						<div
-							class="rounded-lg bg-gold-glow border border-border p-5 text-center space-y-3"
-						>
+						<div class="rounded-lg bg-gold-glow border border-border p-5 text-center space-y-3">
 							{#if callState === 'connecting'}
 								<div class="flex items-center justify-center gap-2 text-yellow-400">
 									<PhoneOutgoing class="h-5 w-5 animate-pulse" />
@@ -719,9 +717,7 @@
 					<Clock class="h-5 w-5 text-gold" />
 					<h2 class="text-base tracking-wide">Session Activity</h2>
 				</div>
-				<p class="text-xs text-text-tertiary mt-0.5">
-					Calls during this browser session
-				</p>
+				<p class="text-xs text-text-tertiary mt-0.5">Calls during this browser session</p>
 			</div>
 			<div class="p-5">
 				{#if callHistory.length === 0}
@@ -738,9 +734,7 @@
 							>
 								No calls yet
 							</p>
-							<p class="text-xs text-text-ghost">
-								Incoming calls will ring here once connected.
-							</p>
+							<p class="text-xs text-text-ghost">Incoming calls will ring here once connected.</p>
 						</div>
 					</div>
 				{:else}

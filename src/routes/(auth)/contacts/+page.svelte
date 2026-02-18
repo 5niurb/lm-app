@@ -299,9 +299,7 @@
 							No contacts found
 						</p>
 						{#if search || tagFilter !== 'all'}
-							<p class="text-xs text-text-ghost">
-								Try adjusting your search or filters.
-							</p>
+							<p class="text-xs text-text-ghost">Try adjusting your search or filters.</p>
 						{:else}
 							<p class="text-xs text-text-ghost">
 								Import contacts using the sync script or add them manually.
@@ -669,9 +667,7 @@
 										<Badge variant="outline" class="text-xs">
 											{call.direction === 'inbound' ? 'In' : 'Out'}
 										</Badge>
-										<span class="text-text-secondary"
-											>{call.disposition || call.status}</span
-										>
+										<span class="text-text-secondary">{call.disposition || call.status}</span>
 									</div>
 									<span class="text-xs text-text-tertiary">
 										{formatRelativeDate(call.started_at)}
@@ -694,9 +690,7 @@
 						</p>
 						<div class="space-y-2">
 							{#each expandedContact.form_submissions as sub}
-								<div
-									class="bg-gold-glow rounded-md px-3 py-2.5 border border-border"
-								>
+								<div class="bg-gold-glow rounded-md px-3 py-2.5 border border-border">
 									<div class="flex items-center justify-between mb-1">
 										<div class="flex items-center gap-2">
 											{#if sub.interested_in}
@@ -746,8 +740,7 @@
 							>
 								{#each Object.entries(expandedContact.metadata) as [key, val]}
 									<div class="flex gap-2">
-										<span
-											class="font-medium capitalize whitespace-nowrap text-text-secondary"
+										<span class="font-medium capitalize whitespace-nowrap text-text-secondary"
 											>{key.replace(/_/g, ' ')}:</span
 										>
 										<span class="text-text-tertiary break-all"

@@ -360,9 +360,7 @@
 						<Phone class="mx-auto mb-3 h-8 w-8 text-gold-dim" />
 						<p class="text-sm text-text-tertiary">No call records found.</p>
 						{#if search || filter !== 'all'}
-							<p class="text-xs text-text-ghost mt-1">
-								Try adjusting your search or filter.
-							</p>
+							<p class="text-xs text-text-ghost mt-1">Try adjusting your search or filter.</p>
 						{:else}
 							<p class="text-xs text-text-ghost mt-1">
 								Calls will appear here once Twilio webhooks are connected.
@@ -376,7 +374,10 @@
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
-							class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-gold-glow border border-transparent hover:border-border {i > 0 ? 'border-t border-t-border-subtle' : ''}"
+							class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-gold-glow border border-transparent hover:border-border {i >
+							0
+								? 'border-t border-t-border-subtle'
+								: ''}"
 						>
 							<!-- Direction icon -->
 							<div class="mt-0.5 shrink-0">
@@ -400,9 +401,7 @@
 									<div class="flex items-center gap-1.5 min-w-0">
 										<p class="text-sm font-medium truncate flex items-center gap-1.5">
 											{#if call.contact_id && call.caller_name}
-												<span class="text-gold text-[10px] shrink-0" title="Contact"
-													>&#9670;</span
-												>
+												<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
 												<span class="text-text-primary">{call.caller_name}</span>
 											{:else if call.caller_name}
 												<span class="text-text-secondary">{call.caller_name}</span>
@@ -461,9 +460,7 @@
 								<div class="flex items-center gap-2 mt-1">
 									{#if summary.type === 'voicemail' || summary.type === 'voicemail-pending'}
 										<Voicemail class="h-3.5 w-3.5 shrink-0 text-gold/70" />
-										<span class="text-xs text-text-tertiary truncate italic"
-											>{summary.text}</span
-										>
+										<span class="text-xs text-text-tertiary truncate italic">{summary.text}</span>
 										{#if summary.hasAudio}
 											<button
 												class="shrink-0 flex items-center gap-1 text-[10px] uppercase tracking-wider text-gold/60 hover:text-gold transition-colors"

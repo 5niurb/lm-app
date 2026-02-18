@@ -439,7 +439,7 @@
 				"method": "POST",
 				"content_type": "application/json;charset=utf-8",
 				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
-				"url": "https://lm-app-api.onrender.com/api/webhooks/sms/studio-send",
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send",
 				"offset": {
 					"x": 670,
 					"y": 1570
@@ -485,7 +485,7 @@
 			"name": "connect_call_accounts",
 			"type": "add-twiml-redirect",
 			"properties": {
-				"url": "https://lm-app-api.onrender.com/api/twilio/connect-operator",
+				"url": "https://api.lemedspa.app/api/twilio/connect-operator",
 				"method": "POST",
 				"offset": {
 					"x": 1390,
@@ -525,7 +525,7 @@
 			"name": "connect_call_HighLevel",
 			"type": "add-twiml-redirect",
 			"properties": {
-				"url": "https://lm-app-api.onrender.com/api/twilio/connect-operator",
+				"url": "https://api.lemedspa.app/api/twilio/connect-operator",
 				"method": "POST",
 				"offset": {
 					"x": 1340,

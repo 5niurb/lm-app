@@ -23,6 +23,8 @@
 			"mcp__firecrawl__firecrawl_scrape",
 			"mcp__firecrawl__firecrawl_search",
 			"WebFetch(domain:www.twilio.com)",
+			"WebFetch(domain:lemedspa.app)",
+			"WebFetch(domain:api.lemedspa.app)",
 			"WebFetch(domain:lm-app.pages.dev)",
 			"WebFetch(domain:lm-app-api.onrender.com)",
 			"WebFetch(domain:lemedspa.com)"

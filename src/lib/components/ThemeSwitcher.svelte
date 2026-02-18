@@ -13,9 +13,7 @@
 	};
 
 	/** @type {typeof Moon} */
-	let CurrentIcon = $derived(
-		$themeChoice === 'auto' ? Monitor : themeIcons[$theme] || Moon
-	);
+	let CurrentIcon = $derived($themeChoice === 'auto' ? Monitor : themeIcons[$theme] || Moon);
 </script>
 
 <DropdownMenu.Root bind:open>
@@ -35,7 +33,10 @@
 
 	<DropdownMenu.Content align="end" class="w-64 p-2">
 		<DropdownMenu.Label class="px-2 pb-2">
-			<span class="text-xs font-semibold uppercase tracking-[0.1em]" style="color: var(--text-tertiary)">
+			<span
+				class="text-xs font-semibold uppercase tracking-[0.1em]"
+				style="color: var(--text-tertiary)"
+			>
 				Ambiance
 			</span>
 		</DropdownMenu.Label>
@@ -44,8 +45,13 @@
 		{#each themes as t}
 			{@const isActive = $themeChoice === t.id}
 			<DropdownMenu.Item
-				class="flex items-center gap-3 rounded-md px-2 py-2.5 cursor-pointer {isActive ? 'bg-[var(--surface-raised)]' : ''}"
-				onclick={() => { setTheme(t.id); open = false; }}
+				class="flex items-center gap-3 rounded-md px-2 py-2.5 cursor-pointer {isActive
+					? 'bg-[var(--surface-raised)]'
+					: ''}"
+				onclick={() => {
+					setTheme(t.id);
+					open = false;
+				}}
 			>
 				<!-- Theme preview orb -->
 				<div
@@ -74,7 +80,17 @@
 				<!-- Checkmark -->
 				{#if isActive}
 					<div class="ml-auto shrink-0" style="color: var(--gold)">
-						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg
+						>
 					</div>
 				{/if}
 			</DropdownMenu.Item>
@@ -85,8 +101,13 @@
 		<!-- Auto / System option -->
 		{@const isAuto = $themeChoice === 'auto'}
 		<DropdownMenu.Item
-			class="flex items-center gap-3 rounded-md px-2 py-2.5 cursor-pointer {isAuto ? 'bg-[var(--surface-raised)]' : ''}"
-			onclick={() => { setTheme('auto'); open = false; }}
+			class="flex items-center gap-3 rounded-md px-2 py-2.5 cursor-pointer {isAuto
+				? 'bg-[var(--surface-raised)]'
+				: ''}"
+			onclick={() => {
+				setTheme('auto');
+				open = false;
+			}}
 		>
 			<div
 				class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
@@ -106,7 +127,17 @@
 			</div>
 			{#if isAuto}
 				<div class="ml-auto shrink-0" style="color: var(--gold)">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg
+					>
 				</div>
 			{/if}
 		</DropdownMenu.Item>

@@ -163,7 +163,7 @@
 					"x": 1340,
 					"y": 200
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/hours-check"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/hours-check"
 			},
 			"transitions": [
 				{
@@ -228,7 +228,7 @@
 					"x": 1700,
 					"y": 550
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/event"
 			},
 			"transitions": [
 				{
@@ -252,7 +252,7 @@
 					"x": 1900,
 					"y": 750
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/event"
 			},
 			"transitions": [
 				{
@@ -821,7 +821,7 @@
 					"x": -200,
 					"y": -140
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/incoming"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/incoming"
 			},
 			"transitions": [
 				{
@@ -845,7 +845,7 @@
 					"x": 460,
 					"y": 200
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/event"
 			},
 			"transitions": [
 				{
@@ -869,7 +869,7 @@
 					"x": 860,
 					"y": 690
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/event"
 			},
 			"transitions": [
 				{
@@ -893,7 +893,7 @@
 					"x": 1250,
 					"y": 1260
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/event"
 			},
 			"transitions": [
 				{
@@ -917,7 +917,7 @@
 					"x": 1140,
 					"y": 80
 				},
-				"url": "https://lm-app-api.onrender.com/api/webhooks/voice/event"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/event"
 			},
 			"transitions": [
 				{

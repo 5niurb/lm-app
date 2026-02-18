@@ -9,7 +9,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-const API_URL = process.env.API_URL || 'https://lm-app-api.onrender.com';
+const API_URL = process.env.API_URL || 'https://api.lemedspa.app';
 
 describe('API Health', () => {
 	it('returns ok status', async () => {
@@ -22,11 +22,11 @@ describe('API Health', () => {
 
 	it('returns CORS headers for CF Pages origin', async () => {
 		const res = await fetch(`${API_URL}/api/health`, {
-			headers: { Origin: 'https://lm-app.pages.dev' }
+			headers: { Origin: 'https://lemedspa.app' }
 		});
 		assert.strictEqual(res.status, 200);
 		const corsHeader = res.headers.get('access-control-allow-origin');
-		assert.strictEqual(corsHeader, 'https://lm-app.pages.dev');
+		assert.strictEqual(corsHeader, 'https://lemedspa.app');
 	});
 
 	it('rejects unknown CORS origins', async () => {

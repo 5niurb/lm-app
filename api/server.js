@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 3001;
 // CORS — must be BEFORE all routes so every response gets headers
 // Allow both the production CF Pages URL and local dev
 const ALLOWED_ORIGINS = [
+	'https://lemedspa.app',
 	'https://lm-app.pages.dev',
 	'https://lemedspa.com',
 	'https://www.lemedspa.com',
@@ -34,6 +35,7 @@ app.use(
 			if (!origin) return cb(null, true);
 			if (
 				ALLOWED_ORIGINS.includes(origin) ||
+				origin.endsWith('.lemedspa.app') ||
 				origin.endsWith('.lm-app.pages.dev') ||
 				origin.endsWith('.lemedspa.pages.dev')
 			) {

@@ -62,9 +62,7 @@
 	<!-- Left panel — Brand / Visual -->
 	<div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-background">
 		<!-- Decorative gradient background -->
-		<div
-			class="absolute inset-0 bg-gradient-to-br from-gold/8 via-transparent to-gold/4"
-		></div>
+		<div class="absolute inset-0 bg-gradient-to-br from-gold/8 via-transparent to-gold/4"></div>
 		<!-- Subtle noise overlay -->
 		<div
 			class="absolute inset-0 opacity-[0.03]"
@@ -97,9 +95,7 @@
 							class="text-base font-medium tracking-wide text-text-primary"
 							style="font-family: 'Playfair Display', serif;">Le Med Spa</span
 						>
-						<span class="text-[10px] uppercase tracking-[0.25em] text-gold-dim"
-							>Operations</span
-						>
+						<span class="text-[10px] uppercase tracking-[0.25em] text-gold-dim">Operations</span>
 					</div>
 				</div>
 
@@ -121,20 +117,16 @@
 			<div>
 				<!-- Decorative gold ornament -->
 				<div class="flex items-center gap-3 mb-6">
-					<div
-						class="h-px flex-1 bg-gradient-to-r from-gold/20 to-transparent"
-					></div>
+					<div class="h-px flex-1 bg-gradient-to-r from-gold/20 to-transparent"></div>
 					<div class="h-1.5 w-1.5 rotate-45 bg-gold/30"></div>
 					<div class="h-px w-8 bg-gold/20"></div>
 					<div class="h-1.5 w-1.5 rotate-45 bg-gold/30"></div>
-					<div
-						class="h-px flex-1 bg-gradient-to-l from-gold/20 to-transparent"
-					></div>
+					<div class="h-px flex-1 bg-gradient-to-l from-gold/20 to-transparent"></div>
 				</div>
 
 				<p class="text-[10px] uppercase tracking-[0.2em] text-text-ghost text-center">
-					LEMEDSPA<span class="text-gold-dim">&reg;</span> &middot; 17414 Ventura Blvd &middot;
-					Encino, CA
+					LEMEDSPA<span class="text-gold-dim">&reg;</span> &middot; 17414 Ventura Blvd &middot; Encino,
+					CA
 				</p>
 			</div>
 		</div>
@@ -166,9 +158,7 @@
 						class="text-sm font-medium tracking-wide text-text-primary"
 						style="font-family: 'Playfair Display', serif;">Le Med Spa</span
 					>
-					<span class="text-[9px] uppercase tracking-[0.2em] text-gold-dim"
-						>Operations</span
-					>
+					<span class="text-[9px] uppercase tracking-[0.2em] text-gold-dim">Operations</span>
 				</div>
 			</div>
 
@@ -203,9 +193,8 @@
 					class="space-y-5"
 				>
 					<div class="space-y-2">
-						<Label
-							for="email"
-							class="text-xs uppercase tracking-[0.1em] text-text-tertiary">Email</Label
+						<Label for="email" class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
+							>Email</Label
 						>
 						<Input
 							id="email"
@@ -217,9 +206,7 @@
 						/>
 					</div>
 					<div class="space-y-2">
-						<Label
-							for="password"
-							class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
+						<Label for="password" class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
 							>Password</Label
 						>
 						<Input
@@ -288,9 +275,7 @@
 				<div class="h-1 w-1 rotate-45 bg-gold/20"></div>
 				<div class="h-px flex-1 bg-gradient-to-l from-transparent to-gold/12"></div>
 			</div>
-			<p
-				class="mt-4 text-center text-[10px] text-text-ghost uppercase tracking-[0.15em]"
-			>
+			<p class="mt-4 text-center text-[10px] text-text-ghost uppercase tracking-[0.15em]">
 				Secure access &middot; Staff only
 			</p>
 		</div>
