@@ -1,3 +1,68 @@
+## Session — 2026-02-18 (Session 34)
+**Focus:** Deploy + Cmd+K command palette
+
+**Accomplished:**
+- **Deployed frontend to Cloudflare Pages** — latest build with Schedule page + command palette live at lm-app.pages.dev
+- **Built Cmd+K command palette** (`src/lib/components/CommandPalette.svelte`):
+  - 9 page navigation commands (Dashboard, Softphone, Phone Log, Messages, Contacts, Schedule, Services, Automation, Settings)
+  - 3 quick actions (New Message, Make a Call, Add Contact)
+  - Live contact search via `/api/contacts/search` when typing 2+ chars
+  - Grouped results (Pages, Actions, Contacts) with gold highlight
+  - Keyboard navigation (↑↓ arrows, Enter to select, Esc to close)
+  - Ctrl/Cmd+K to open/close
+  - Footer with keyboard hints
+- **Wired into auth layout** — `bind:this` on component, header Search button calls `show()` via prop
+- **Fixed close behavior bug** — initial implementation used `svelte:window onkeydown` + `onmousedown` which didn't reliably close. Fixed with:
+  - `document.addEventListener('keydown', ..., true)` (capture phase) instead of `svelte:window`
+  - `await tick()` before `goto()` to ensure DOM closes before navigation
+  - `<button>` with `onclick` instead of `<div>` with `onmousedown`
+  - Backdrop close via `onclick` with `e.target` check
+- **Tested in Chrome** via browser automation — item click navigates + closes, backdrop dismiss works, search filtering works
+
+**Diagram:**
+```
+┌──────────────┐  Ctrl+K / click   ┌──────────────────┐
+│ AppHeader    │ ─────────────────► │ CommandPalette   │
+│ Search ⌘K   │                    │ ┌──────────────┐ │
+└──────────────┘                    │ │ Search input │ │
+                                    │ ├──────────────┤ │
+                                    │ │ Pages (9)    │ │
+                                    │ │ Actions (3)  │ │
+                                    │ │ Contacts (*)│ │  ←── API search
+                                    │ └──────────────┘ │
+                                    │  ↑↓ ↵ esc        │
+                                    └──────────────────┘
+```
+
+**Files Created (1):**
+- `src/lib/components/CommandPalette.svelte` — Full command palette component
+
+**Files Modified (2):**
+- `src/lib/components/AppHeader.svelte` — Added `onOpenCommandPalette` prop, wired Search button
+- `src/routes/(auth)/+layout.svelte` — Import CommandPalette, bind:this, pass callback to header
+
+**Commits:**
+- `0717ccb` — [ui] Add Cmd+K command palette with page navigation, actions, and contact search
+- `9520ea8` — [fix] Fix command palette close behavior and item selection
+
+**Current State:**
+- Frontend deployed to Cloudflare Pages (latest build)
+- Command palette fully functional — open/close/navigate/search all working
+- API on Render may be sleeping (free tier) — wakes on first request
+- Wrangler auth expired — needs `wrangler login` in terminal for future deploys (worked this session after re-auth)
+
+**Issues:**
+- Render API sleeping — "Failed to fetch" on deployed site until first request wakes it
+- GCP service account env vars still not set (Schedule page won't show real data)
+
+**Next Steps:**
+- One-time GCP setup: create service account, share AR calendar, set env vars
+- Consent form end-to-end testing
+- Deploy Studio flow to Twilio for after-hours IVR
+- Consider adding recent pages / frecency to command palette
+
+---
+
 ## Session — 2026-02-18 (Session 33)
 **Focus:** ESLint cleanup + Appointments/Schedule page from Google Calendar
 
