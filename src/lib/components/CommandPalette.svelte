@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { tick } from 'svelte';
 	import { api } from '$lib/api/client.js';
 	import {
 		LayoutDashboard,
@@ -19,15 +20,18 @@
 		ArrowRight
 	} from '@lucide/svelte';
 
-	let open = $state(false);
+	let visible = $state(false);
 	let query = $state('');
 	let selectedIndex = $state(0);
 	/** @type {HTMLInputElement|null} */
 	let inputEl = $state(null);
+	/** @type {HTMLDivElement|null} */
+	let backdropEl = $state(null);
 
 	/** @type {Array<{ id: string, name: string, phone?: string, email?: string }>} */
 	let contactResults = $state([]);
-	let searchTimeout = $state(0);
+	/** @type {ReturnType<typeof setTimeout>|null} */
+	let searchTimer = $state(null);
 
 	const pages = [
 		{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', group: 'Pages' },
@@ -47,38 +51,35 @@
 			label: 'New Message',
 			icon: Mail,
 			group: 'Actions',
-			action: () => goto(resolve('/messages') + '?compose=true')
+			href: '/messages?compose=true'
 		},
 		{
 			id: 'make-call',
 			label: 'Make a Call',
 			icon: PhoneOutgoing,
 			group: 'Actions',
-			action: () => goto(resolve('/softphone'))
+			href: '/softphone'
 		},
 		{
 			id: 'add-contact',
 			label: 'Add Contact',
 			icon: UserPlus,
 			group: 'Actions',
-			action: () => goto(resolve('/contacts') + '?action=add')
+			href: '/contacts?action=add'
 		}
 	];
 
 	let filteredItems = $derived.by(() => {
 		const q = query.toLowerCase().trim();
 		if (!q) return [...pages, ...actions];
-
-		const filtered = [
+		return [
 			...pages.filter(
 				(p) => p.label.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
 			),
 			...actions.filter((a) => a.label.toLowerCase().includes(q))
 		];
-		return filtered;
 	});
 
-	/** @type {Array<{ id: string, label: string, subtitle?: string, icon: any, group: string, href?: string, action?: () => void }>} */
 	let allItems = $derived.by(() => {
 		const items = [...filteredItems];
 		for (const c of contactResults) {
@@ -88,7 +89,7 @@
 				subtitle: c.phone || c.email || '',
 				icon: Users,
 				group: 'Contacts',
-				action: () => goto(resolve('/contacts') + `?search=${encodeURIComponent(c.name)}`)
+				href: `/contacts?search=${encodeURIComponent(c.name)}`
 			});
 		}
 		return items;
@@ -96,7 +97,6 @@
 
 	// Reset index when items change
 	$effect(() => {
-		// Access allItems to track changes
 		allItems.length;
 		selectedIndex = 0;
 	});
@@ -108,8 +108,8 @@
 			contactResults = [];
 			return;
 		}
-		clearTimeout(searchTimeout);
-		searchTimeout = setTimeout(async () => {
+		if (searchTimer) clearTimeout(searchTimer);
+		searchTimer = setTimeout(async () => {
 			try {
 				const res = await api(`/api/contacts/search?q=${encodeURIComponent(q)}&limit=5`);
 				contactResults = (res.data || res || []).map((/** @type {any} */ c) => ({
@@ -124,30 +124,42 @@
 		}, 200);
 	});
 
+	// Global keyboard listener via document.addEventListener
+	$effect(() => {
+		/** @param {KeyboardEvent} e */
+		function onKeydown(e) {
+			if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+				e.preventDefault();
+				if (visible) {
+					close();
+				} else {
+					show();
+				}
+				return;
+			}
+			if (visible && e.key === 'Escape') {
+				e.preventDefault();
+				close();
+				return;
+			}
+		}
+		document.addEventListener('keydown', onKeydown, true);
+		return () => document.removeEventListener('keydown', onKeydown, true);
+	});
+
+	function close() {
+		visible = false;
+		query = '';
+		contactResults = [];
+	}
+
 	/** Open the palette */
 	export function show() {
-		open = true;
+		visible = true;
 		query = '';
 		contactResults = [];
 		selectedIndex = 0;
-		// Focus input after DOM update
-		setTimeout(() => inputEl?.focus(), 10);
-	}
-
-	/** @param {KeyboardEvent} e */
-	function handleGlobalKeydown(e) {
-		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-			e.preventDefault();
-			if (open) {
-				open = false;
-			} else {
-				show();
-			}
-		}
-		if (e.key === 'Escape' && open) {
-			e.preventDefault();
-			open = false;
-		}
+		tick().then(() => inputEl?.focus());
 	}
 
 	/** @param {KeyboardEvent} e */
@@ -165,18 +177,19 @@
 		}
 	}
 
-	/** @param {any} item */
-	function selectItem(item) {
-		open = false;
-		if (item.action) {
-			item.action();
-		} else if (item.href) {
-			goto(resolve(item.href));
+	/** @param {{ href?: string }} item */
+	async function selectItem(item) {
+		close();
+		await tick();
+		if (item.href) {
+			// Separate base path from query string for resolve
+			const [path, qs] = item.href.split('?');
+			const target = resolve(path) + (qs ? `?${qs}` : '');
+			goto(target);
 		}
 	}
 
 	/**
-	 * Group items by their group property
 	 * @param {Array<any>} items
 	 * @returns {Array<{ group: string, items: Array<any> }>}
 	 */
@@ -188,33 +201,34 @@
 			if (!map.has(group)) map.set(group, []);
 			map.get(group)?.push(item);
 		}
-		return Array.from(map.entries()).map(([group, items]) => ({ group, items }));
+		return Array.from(map.entries()).map(([group, gItems]) => ({ group, items: gItems }));
 	}
 
-	/**
-	 * Get the flat index of an item
-	 * @param {any} item
-	 */
+	/** @param {any} item */
 	function getItemIndex(item) {
 		return allItems.indexOf(item);
 	}
+
+	/** Sync query from input events (handles browser automation edge cases) */
+	function handleInput(/** @type {Event} */ e) {
+		const target = /** @type {HTMLInputElement} */ (e.target);
+		query = target.value;
+	}
 </script>
 
-<svelte:window onkeydown={handleGlobalKeydown} />
-
-{#if open}
-	<!-- Backdrop -->
+{#if visible}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
+		bind:this={backdropEl}
 		class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-		onmousedown={() => (open = false)}
+		onclick={(e) => {
+			if (e.target === backdropEl) close();
+		}}
 		onkeydown={() => {}}
 	>
-		<!-- Palette -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			class="mx-auto mt-[15vh] w-full max-w-lg overflow-hidden rounded-xl border border-border-subtle bg-[var(--surface-raised,#161619)] shadow-2xl"
-			onmousedown={(e) => e.stopPropagation()}
 			onkeydown={() => {}}
 		>
 			<!-- Search input -->
@@ -223,6 +237,7 @@
 				<input
 					bind:this={inputEl}
 					bind:value={query}
+					oninput={handleInput}
 					onkeydown={handleInputKeydown}
 					type="text"
 					placeholder="Search pages, actions, contacts..."
@@ -249,15 +264,14 @@
 							</div>
 							{#each items as item (item.id)}
 								{@const idx = getItemIndex(item)}
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
-								<div
-									class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors {idx ===
+								<button
+									type="button"
+									class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors {idx ===
 									selectedIndex
 										? 'bg-gold/10 text-gold'
 										: 'text-text-secondary hover:bg-[rgba(255,255,255,0.04)] hover:text-text-primary'}"
 									onmouseenter={() => (selectedIndex = idx)}
-									onmousedown={() => selectItem(item)}
-									onkeydown={() => {}}
+									onclick={() => selectItem(item)}
 								>
 									<item.icon class="h-4 w-4 shrink-0 opacity-60" />
 									<div class="flex-1 min-w-0">
@@ -269,7 +283,7 @@
 									{#if idx === selectedIndex}
 										<ArrowRight class="h-3.5 w-3.5 shrink-0 opacity-40" />
 									{/if}
-								</div>
+								</button>
 							{/each}
 						</div>
 					{/each}
