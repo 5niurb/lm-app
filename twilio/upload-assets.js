@@ -109,7 +109,7 @@ if (!environment) {
 }
 
 // 3. Scan local files
-const audioExts = ['.mp3', '.wav'];
+const audioExts = ['.mp3', '.wav', '.m4a'];
 const files = readdirSync(assetsDir).filter((f) => audioExts.includes(extname(f).toLowerCase()));
 if (files.length === 0) {
 	console.log('No audio files found in twilio/assets/');
@@ -125,13 +125,16 @@ for (const file of files) {
 	const filePath = resolve(assetsDir, file);
 	const fileContent = readFileSync(filePath);
 	const ext = extname(file).toLowerCase();
-	const contentType = ext === '.mp3' ? 'audio/mpeg' : 'audio/wav';
+	const contentType = ext === '.mp3' ? 'audio/mpeg' : ext === '.m4a' ? 'audio/mp4' : 'audio/wav';
 
 	// Clean up the filename for the path
 	// Remove double extensions like .mp3.mp3 and spaces
 	let cleanName = file;
 	// Fix double extensions
-	cleanName = cleanName.replace(/\.mp3\.mp3$/, '.mp3').replace(/\.wav\.wav$/, '.wav');
+	cleanName = cleanName
+		.replace(/\.mp3\.mp3$/, '.mp3')
+		.replace(/\.wav\.wav$/, '.wav')
+		.replace(/\.m4a\.m4a$/, '.m4a');
 	// Replace spaces and parens with dashes/clean chars
 	cleanName = cleanName.replace(/[()]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-');
 
@@ -279,7 +282,10 @@ console.log('\n=== PUBLIC ASSET URLs ===');
 const domain = environment.domain_name;
 for (const file of files) {
 	let cleanName = file;
-	cleanName = cleanName.replace(/\.mp3\.mp3$/, '.mp3').replace(/\.wav\.wav$/, '.wav');
+	cleanName = cleanName
+		.replace(/\.mp3\.mp3$/, '.mp3')
+		.replace(/\.wav\.wav$/, '.wav')
+		.replace(/\.m4a\.m4a$/, '.m4a');
 	cleanName = cleanName.replace(/[()]/g, '').replace(/\s+/g, '-').replace(/--+/g, '-');
 	console.log(`https://${domain}/assets/${cleanName}`);
 }

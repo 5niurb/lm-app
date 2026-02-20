@@ -217,7 +217,7 @@ router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
 			action: `${baseUrl}/api/twilio/connect-operator-text`,
 			method: 'POST'
 		});
-		gather.play('https://lm-ivr-assets-2112.twil.io/assets/0b-Apologize-missed-Elise.wav');
+		gather.play('https://lm-ivr-assets-2112.twil.io/assets/apologize-victoria-fixed-m4a.m4a');
 
 		// Timeout fallback — record voicemail
 		twiml.record({
