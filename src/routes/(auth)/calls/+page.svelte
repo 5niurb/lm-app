@@ -11,7 +11,6 @@
 		PhoneMissed,
 		ChevronLeft,
 		ChevronRight,
-		Voicemail,
 		Play,
 		Pause,
 		MessageSquare,
