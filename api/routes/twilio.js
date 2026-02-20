@@ -247,6 +247,25 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 	const twilioNumber = req.body.Called || req.body.To || process.env.TWILIO_PHONE_NUMBER;
 	const digit = req.body.Digits;
 
+	if (digit !== '1') {
+		// Any digit other than 1 — fall through to voicemail
+		const baseUrl =
+			process.env.RENDER_EXTERNAL_URL ||
+			process.env.FRONTEND_URL_PUBLIC ||
+			'https://api.lemedspa.app';
+		twiml.record({
+			maxLength: 120,
+			transcribe: false,
+			recordingStatusCallback: `${baseUrl}/api/webhooks/voice/recording?mailbox=operator`,
+			recordingStatusCallbackMethod: 'POST',
+			recordingStatusCallbackEvent: 'completed',
+			action: `${baseUrl}/api/webhooks/voice/recording?mailbox=operator`,
+			method: 'POST'
+		});
+		res.type('text/xml');
+		return res.send(twiml.toString());
+	}
+
 	if (digit === '1' && callerNumber) {
 		try {
 			const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -314,10 +333,7 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 					.eq('id', convId);
 			}
 
-			twiml.say(
-				{ voice: 'Polly.Joanna' },
-				'A text message has been sent to your phone. You can reply directly to that message. Goodbye.'
-			);
+			twiml.play('https://lm-ivr-assets-2112.twil.io/assets/message-sent-wav.wav');
 		} catch (err) {
 			console.error('[connect-operator-text] Failed to send SMS:', err.message);
 			twiml.say(

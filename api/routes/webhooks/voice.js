@@ -20,6 +20,11 @@ router.use(express.urlencoded({ extended: false }));
  *   Sun:     Closed
  */
 router.get('/hours-check', (req, res) => {
+	// Override for testing — set FORCE_HOURS_OPEN=true on Render to bypass hours check
+	if (process.env.FORCE_HOURS_OPEN === 'true') {
+		return res.json({ status: 'open', forced: true, timezone: 'America/Los_Angeles' });
+	}
+
 	// Get current time in LA timezone
 	const now = new Date();
 	const laTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
