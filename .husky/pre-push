@@ -1,0 +1,31 @@
+echo "🔍 Pre-push CI check..."
+
+# 1. Format check (fastest — catches Prettier drift)
+echo "  → format:check"
+npm run format:check || {
+  echo "❌ Format check failed. Run: npm run format"
+  exit 1
+}
+
+# 2. Lint (catches unused vars, import errors)
+echo "  → lint"
+npm run lint || {
+  echo "❌ Lint failed. Run: npm run lint:fix"
+  exit 1
+}
+
+# 3. Unit tests (vitest — catches assertion mismatches)
+echo "  → test"
+npm test || {
+  echo "❌ Unit tests failed."
+  exit 1
+}
+
+# 4. API integration tests (node:test)
+echo "  → test:api"
+npm run test:api || {
+  echo "❌ API tests failed."
+  exit 1
+}
+
+echo "✅ All CI checks passed — pushing."
