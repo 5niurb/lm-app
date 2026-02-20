@@ -4,6 +4,7 @@ import twilio from 'twilio';
 import { supabaseAdmin } from '../../services/supabase.js';
 import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
 import { forwardToTextMagic } from './sms-forward.js';
+import { lookupContactByPhone } from '../../services/phone-lookup.js';
 
 const router = Router();
 
@@ -63,22 +64,16 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 				})
 				.eq('id', existing.id);
 		} else {
-			// Look up contact by phone
-			const phoneDigits = fromNumber.replace(/\D/g, '');
-			const { data: contact } = await supabaseAdmin
-				.from('contacts')
-				.select('id, full_name')
-				.or(`phone_normalized.eq.${phoneDigits},phone.eq.${fromNumber}`)
-				.limit(1)
-				.maybeSingle();
+			// Look up contact by phone (shared utility handles format variants)
+			const { contactId, contactName } = await lookupContactByPhone(fromNumber);
 
 			const { data: newConv } = await supabaseAdmin
 				.from('conversations')
 				.insert({
 					phone_number: fromNumber,
 					twilio_number: toNumber || null,
-					display_name: contact?.full_name || null,
-					contact_id: contact?.id || null,
+					display_name: contactName,
+					contact_id: contactId,
 					last_message: body.substring(0, 200),
 					last_at: new Date().toISOString(),
 					unread_count: 1
@@ -151,6 +146,13 @@ router.post('/status', validateTwilioSignature, async (req, res) => {
  *   callSid  — the call SID (optional, for linking)
  */
 router.post('/studio-send', async (req, res) => {
+	// Verify shared secret — Studio HTTP Request widget sends this as a custom header.
+	// Falls back to open access if STUDIO_WEBHOOK_SECRET is not configured (dev/migration).
+	const secret = process.env.STUDIO_WEBHOOK_SECRET;
+	if (secret && req.headers['x-studio-secret'] !== secret) {
+		return res.status(403).json({ error: 'Forbidden' });
+	}
+
 	const { to, body: msgBody, callSid } = req.body;
 
 	if (!to || !msgBody) {
@@ -200,21 +202,15 @@ router.post('/studio-send', async (req, res) => {
 		if (existing) {
 			convId = existing.id;
 		} else {
-			// Look up contact by phone
-			const phoneDigits = toNumber.replace(/\D/g, '');
-			const { data: contact } = await supabaseAdmin
-				.from('contacts')
-				.select('id, full_name')
-				.or(`phone_normalized.eq.${phoneDigits},phone.eq.${toNumber}`)
-				.limit(1)
-				.maybeSingle();
+			// Look up contact by phone (shared utility handles format variants)
+			const { contactId, contactName } = await lookupContactByPhone(toNumber);
 
 			const { data: newConv } = await supabaseAdmin
 				.from('conversations')
 				.insert({
 					phone_number: toNumber,
-					display_name: contact?.full_name || null,
-					contact_id: contact?.id || null,
+					display_name: contactName,
+					contact_id: contactId,
 					last_message: msgBody.substring(0, 200),
 					last_at: new Date().toISOString(),
 					unread_count: 0 // Outbound — no unread

@@ -2,43 +2,10 @@ import { Router } from 'express';
 import twilio from 'twilio';
 import { supabaseAdmin } from '../services/supabase.js';
 import { verifyToken } from '../middleware/auth.js';
+import { validateTwilioSignature } from '../middleware/twilioSignature.js';
+import { lookupContactByPhone } from '../services/phone-lookup.js';
 
 const router = Router();
-
-/**
- * Look up a contact by phone number, trying multiple format variants.
- * Returns { contactId, contactName } or nulls if not found.
- */
-async function lookupContactByPhone(phone) {
-	if (!phone || phone.startsWith('client:')) return { contactId: null, contactName: null };
-
-	const digits = phone.replace(/\D/g, '');
-	if (!digits) return { contactId: null, contactName: null };
-
-	// Build variants: +13106218356 → ['13106218356', '3106218356', '+13106218356']
-	const variants = [digits];
-	if (digits.length === 11 && digits.startsWith('1')) {
-		variants.push(digits.slice(1)); // strip country code
-	}
-	if (digits.length === 10) {
-		variants.push('1' + digits); // add country code
-	}
-	variants.push(phone); // original format with +
-
-	// Query using OR across all variants
-	const orFilter = variants.map((v) => `phone_normalized.eq.${v},phone.eq.${v}`).join(',');
-	const { data: contact } = await supabaseAdmin
-		.from('contacts')
-		.select('id, full_name')
-		.or(orFilter)
-		.limit(1)
-		.maybeSingle();
-
-	return {
-		contactId: contact?.id || null,
-		contactName: contact?.full_name || null
-	};
-}
 
 const { AccessToken } = twilio.jwt;
 const { VoiceGrant } = AccessToken;
@@ -235,7 +202,7 @@ router.post('/connect-operator', (req, res) => {
  * If nobody answered, offers "press 1 to text" then falls back to voicemail.
  * All URLs MUST be absolute (see connect-operator comment).
  */
-router.post('/connect-operator-status', (req, res) => {
+router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
 	const dialStatus = req.body.DialCallStatus;
 	const baseUrl =
@@ -259,11 +226,10 @@ router.post('/connect-operator-status', (req, res) => {
 		twiml.record({
 			maxLength: 120,
 			transcribe: false,
-			transcribeCallback: `${baseUrl}/api/webhooks/voice/transcription`,
-			recordingStatusCallback: `${baseUrl}/api/webhooks/voice/recording`,
+			recordingStatusCallback: `${baseUrl}/api/webhooks/voice/recording?mailbox=operator`,
 			recordingStatusCallbackMethod: 'POST',
 			recordingStatusCallbackEvent: 'completed',
-			action: `${baseUrl}/api/webhooks/voice/recording`,
+			action: `${baseUrl}/api/webhooks/voice/recording?mailbox=operator`,
 			method: 'POST'
 		});
 	}
@@ -278,7 +244,7 @@ router.post('/connect-operator-status', (req, res) => {
  * Called when caller presses 1 during the voicemail greeting.
  * Sends an SMS to initiate a 2-way text conversation, then hangs up.
  */
-router.post('/connect-operator-text', async (req, res) => {
+router.post('/connect-operator-text', validateTwilioSignature, async (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
 	const callerNumber = req.body.From || req.body.Caller;
 	const twilioNumber = req.body.Called || req.body.To || process.env.TWILIO_PHONE_NUMBER;

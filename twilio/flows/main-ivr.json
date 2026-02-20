@@ -629,7 +629,7 @@
 				},
 				{
 					"event": "fail",
-					"next": "play_MsgSentGoodbye"
+					"next": "gather_accounts_vmail"
 				}
 			],
 			"type": "make-http-request"

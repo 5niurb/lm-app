@@ -120,6 +120,6 @@ describe('connect-operator-status handler', () => {
 		const xml = getSentXml();
 
 		expect(xml).toContain('https://api.lemedspa.app/api/twilio/connect-operator-text');
-		expect(xml).toContain('https://api.lemedspa.app/api/webhooks/voice/recording');
+		expect(xml).toContain('https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=operator');
 	});
 });
