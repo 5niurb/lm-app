@@ -1,5 +1,5 @@
 ## Session — 2026-02-20 (Session 40)
-**Focus:** IVR testing, softphone auth fix, CI hardening, Victoria audio updates
+**Focus:** IVR testing, softphone auth fix, CI hardening, Victoria audio, duplicate thread fix
 
 **Accomplished:**
 - **Softphone auth fix** — replaced raw `fetch()` with `api()` helper that auto-attaches Bearer token
@@ -12,6 +12,13 @@
 - **Victoria audio updates** — main greeting, message-sent, apologize/missed-call all updated to Victoria recordings
 - **Studio flow rev 59** — deployed with Victoria audio, updated routing (0=operator, 1=text, 2=hours, 3=more)
 - **.m4a support** — upload-assets.js now handles .m4a files (audio/mp4 content type)
+- **Duplicate SMS thread fix** — centralized `findConversation()` + `normalizePhone()` in phone-lookup.js; all 4 conversation lookup paths (SMS incoming, studio-send, connect-operator-text, messages/send) now use variant matching without twilio_number scoping — one thread per customer
+- **Message thread display fix** — API returns newest 50 messages (DESC + reverse) instead of oldest 50
+- **Keep-alive reduced** — 14 min → 5 min for more reliable Render uptime
+- **Font size bump** — root html 16px → 17px, scales all rem-based text ~6%
+- **Merged 4 duplicate Mike conversations** → 1 thread with 155 messages
+- **Updated apologize audio** to new Victoria "open" version (.wav)
+- **IVR tested end-to-end** — user confirmed all working
 
 **Diagram:**
 ```
@@ -19,7 +26,7 @@ Caller → Twilio Studio (rev 59)
           │
           ├─ Press 0 → /connect-operator → SIP + Softphone
           │              │
-          │              └─ No answer → Victoria apologize (.m4a)
+          │              └─ No answer → Victoria apologize (.wav)
           │                              ├─ Press 1 → SMS + Victoria msg-sent (.wav)
           │                              ├─ Other key → Record voicemail
           │                              └─ Timeout → Record voicemail
@@ -27,25 +34,35 @@ Caller → Twilio Studio (rev 59)
           ├─ Press 1 → SMS 2-way text
           ├─ Press 2 → Hours/location
           └─ Press 3 → More options
+
+  SMS Thread Fix:
+  ┌─────────────┐    normalizePhone()     ┌──────────────────┐
+  │ IVR press-1  │ ──────────────────────► │                  │
+  │ SMS incoming │ ── findConversation() ─►│ ONE conversation │
+  │ studio-send  │ ──────────────────────► │  per customer    │
+  │ app /send    │ ──────────────────────► │                  │
+  └─────────────┘                          └──────────────────┘
 ```
 
 **Current State:**
-- All code committed and pushed to main (6 commits this session)
-- Render auto-deployed, API healthy
+- All code committed and pushed to main (8 commits this session)
+- Render auto-deployed, API healthy, keep-alive every 5 min
+- Frontend deployed to Cloudflare Pages (font size bumped)
 - `FORCE_HOURS_OPEN=true` still active on Render (remove when done testing)
 - Studio flow deployed as rev 59 (test flow SID: FW9d3adadbd331019576b71c0a586fc491)
-- Softphone working — loads and rings on inbound calls
-- Frontend deployed to Cloudflare Pages
+- Softphone working, IVR fully tested
+- No duplicate conversations remaining
+- ~90 unstaged files are Prettier formatting drift from hooks (not substantive)
 
 **Issues:**
-- `claude/start-building-bjJ26` branch is 128 commits behind main (deferred sync)
+- `claude/start-building-bjJ26` branch is 130+ commits behind main (deferred sync)
 - Studio flow not yet deployed to production flow SID (`FW839cc419ccdd08f5199da5606f463f87`)
 
 **Next Steps:**
-- Test full IVR flow with Victoria audio (all paths)
-- Remove `FORCE_HOURS_OPEN` on Render after testing
+- Remove `FORCE_HOURS_OPEN` on Render when done testing
 - Deploy Studio flow to production flow SID
 - Sync `claude/start-building-bjJ26` branch with main
+- Commit Prettier formatting drift (batch cleanup)
 
 ---
 
