@@ -362,9 +362,28 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 				.maybeSingle();
 			callLog = data;
 
-			// If no call_log exists (e.g. Studio webhook timed out on cold start),
-			// create a basic one so the voicemail has a parent record
+			// Fallback: match by phone number + recent timing (within 5 min)
+			// TwiML redirects from Studio can cause CallSid mismatches
 			if (!callLog && From) {
+				console.warn('[recording] CallSid lookup failed for', CallSid, '— trying phone match');
+				const { data: phoneMatch } = await supabaseAdmin
+					.from('call_logs')
+					.select('id')
+					.eq('from_number', From)
+					.eq('direction', 'inbound')
+					.gte('started_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+					.order('started_at', { ascending: false })
+					.limit(1)
+					.maybeSingle();
+				callLog = phoneMatch;
+				if (callLog) {
+					console.log('[recording] Matched by phone fallback:', callLog.id);
+				}
+			}
+
+			// Last resort: create a call_log so voicemail has a parent record
+			if (!callLog && From) {
+				console.warn('[recording] Creating fallback call_log for', From);
 				const { data: created } = await supabaseAdmin
 					.from('call_logs')
 					.insert({
@@ -381,6 +400,19 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 					.single();
 				callLog = created;
 			}
+		} else if (From) {
+			// No CallSid at all — try phone match
+			console.warn('[recording] No CallSid in recording callback — trying phone match for', From);
+			const { data: phoneMatch } = await supabaseAdmin
+				.from('call_logs')
+				.select('id')
+				.eq('from_number', From)
+				.eq('direction', 'inbound')
+				.gte('started_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+				.order('started_at', { ascending: false })
+				.limit(1)
+				.maybeSingle();
+			callLog = phoneMatch;
 		}
 
 		const { error } = await supabaseAdmin.from('voicemails').insert({

@@ -129,7 +129,8 @@
 		const vm = call.voicemails?.[0]; // joined voicemail (if any)
 
 		// Voicemail left — show transcription preview
-		if (call.disposition === 'voicemail' && vm) {
+		// Check for vm record first (disposition may not always be set)
+		if (vm) {
 			if (vm.transcription) {
 				const preview =
 					vm.transcription.length > 80
