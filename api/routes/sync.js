@@ -198,7 +198,10 @@ router.post('/textmagic', async (req, res) => {
 
 				const { error: insertErr } = await supabaseAdmin.from('contacts').insert(contactData);
 				if (insertErr) {
-					console.error(`[sync] Insert error for ${fullName || phoneNormalized}:`, insertErr.message);
+					console.error(
+						`[sync] Insert error for ${fullName || phoneNormalized}:`,
+						insertErr.message
+					);
 					errors++;
 				} else {
 					inserted++;

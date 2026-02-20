@@ -361,7 +361,9 @@
 												<PhoneOutgoing class="h-4 w-4" />
 											</a>
 											<a
-												href={resolve(`/messages?phone=${encodeURIComponent(contact.phone)}${contact.full_name ? '&name=' + encodeURIComponent(contact.full_name) : ''}&new=true`)}
+												href={resolve(
+													`/messages?phone=${encodeURIComponent(contact.phone)}${contact.full_name ? '&name=' + encodeURIComponent(contact.full_name) : ''}&new=true`
+												)}
 												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-blue-500/40 text-blue-400/60 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 												title="Message {contact.full_name || 'contact'}"
 												onclick={(e) => e.stopPropagation()}
@@ -486,7 +488,9 @@
 						Call
 					</a>
 					<a
-						href={resolve(`/messages?phone=${encodeURIComponent(expandedContact.phone)}${expandedContact.full_name ? '&name=' + encodeURIComponent(expandedContact.full_name) : ''}&new=true`)}
+						href={resolve(
+							`/messages?phone=${encodeURIComponent(expandedContact.phone)}${expandedContact.full_name ? '&name=' + encodeURIComponent(expandedContact.full_name) : ''}&new=true`
+						)}
 						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-blue-500/40 text-blue-400 hover:bg-blue-500/15 hover:border-blue-400 transition-all text-sm font-medium"
 					>
 						<MessageSquare class="h-4 w-4" />

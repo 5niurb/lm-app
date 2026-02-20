@@ -579,7 +579,9 @@
 						{#if showDaySep}
 							<div class="flex items-center gap-3 py-1">
 								<div class="flex-1 h-px bg-border"></div>
-								<span class="text-[10px] text-text-tertiary font-medium uppercase tracking-wider shrink-0">
+								<span
+									class="text-[10px] text-text-tertiary font-medium uppercase tracking-wider shrink-0"
+								>
 									{formatDayLabel(msgDate)}
 								</span>
 								<div class="flex-1 h-px bg-border"></div>

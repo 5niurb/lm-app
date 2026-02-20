@@ -19,7 +19,7 @@ export async function forwardToTextMagic(body) {
 		const resp = await fetch(url, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: params,
+			body: params
 		});
 		if (!resp.ok) {
 			console.warn('[sms-forward] TextMagic returned', resp.status, resp.statusText);

@@ -18,11 +18,7 @@
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
-	import {
-		formatPhone,
-		formatDuration,
-		formatRelativeDate
-	} from '$lib/utils/formatters.js';
+	import { formatPhone, formatDuration, formatRelativeDate } from '$lib/utils/formatters.js';
 
 	// ─── State ───
 	let search = $state('');
@@ -440,9 +436,13 @@
 													<PhoneOutgoing class="h-3.5 w-3.5" />
 												</a>
 												<a
-													href={resolve(`/messages?phone=${encodeURIComponent(callPhone)}${call.caller_name
-														? '&name=' + encodeURIComponent(call.caller_name)
-														: ''}&new=true`)}
+													href={resolve(
+														`/messages?phone=${encodeURIComponent(callPhone)}${
+															call.caller_name
+																? '&name=' + encodeURIComponent(call.caller_name)
+																: ''
+														}&new=true`
+													)}
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 													title="Send message"
 												>

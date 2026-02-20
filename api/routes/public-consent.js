@@ -117,8 +117,7 @@ router.post('/:slug/submit', async (req, res) => {
 			if (!existingContact && client_phone) {
 				const digits = client_phone.replace(/\D/g, '');
 				// Match digits-only format used by the rest of the codebase
-				const normalized =
-					digits.length === 10 ? '1' + digits : digits;
+				const normalized = digits.length === 10 ? '1' + digits : digits;
 				const { data } = await supabaseAdmin
 					.from('contacts')
 					.select('id')

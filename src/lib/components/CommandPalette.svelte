@@ -113,12 +113,24 @@
 	}
 
 	const pages = [
-		{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', group: 'Pages' },
+		{
+			id: 'dashboard',
+			label: 'Dashboard',
+			icon: LayoutDashboard,
+			href: '/dashboard',
+			group: 'Pages'
+		},
 		{ id: 'softphone', label: 'Softphone', icon: Headset, href: '/softphone', group: 'Pages' },
 		{ id: 'calls', label: 'Phone Log', icon: Phone, href: '/calls', group: 'Pages' },
 		{ id: 'messages', label: 'Messages', icon: MessageSquare, href: '/messages', group: 'Pages' },
 		{ id: 'contacts', label: 'Contacts', icon: Users, href: '/contacts', group: 'Pages' },
-		{ id: 'schedule', label: 'Schedule', icon: CalendarDays, href: '/appointments', group: 'Pages' },
+		{
+			id: 'schedule',
+			label: 'Schedule',
+			icon: CalendarDays,
+			href: '/appointments',
+			group: 'Pages'
+		},
 		{ id: 'services', label: 'Services', icon: Sparkles, href: '/services', group: 'Pages' },
 		{ id: 'automation', label: 'Automation', icon: Zap, href: '/automation', group: 'Pages' },
 		{ id: 'settings', label: 'Settings', icon: Settings, href: '/settings', group: 'Pages' }
@@ -169,9 +181,7 @@
 		}
 
 		return [
-			...pages.filter(
-				(p) => p.label.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
-			),
+			...pages.filter((p) => p.label.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)),
 			...actions.filter((a) => a.label.toLowerCase().includes(q))
 		];
 	});

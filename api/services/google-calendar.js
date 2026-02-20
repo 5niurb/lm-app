@@ -44,7 +44,7 @@ export async function fetchEvents(timeMin, timeMax) {
 		singleEvents: true,
 		orderBy: 'startTime',
 		maxResults: 250,
-		timeZone: TIMEZONE,
+		timeZone: TIMEZONE
 	});
 
 	const events = (res.data.items || []).map(parseEvent);
@@ -104,7 +104,7 @@ export function parseEvent(gcalEvent) {
 		status: gcalEvent.status || 'confirmed',
 		location: gcalEvent.location || null,
 		description: gcalEvent.description || null,
-		all_day: isAllDay,
+		all_day: isAllDay
 	};
 }
 

@@ -51,7 +51,11 @@ describe('laTimeToISO', () => {
 	// -----------------------------------------------------------------------
 	it('PST winter date: midnight LA (2026-01-15 00:00:00) should be 08:00 UTC', () => {
 		const result = laTimeToISO('2026-01-15', '00:00:00');
-		assert.equal(utcHour(result), 8, `Expected UTC hour 8, got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			8,
+			`Expected UTC hour 8, got ${utcHour(result)} — full ISO: ${result}`
+		);
 		assert.equal(utcMinute(result), 0);
 		assert.equal(utcSecond(result), 0);
 	});
@@ -61,7 +65,11 @@ describe('laTimeToISO', () => {
 	// -----------------------------------------------------------------------
 	it('PDT summer date: midnight LA (2026-07-15 00:00:00) should be 07:00 UTC', () => {
 		const result = laTimeToISO('2026-07-15', '00:00:00');
-		assert.equal(utcHour(result), 7, `Expected UTC hour 7, got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			7,
+			`Expected UTC hour 7, got ${utcHour(result)} — full ISO: ${result}`
+		);
 		assert.equal(utcMinute(result), 0);
 		assert.equal(utcSecond(result), 0);
 	});
@@ -74,12 +82,20 @@ describe('laTimeToISO', () => {
 	// -----------------------------------------------------------------------
 	it('DST spring-forward day: midnight LA (2026-03-08 00:00:00) should be 08:00 UTC (PST)', () => {
 		const result = laTimeToISO('2026-03-08', '00:00:00');
-		assert.equal(utcHour(result), 8, `Expected UTC hour 8 (PST), got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			8,
+			`Expected UTC hour 8 (PST), got ${utcHour(result)} — full ISO: ${result}`
+		);
 	});
 
 	it('DST spring-forward day: 11:00 LA (2026-03-08 11:00:00) should be 18:00 UTC (PDT)', () => {
 		const result = laTimeToISO('2026-03-08', '11:00:00');
-		assert.equal(utcHour(result), 18, `Expected UTC hour 18 (PDT), got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			18,
+			`Expected UTC hour 18 (PDT), got ${utcHour(result)} — full ISO: ${result}`
+		);
 	});
 
 	// -----------------------------------------------------------------------
@@ -90,12 +106,20 @@ describe('laTimeToISO', () => {
 	// -----------------------------------------------------------------------
 	it('DST fall-back day: midnight LA (2026-11-01 00:00:00) should be 07:00 UTC (PDT)', () => {
 		const result = laTimeToISO('2026-11-01', '00:00:00');
-		assert.equal(utcHour(result), 7, `Expected UTC hour 7 (PDT), got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			7,
+			`Expected UTC hour 7 (PDT), got ${utcHour(result)} — full ISO: ${result}`
+		);
 	});
 
 	it('DST fall-back day: 15:00 LA (2026-11-01 15:00:00) should be 23:00 UTC (PST)', () => {
 		const result = laTimeToISO('2026-11-01', '15:00:00');
-		assert.equal(utcHour(result), 23, `Expected UTC hour 23 (PST), got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			23,
+			`Expected UTC hour 23 (PST), got ${utcHour(result)} — full ISO: ${result}`
+		);
 	});
 
 	// -----------------------------------------------------------------------
@@ -104,8 +128,16 @@ describe('laTimeToISO', () => {
 	it('End-of-day PST (2026-01-15 23:59:59) should be 07:59:59 the next day UTC', () => {
 		const result = laTimeToISO('2026-01-15', '23:59:59');
 		const d = new Date(result);
-		assert.equal(d.getUTCDate(), 16, `Expected UTC day 16, got ${d.getUTCDate()} — full ISO: ${result}`);
-		assert.equal(d.getUTCHours(), 7, `Expected UTC hour 7, got ${d.getUTCHours()} — full ISO: ${result}`);
+		assert.equal(
+			d.getUTCDate(),
+			16,
+			`Expected UTC day 16, got ${d.getUTCDate()} — full ISO: ${result}`
+		);
+		assert.equal(
+			d.getUTCHours(),
+			7,
+			`Expected UTC hour 7, got ${d.getUTCHours()} — full ISO: ${result}`
+		);
 		assert.equal(d.getUTCMinutes(), 59);
 		assert.equal(d.getUTCSeconds(), 59);
 	});
@@ -116,8 +148,16 @@ describe('laTimeToISO', () => {
 	it('End-of-day PDT (2026-07-15 23:59:59) should be 06:59:59 the next day UTC', () => {
 		const result = laTimeToISO('2026-07-15', '23:59:59');
 		const d = new Date(result);
-		assert.equal(d.getUTCDate(), 16, `Expected UTC day 16, got ${d.getUTCDate()} — full ISO: ${result}`);
-		assert.equal(d.getUTCHours(), 6, `Expected UTC hour 6, got ${d.getUTCHours()} — full ISO: ${result}`);
+		assert.equal(
+			d.getUTCDate(),
+			16,
+			`Expected UTC day 16, got ${d.getUTCDate()} — full ISO: ${result}`
+		);
+		assert.equal(
+			d.getUTCHours(),
+			6,
+			`Expected UTC hour 6, got ${d.getUTCHours()} — full ISO: ${result}`
+		);
 		assert.equal(d.getUTCMinutes(), 59);
 		assert.equal(d.getUTCSeconds(), 59);
 	});
@@ -127,7 +167,11 @@ describe('laTimeToISO', () => {
 	// -----------------------------------------------------------------------
 	it('Return value is a valid ISO 8601 string ending in Z', () => {
 		const result = laTimeToISO('2026-01-15', '09:30:00');
-		assert.match(result, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/, `Not a valid ISO string: ${result}`);
+		assert.match(
+			result,
+			/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+			`Not a valid ISO string: ${result}`
+		);
 	});
 
 	// -----------------------------------------------------------------------
@@ -135,7 +179,11 @@ describe('laTimeToISO', () => {
 	// -----------------------------------------------------------------------
 	it('Mid-day PST (2026-02-10 12:00:00) should be 20:00 UTC', () => {
 		const result = laTimeToISO('2026-02-10', '12:00:00');
-		assert.equal(utcHour(result), 20, `Expected UTC hour 20, got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			20,
+			`Expected UTC hour 20, got ${utcHour(result)} — full ISO: ${result}`
+		);
 	});
 
 	// -----------------------------------------------------------------------
@@ -143,6 +191,10 @@ describe('laTimeToISO', () => {
 	// -----------------------------------------------------------------------
 	it('Mid-day PDT (2026-08-20 12:00:00) should be 19:00 UTC', () => {
 		const result = laTimeToISO('2026-08-20', '12:00:00');
-		assert.equal(utcHour(result), 19, `Expected UTC hour 19, got ${utcHour(result)} — full ISO: ${result}`);
+		assert.equal(
+			utcHour(result),
+			19,
+			`Expected UTC hour 19, got ${utcHour(result)} — full ISO: ${result}`
+		);
 	});
 });

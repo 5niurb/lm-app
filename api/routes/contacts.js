@@ -7,7 +7,7 @@ const router = Router();
 
 /** Sanitize search input for Supabase .or() filter — strips PostgREST operators */
 function sanitizeSearch(input) {
-	return String(input).replace(/[,.()\[\]{}]/g, '');
+	return String(input).replace(/[,.()[\]{}]/g, '');
 }
 
 /** Allowlisted sort columns for contacts */
@@ -78,9 +78,7 @@ router.get('/', logAction('contacts.list'), async (req, res) => {
 	}
 
 	// Sorting (validated against allowlist)
-	const sortField = CONTACTS_SORT_ALLOWLIST.includes(req.query.sort)
-		? req.query.sort
-		: 'full_name';
+	const sortField = CONTACTS_SORT_ALLOWLIST.includes(req.query.sort) ? req.query.sort : 'full_name';
 	const sortOrder = req.query.order === 'desc' ? false : true;
 	query = query.order(sortField, { ascending: sortOrder });
 

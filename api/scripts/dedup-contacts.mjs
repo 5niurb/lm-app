@@ -46,7 +46,8 @@ function sourcePriority(source) {
 let all = [];
 let from = 0;
 while (true) {
-	const { data } = await sb.from('contacts')
+	const { data } = await sb
+		.from('contacts')
 		.select('*')
 		.range(from, from + 999);
 	if (!data || data.length === 0) break;
@@ -108,22 +109,26 @@ for (const [phone, contacts] of dupeGroups) {
 	}
 
 	// Merge tags (union), then enforce lead/patient exclusivity
-	const allTags = new Set(contacts.flatMap(c => c.tags || []));
+	const allTags = new Set(contacts.flatMap((c) => c.tags || []));
 	if (allTags.has('patient')) allTags.delete('lead');
 	const mergedTags = [...allTags];
 
 	// Pick best values: prefer non-null, prefer winner's
-	const mergedEmail = winner.email || losers.find(l => l.email)?.email || null;
-	const mergedFullName = winner.full_name || losers.find(l => l.full_name)?.full_name || null;
-	const mergedFirstName = winner.first_name || losers.find(l => l.first_name)?.first_name || null;
-	const mergedLastName = winner.last_name || losers.find(l => l.last_name)?.last_name || null;
-	const mergedNotes = [winner.notes, ...losers.map(l => l.notes)].filter(Boolean).join('\n---\n') || null;
+	const mergedEmail = winner.email || losers.find((l) => l.email)?.email || null;
+	const mergedFullName = winner.full_name || losers.find((l) => l.full_name)?.full_name || null;
+	const mergedFirstName = winner.first_name || losers.find((l) => l.first_name)?.first_name || null;
+	const mergedLastName = winner.last_name || losers.find((l) => l.last_name)?.last_name || null;
+	const mergedNotes =
+		[winner.notes, ...losers.map((l) => l.notes)].filter(Boolean).join('\n---\n') || null;
 
 	if (dryRun) {
-		console.log(`MERGE +${phone}: keep ${winner.source}/${winner.full_name} (${winner.id.slice(0, 8)}), delete ${losers.length} dupes`);
+		console.log(
+			`MERGE +${phone}: keep ${winner.source}/${winner.full_name} (${winner.id.slice(0, 8)}), delete ${losers.length} dupes`
+		);
 	} else {
 		// Update winner with merged data
-		const { error: updateErr } = await sb.from('contacts')
+		const { error: updateErr } = await sb
+			.from('contacts')
 			.update({
 				email: mergedEmail,
 				full_name: mergedFullName,
@@ -142,14 +147,16 @@ for (const [phone, contacts] of dupeGroups) {
 		}
 
 		// Repoint foreign keys from losers to winner
-		const loserIds = losers.map(l => l.id);
+		const loserIds = losers.map((l) => l.id);
 
-		const { count: callCount } = await sb.from('call_logs')
+		const { count: callCount } = await sb
+			.from('call_logs')
 			.update({ contact_id: winner.id })
 			.in('contact_id', loserIds)
 			.select('*', { count: 'exact', head: true });
 
-		const { count: convoCount } = await sb.from('conversations')
+		const { count: convoCount } = await sb
+			.from('conversations')
 			.update({ contact_id: winner.id })
 			.in('contact_id', loserIds)
 			.select('*', { count: 'exact', head: true });
@@ -157,9 +164,7 @@ for (const [phone, contacts] of dupeGroups) {
 		fkUpdates += (callCount || 0) + (convoCount || 0);
 
 		// Delete losers
-		const { error: delErr } = await sb.from('contacts')
-			.delete()
-			.in('id', loserIds);
+		const { error: delErr } = await sb.from('contacts').delete().in('id', loserIds);
 
 		if (delErr) {
 			console.error(`  ERROR deleting losers for +${phone}: ${delErr.message}`);
@@ -173,7 +178,8 @@ for (const [phone, contacts] of dupeGroups) {
 // ── Fix lead/patient exclusivity on remaining contacts ───────────────────────
 console.log('\nFixing lead/patient tag exclusivity...');
 
-const { data: bothTagContacts } = await sb.from('contacts')
+const { data: bothTagContacts } = await sb
+	.from('contacts')
 	.select('id, tags')
 	.contains('tags', ['lead', 'patient']);
 
@@ -182,8 +188,9 @@ if (bothTagContacts && bothTagContacts.length > 0) {
 
 	if (!dryRun) {
 		for (const c of bothTagContacts) {
-			const newTags = (c.tags || []).filter(t => t !== 'lead');
-			await sb.from('contacts')
+			const newTags = (c.tags || []).filter((t) => t !== 'lead');
+			await sb
+				.from('contacts')
 				.update({ tags: newTags, updated_at: new Date().toISOString() })
 				.eq('id', c.id);
 			tagFixes++;
@@ -201,6 +208,8 @@ console.log(`  Foreign keys repointed: ${fkUpdates}`);
 console.log(`  Lead tags removed (patient wins): ${tagFixes}`);
 
 if (dryRun) {
-	console.log(`\n  Would merge ${dupeGroups.length} groups, deleting ~${dupeGroups.reduce((n, [, v]) => n + v.length - 1, 0)} contacts`);
+	console.log(
+		`\n  Would merge ${dupeGroups.length} groups, deleting ~${dupeGroups.reduce((n, [, v]) => n + v.length - 1, 0)} contacts`
+	);
 	console.log('  Run with --apply to execute');
 }

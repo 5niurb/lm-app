@@ -18,7 +18,10 @@ export default [
 		},
 		rules: {
 			// Relax rules for our codebase — warn instead of error for common patterns
-			'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+			'no-unused-vars': [
+				'warn',
+				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
+			],
 			'no-undef': 'warn'
 		}
 	},

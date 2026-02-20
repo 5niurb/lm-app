@@ -73,7 +73,7 @@ export function formatTime(dateTime) {
 	return new Date(dateTime).toLocaleTimeString('en-US', {
 		hour: 'numeric',
 		minute: '2-digit',
-		hour12: true,
+		hour12: true
 	});
 }
 
@@ -87,7 +87,7 @@ export function formatDateHeader(dateStr) {
 	return d.toLocaleDateString('en-US', {
 		weekday: 'long',
 		month: 'long',
-		day: 'numeric',
+		day: 'numeric'
 	});
 }
 
@@ -117,7 +117,7 @@ export function formatCurrency(amount, options = {}) {
 		style: 'currency',
 		currency: 'USD',
 		minimumFractionDigits: showCents ? 2 : 0,
-		maximumFractionDigits: showCents ? 2 : 0,
+		maximumFractionDigits: showCents ? 2 : 0
 	});
 }
 

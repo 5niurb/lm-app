@@ -23,7 +23,7 @@ describe('TextMagic SMS forwarding', () => {
 			MessageSid: 'SM123',
 			From: '+13105551234',
 			To: '+12134442242',
-			Body: 'Hello',
+			Body: 'Hello'
 		};
 
 		await forwardToTextMagic(twilioBody);

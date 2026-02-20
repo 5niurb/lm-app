@@ -18,7 +18,7 @@ import assert from 'node:assert';
  * Sanitize search input for Supabase .or() filter — strips PostgREST operators
  */
 function sanitizeSearch(input) {
-	return String(input).replace(/[,.()\[\]{}]/g, '');
+	return String(input).replace(/[,.()[\]{}]/g, '');
 }
 
 /**
@@ -61,7 +61,7 @@ describe('sanitizeSearch', () => {
 		assert.strictEqual(sanitizeSearch('Mary-Jane'), 'Mary-Jane');
 	});
 
-	it("passes through an apostrophe (not in strip list)", () => {
+	it('passes through an apostrophe (not in strip list)', () => {
 		assert.strictEqual(sanitizeSearch("O'Brien"), "O'Brien");
 	});
 

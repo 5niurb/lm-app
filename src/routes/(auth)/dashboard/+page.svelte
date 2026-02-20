@@ -9,7 +9,7 @@
 		PhoneOutgoing,
 		MessageSquare,
 		ArrowRight,
-		CalendarDays,
+		CalendarDays
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
@@ -558,7 +558,7 @@
 									{new Date(appt.start).toLocaleTimeString('en-US', {
 										hour: 'numeric',
 										minute: '2-digit',
-										hour12: true,
+										hour12: true
 									})}
 								</span>
 							</div>
@@ -593,7 +593,9 @@
 				<h2 class="text-base tracking-wide">Recent Calls</h2>
 				<p class="text-xs text-muted-foreground mt-0.5">Latest call activity.</p>
 			</div>
-			<a href={resolve('/calls')} class="text-xs text-gold hover:text-gold transition-colors">View all →</a>
+			<a href={resolve('/calls')} class="text-xs text-gold hover:text-gold transition-colors"
+				>View all →</a
+			>
 		</div>
 		<div class="p-5">
 			{#if recentCalls === null}
@@ -671,7 +673,9 @@
 													<PhoneOutgoing class="h-3.5 w-3.5" />
 												</a>
 												<a
-													href={resolve(`/messages?phone=${encodeURIComponent(callPhone)}${call.caller_name ? '&name=' + encodeURIComponent(call.caller_name) : ''}&new=true`)}
+													href={resolve(
+														`/messages?phone=${encodeURIComponent(callPhone)}${call.caller_name ? '&name=' + encodeURIComponent(call.caller_name) : ''}&new=true`
+													)}
 													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
 													title="Send message"
 												>

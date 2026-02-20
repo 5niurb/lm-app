@@ -7,7 +7,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
+		"prepare": "husky",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "eslint .",
@@ -28,6 +28,8 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.15.0",
 		"globals": "^17.3.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.7",
 		"playwright": "^1.58.2",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
@@ -42,6 +44,19 @@
 		"@sveltejs/kit": {
 			"cookie": "^0.7.0"
 		}
+	},
+	"lint-staged": {
+		"*.{js,mjs,cjs}": [
+			"eslint --fix",
+			"prettier --write"
+		],
+		"*.svelte": [
+			"eslint --fix",
+			"prettier --write --plugin prettier-plugin-svelte"
+		],
+		"*.{json,css,md,html,yaml,yml}": [
+			"prettier --write"
+		]
 	},
 	"dependencies": {
 		"@internationalized/date": "^3.11.0",

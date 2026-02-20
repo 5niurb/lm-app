@@ -25,10 +25,7 @@ const XLSX = require('xlsx');
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, '..', '.env') });
 
-const supabase = createClient(
-	process.env.SUPABASE_URL,
-	process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // ── Parse XLS ────────────────────────────────────────────────────────────────
 
@@ -90,7 +87,8 @@ for (const row of rows) {
 	if (row['DOB']) metadata.dob = row['DOB'];
 	if (row['Referral Source']) metadata.referral_source = row['Referral Source'];
 	if (row['Nick Name']) metadata.nickname = row['Nick Name'];
-	if (row['Total Sales Relationship']) metadata.total_sales = Number(row['Total Sales Relationship']) || 0;
+	if (row['Total Sales Relationship'])
+		metadata.total_sales = Number(row['Total Sales Relationship']) || 0;
 	if (row['Visited'] && row['Visited'] !== 'Never') metadata.last_visited = row['Visited'];
 	if (row['user_image']) metadata.ar_image = row['user_image'];
 	if (row['Patient Created Date']) metadata.ar_created_date = row['Patient Created Date'];
@@ -154,9 +152,7 @@ for (const row of rows) {
 			}
 		} else {
 			// Insert new
-			const { error } = await supabase
-				.from('contacts')
-				.insert(contactData);
+			const { error } = await supabase.from('contacts').insert(contactData);
 
 			if (error) {
 				console.error(`  ERROR inserting AR#${arId} (${fullName}): ${error.message}`);

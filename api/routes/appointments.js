@@ -80,7 +80,7 @@ router.get('/stats', logAction('appointments.stats'), async (req, res) => {
 
 		const [todayEvents, weekEvents] = await Promise.all([
 			getEventsForDay(today),
-			getEventsForRange(mondayStr, sundayStr),
+			getEventsForRange(mondayStr, sundayStr)
 		]);
 
 		// Find next upcoming appointment (today, after now)
@@ -90,7 +90,7 @@ router.get('/stats', logAction('appointments.stats'), async (req, res) => {
 		res.json({
 			today: todayEvents.length,
 			thisWeek: weekEvents.length,
-			nextAppointment: upcoming || null,
+			nextAppointment: upcoming || null
 		});
 	} catch (err) {
 		console.error('[appointments] stats failed:', err.message);

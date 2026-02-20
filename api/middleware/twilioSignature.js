@@ -28,7 +28,10 @@ export function validateTwilioSignature(req, res, next) {
 	// Build the full URL Twilio used to sign the request.
 	// In production behind a proxy/load-balancer, RENDER_EXTERNAL_URL or
 	// API_BASE_URL must be set so the reconstructed URL matches what Twilio signed.
-	const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`;
+	const baseUrl =
+		process.env.RENDER_EXTERNAL_URL ||
+		process.env.API_BASE_URL ||
+		`${req.protocol}://${req.get('host')}`;
 	const fullUrl = `${baseUrl}${req.originalUrl}`;
 
 	const isValid = twilio.validateRequest(authToken, signature, fullUrl, req.body || {});

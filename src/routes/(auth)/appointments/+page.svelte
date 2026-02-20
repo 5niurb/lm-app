@@ -10,7 +10,7 @@
 		MessageSquare,
 		MapPin,
 		CalendarDays,
-		PhoneOutgoing,
+		PhoneOutgoing
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
@@ -35,7 +35,7 @@
 		appointments
 			? appointments.filter((a) => {
 					const apptDate = new Date(a.start).toLocaleDateString('en-CA', {
-						timeZone: 'America/Los_Angeles',
+						timeZone: 'America/Los_Angeles'
 					});
 					return apptDate === selectedDate;
 				})
@@ -57,7 +57,7 @@
 		for (const day of weekDays) {
 			grouped[day.date] = appointments.filter((a) => {
 				const apptDate = new Date(a.start).toLocaleDateString('en-CA', {
-					timeZone: 'America/Los_Angeles',
+					timeZone: 'America/Los_Angeles'
 				});
 				return apptDate === day.date;
 			});
@@ -237,7 +237,7 @@
 				date: d,
 				label: date.toLocaleDateString('en-US', { weekday: 'short' }),
 				dayNum: date.getDate(),
-				isToday: d === todayStr(),
+				isToday: d === todayStr()
 			};
 		});
 	}
@@ -336,7 +336,9 @@
 				<div class="flex flex-wrap gap-2">
 					{#each allDayAppointments as appt (appt.id)}
 						<button
-							class="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm transition-all duration-200 hover:bg-gold-glow {statusColor(appt.status)}"
+							class="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm transition-all duration-200 hover:bg-gold-glow {statusColor(
+								appt.status
+							)}"
 							onclick={() => openDrawer(appt)}
 						>
 							<CalendarDays class="h-3.5 w-3.5 text-gold-dim" />
@@ -392,7 +394,9 @@
 							{@const height = getBlockHeight(appt.start, appt.end)}
 							{@const durationMin = getDurationMinutes(appt.start, appt.end)}
 							<button
-								class="absolute left-1 right-2 z-10 rounded-md border-l-[3px] px-3 py-1.5 text-left transition-all duration-200 hover:shadow-lg hover:scale-[1.01] overflow-hidden cursor-pointer {statusColor(appt.status)}"
+								class="absolute left-1 right-2 z-10 rounded-md border-l-[3px] px-3 py-1.5 text-left transition-all duration-200 hover:shadow-lg hover:scale-[1.01] overflow-hidden cursor-pointer {statusColor(
+									appt.status
+								)}"
 								style="top: {top}px; height: {height}px;"
 								onclick={() => openDrawer(appt)}
 							>
@@ -433,9 +437,7 @@
 							{day.label}
 						</p>
 						<p
-							class="text-lg font-light mt-0.5 {day.isToday
-								? 'text-gold'
-								: 'text-text-primary'}"
+							class="text-lg font-light mt-0.5 {day.isToday ? 'text-gold' : 'text-text-primary'}"
 							style="font-family: 'Playfair Display', serif;"
 						>
 							{day.dayNum}
@@ -460,7 +462,8 @@
 						{:else}
 							{#each dayAppts as appt (appt.id)}
 								<button
-									class="w-full text-left rounded border-l-2 px-1.5 py-1 text-xs transition-all duration-200 hover:shadow-md cursor-pointer {appt.status === 'confirmed'
+									class="w-full text-left rounded border-l-2 px-1.5 py-1 text-xs transition-all duration-200 hover:shadow-md cursor-pointer {appt.status ===
+									'confirmed'
 										? 'border-l-gold bg-gold/5 hover:bg-gold/10'
 										: appt.status === 'tentative'
 											? 'border-l-amber-400 bg-amber-400/5 hover:bg-amber-400/10'
@@ -515,7 +518,9 @@
 					</h2>
 					<div class="flex items-center gap-2 mt-1.5">
 						<span
-							class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize {statusBadgeClasses(selectedAppt.status)}"
+							class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize {statusBadgeClasses(
+								selectedAppt.status
+							)}"
 						>
 							{selectedAppt.status}
 						</span>
@@ -572,7 +577,7 @@
 						<p class="text-sm text-text-primary">
 							{formatDateHeader(
 								new Date(selectedAppt.start).toLocaleDateString('en-CA', {
-									timeZone: 'America/Los_Angeles',
+									timeZone: 'America/Los_Angeles'
 								})
 							)}
 						</p>
@@ -659,7 +664,9 @@
 							{(selectedAppt.patient_name?.[0] || '?').toUpperCase()}
 						</div>
 						<div>
-							<p class="text-sm font-medium text-text-primary group-hover:text-gold transition-colors">
+							<p
+								class="text-sm font-medium text-text-primary group-hover:text-gold transition-colors"
+							>
 								{selectedAppt.patient_name}
 							</p>
 							<p class="text-xs text-text-tertiary">View full contact record</p>

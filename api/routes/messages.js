@@ -8,7 +8,7 @@ const router = Router();
 
 /** Sanitize search input for Supabase .or() filter */
 function sanitizeSearch(input) {
-	return String(input).replace(/[,.()\[\]{}]/g, '');
+	return String(input).replace(/[,.()[\]{}]/g, '');
 }
 
 // All message routes require authentication

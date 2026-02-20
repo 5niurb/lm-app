@@ -644,7 +644,8 @@
 						bind:value={formCategory}
 						class="w-full px-3 py-2 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
 					>
-						{#each categories as cat (cat.value)}<option value={cat.value}>{cat.label}</option>{/each}
+						{#each categories as cat (cat.value)}<option value={cat.value}>{cat.label}</option
+							>{/each}
 					</select>
 				</div>
 				<div class="flex gap-4">
@@ -708,292 +709,292 @@
 
 	<!-- ========== SERVICE LIST ========== -->
 	<div class="rounded border border-border overflow-hidden bg-card p-5">
-	{#if loading}
-		<div class="space-y-3">
-			{#each Array(4) as _, i (i)}<Skeleton class="h-16 w-full" />{/each}
-		</div>
-	{:else if services.length === 0}
-		<div class="flex flex-col items-center justify-center h-64 text-center">
-			<div
-				class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-glow border border-border-subtle"
-			>
-				<Sparkles class="h-7 w-7 empty-state-icon" />
+		{#if loading}
+			<div class="space-y-3">
+				{#each Array(4) as _, i (i)}<Skeleton class="h-16 w-full" />{/each}
 			</div>
-			<p
-				class="text-base font-light text-text-tertiary mb-1"
-				style="font-family: 'Playfair Display', serif;"
-			>
-				No services yet
-			</p>
-			<p class="text-xs text-text-ghost">
-				Run the Phase 1C schema migration to seed default services.
-			</p>
-			{#if $isAdmin}
-				<button
-					onclick={openCreateForm}
-					class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-gold-glow transition-colors"
+		{:else if services.length === 0}
+			<div class="flex flex-col items-center justify-center h-64 text-center">
+				<div
+					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gold-glow border border-border-subtle"
 				>
-					<Plus class="h-3.5 w-3.5" /> Add your first service
-				</button>
-			{/if}
-		</div>
-	{:else}
-		{#each grouped as group (group.value)}
-			<div>
-				<!-- Category header -->
-				<div class="flex items-center gap-3 mb-4">
-					<span
-						class="px-3 py-1 rounded text-[11px] uppercase tracking-[0.14em] font-semibold {categoryColor(
-							group.value
-						)}">{group.label}</span
-					>
-					<span class="text-xs text-text-tertiary"
-						>{group.services.length} service{group.services.length !== 1 ? 's' : ''}</span
-					>
-					<div class="flex-1 h-px bg-gold-glow"></div>
+					<Sparkles class="h-7 w-7 empty-state-icon" />
 				</div>
-
-				<!-- Service card grid -->
-				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each group.services as service (service.id)}
-						<!-- Service card -->
-						<div
-							class="group/card card-elevated rounded-lg border border-t-2 {categoryBorderColor(
+				<p
+					class="text-base font-light text-text-tertiary mb-1"
+					style="font-family: 'Playfair Display', serif;"
+				>
+					No services yet
+				</p>
+				<p class="text-xs text-text-ghost">
+					Run the Phase 1C schema migration to seed default services.
+				</p>
+				{#if $isAdmin}
+					<button
+						onclick={openCreateForm}
+						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-gold-glow transition-colors"
+					>
+						<Plus class="h-3.5 w-3.5" /> Add your first service
+					</button>
+				{/if}
+			</div>
+		{:else}
+			{#each grouped as group (group.value)}
+				<div>
+					<!-- Category header -->
+					<div class="flex items-center gap-3 mb-4">
+						<span
+							class="px-3 py-1 rounded text-[11px] uppercase tracking-[0.14em] font-semibold {categoryColor(
 								group.value
-							)} cursor-pointer transition-all duration-200 hover:translate-y-[-2px] relative flex flex-col"
-							role="button"
-							tabindex="0"
-							onclick={() => toggleExpanded(service.id)}
-							onkeydown={(e) => {
-								if (e.key === 'Enter') toggleExpanded(service.id);
-							}}
+							)}">{group.label}</span
 						>
-							<!-- Active/Inactive badge -->
-							<div class="absolute top-3 right-3">
-								{#if service.is_active}
-									<span
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-									>
-										<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-										Active
-									</span>
-								{:else}
-									<span
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-text-tertiary border border-white/10"
-									>
-										Inactive
-									</span>
-								{/if}
-							</div>
+						<span class="text-xs text-text-tertiary"
+							>{group.services.length} service{group.services.length !== 1 ? 's' : ''}</span
+						>
+						<div class="flex-1 h-px bg-gold-glow"></div>
+					</div>
 
-							<!-- Card body -->
-							<div class="p-5 flex-1 flex flex-col">
-								<!-- Service name -->
-								<h3
-									class="text-base text-text-primary pr-16 mb-2"
-									style="font-family: 'Playfair Display', serif;"
-								>
-									{service.name}
-								</h3>
-
-								<!-- Description -->
-								{#if service.description}
-									<p class="text-xs text-text-tertiary line-clamp-2 leading-relaxed mb-4">
-										{service.description}
-									</p>
-								{:else}
-									<div class="mb-4"></div>
-								{/if}
-
-								<!-- Spacer to push footer down -->
-								<div class="flex-1"></div>
-
-								<!-- Footer: duration + price -->
-								<div class="flex items-center justify-between pt-3 border-t border-border-subtle">
-									<div class="flex items-center gap-4">
-										{#if service.duration_min}
-											<span class="flex items-center gap-1.5 text-xs text-text-tertiary">
-												<Clock class="h-3.5 w-3.5 text-text-ghost" />
-												{service.duration_min} min
-											</span>
-										{/if}
-										{#if service.price_from}
-											<span class="flex items-center gap-1.5 text-xs text-text-tertiary">
-												<DollarSign class="h-3.5 w-3.5 text-text-ghost" />
-												From ${Number(service.price_from).toFixed(0)}
-											</span>
-										{/if}
-									</div>
-									<!-- Expand indicator -->
-									<div class="text-text-ghost group-hover/card:text-gold transition-colors">
-										{#if expandedId === service.id}
-											<ChevronDown class="h-4 w-4" />
-										{:else}
-											<ChevronRight class="h-4 w-4" />
-										{/if}
-									</div>
-								</div>
-							</div>
-
-							<!-- Admin action buttons (appear on hover) -->
-							{#if $isAdmin}
-								<div
-									class="absolute top-3 left-3 flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200"
-								>
-									<button
-										onclick={(e) => {
-											e.stopPropagation();
-											openEditForm(service);
-										}}
-										class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-gold hover:bg-gold/10 transition-colors"
-										title="Edit service"
-									>
-										<Pencil class="h-3.5 w-3.5" />
-									</button>
-									<button
-										onclick={(e) => {
-											e.stopPropagation();
-											deleteService(service);
-										}}
-										class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
-										title="Delete service"
-									>
-										<Trash2 class="h-3.5 w-3.5" />
-									</button>
-								</div>
-							{/if}
-						</div>
-
-						<!-- Expanded content blocks (full-width row below the card) -->
-						{#if expandedId === service.id}
-							<div class="col-span-full rounded-lg border border-border bg-card/95 p-5">
-								<div class="flex items-center justify-between mb-4">
-									<div class="flex items-center gap-3">
-										<h3
-											class="text-sm text-text-secondary"
-											style="font-family: 'Playfair Display', serif;"
+					<!-- Service card grid -->
+					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+						{#each group.services as service (service.id)}
+							<!-- Service card -->
+							<div
+								class="group/card card-elevated rounded-lg border border-t-2 {categoryBorderColor(
+									group.value
+								)} cursor-pointer transition-all duration-200 hover:translate-y-[-2px] relative flex flex-col"
+								role="button"
+								tabindex="0"
+								onclick={() => toggleExpanded(service.id)}
+								onkeydown={(e) => {
+									if (e.key === 'Enter') toggleExpanded(service.id);
+								}}
+							>
+								<!-- Active/Inactive badge -->
+								<div class="absolute top-3 right-3">
+									{#if service.is_active}
+										<span
+											class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
 										>
-											{service.name}
-										</h3>
-										<span class="text-xs uppercase tracking-[0.12em] text-text-ghost"
-											>Content Blocks</span
+											<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+											Active
+										</span>
+									{:else}
+										<span
+											class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/5 text-text-tertiary border border-white/10"
 										>
-									</div>
-									{#if $isAdmin}
-										<button
-											onclick={() => openContentCreate(service.id, service.name)}
-											class="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-gold hover:bg-gold-glow border border-border transition-colors"
-										>
-											<Plus class="h-3 w-3" /> Add Content
-										</button>
+											Inactive
+										</span>
 									{/if}
 								</div>
 
-								{#if serviceContent[service.id]?.length > 0}
-									<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-										{#each serviceContent[service.id] as content (content.id)}
-											<div
-												class="group rounded border border-border-subtle px-3 py-2.5 bg-surface-subtle hover:border-border transition-colors cursor-pointer"
-												role="button"
-												tabindex="0"
-												onclick={() => openContentEdit(content, service.name)}
-												onkeydown={(e) => {
-													if (e.key === 'Enter') openContentEdit(content, service.name);
-												}}
-											>
-												<div class="flex items-center justify-between">
-													<div class="flex items-center gap-2">
-														<FileText class="h-3 w-3 {contentTypeColor(content.content_type)}" />
-														<span class="text-xs font-medium text-text-secondary"
-															>{content.title}</span
-														>
-													</div>
-													{#if $isAdmin}
-														<button
-															onclick={(e) => {
-																e.stopPropagation();
-																deleteContent(content);
-															}}
-															class="p-0.5 opacity-0 group-hover:opacity-100 text-text-ghost hover:text-red-400 transition-all"
-															title="Delete"
-														>
-															<Trash2 class="h-3 w-3" />
-														</button>
-													{/if}
-												</div>
-												<div class="flex items-center gap-2 mt-1">
-													<span class="text-[10px] {contentTypeColor(content.content_type)}"
-														>{contentTypeLabel(content.content_type)}</span
-													>
-													<span class="text-[10px] text-text-ghost">v{content.version}</span>
-													{#if Array.isArray(content.content_json)}
-														<span class="text-[10px] text-text-ghost"
-															>{content.content_json.length} section{content.content_json.length !==
-															1
-																? 's'
-																: ''}</span
-														>
-													{/if}
-													{#if content.page_slug}
-														<span class="text-[10px] text-text-ghost font-mono"
-															>/care/{content.page_slug}</span
-														>
-													{/if}
-												</div>
-												{#if content.summary}
-													<p class="text-[10px] text-text-ghost mt-1 line-clamp-2">
-														{content.summary}
-													</p>
-												{/if}
-											</div>
-										{/each}
+								<!-- Card body -->
+								<div class="p-5 flex-1 flex flex-col">
+									<!-- Service name -->
+									<h3
+										class="text-base text-text-primary pr-16 mb-2"
+										style="font-family: 'Playfair Display', serif;"
+									>
+										{service.name}
+									</h3>
+
+									<!-- Description -->
+									{#if service.description}
+										<p class="text-xs text-text-tertiary line-clamp-2 leading-relaxed mb-4">
+											{service.description}
+										</p>
+									{:else}
+										<div class="mb-4"></div>
+									{/if}
+
+									<!-- Spacer to push footer down -->
+									<div class="flex-1"></div>
+
+									<!-- Footer: duration + price -->
+									<div class="flex items-center justify-between pt-3 border-t border-border-subtle">
+										<div class="flex items-center gap-4">
+											{#if service.duration_min}
+												<span class="flex items-center gap-1.5 text-xs text-text-tertiary">
+													<Clock class="h-3.5 w-3.5 text-text-ghost" />
+													{service.duration_min} min
+												</span>
+											{/if}
+											{#if service.price_from}
+												<span class="flex items-center gap-1.5 text-xs text-text-tertiary">
+													<DollarSign class="h-3.5 w-3.5 text-text-ghost" />
+													From ${Number(service.price_from).toFixed(0)}
+												</span>
+											{/if}
+										</div>
+										<!-- Expand indicator -->
+										<div class="text-text-ghost group-hover/card:text-gold transition-colors">
+											{#if expandedId === service.id}
+												<ChevronDown class="h-4 w-4" />
+											{:else}
+												<ChevronRight class="h-4 w-4" />
+											{/if}
+										</div>
 									</div>
-								{:else}
-									<div class="flex items-center gap-2 py-3">
-										<FileText class="h-4 w-4 text-text-ghost" />
-										<span class="text-xs text-text-ghost">No content blocks yet.</span>
+								</div>
+
+								<!-- Admin action buttons (appear on hover) -->
+								{#if $isAdmin}
+									<div
+										class="absolute top-3 left-3 flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200"
+									>
+										<button
+											onclick={(e) => {
+												e.stopPropagation();
+												openEditForm(service);
+											}}
+											class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-gold hover:bg-gold/10 transition-colors"
+											title="Edit service"
+										>
+											<Pencil class="h-3.5 w-3.5" />
+										</button>
+										<button
+											onclick={(e) => {
+												e.stopPropagation();
+												deleteService(service);
+											}}
+											class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
+											title="Delete service"
+										>
+											<Trash2 class="h-3.5 w-3.5" />
+										</button>
 									</div>
 								{/if}
-
-								<!-- Content type checklist -->
-								<div class="mt-3 flex flex-wrap gap-1.5">
-									{#each contentTypes as ct (ct.value)}
-										{@const exists = serviceContent[service.id]?.some(
-											(c) => c.content_type === ct.value
-										)}
-										<button
-											class="px-2 py-0.5 rounded text-[10px] border transition-colors {exists
-												? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
-												: 'border-border-subtle bg-transparent text-text-ghost hover:border-border hover:text-text-tertiary'}"
-											onclick={() => {
-												if (!exists && $isAdmin) {
-													cType = ct.value;
-													openContentCreate(service.id, service.name);
-												}
-											}}
-											title={exists ? `${ct.label} exists — click to edit` : `Add ${ct.label}`}
-										>
-											{exists ? '✓' : '+'}
-											{ct.shortLabel}
-										</button>
-									{/each}
-								</div>
 							</div>
-						{/if}
-					{/each}
-				</div>
-			</div>
-		{/each}
 
-		<!-- Summary -->
-		<div class="flex items-center gap-6 pt-4 border-t border-border-subtle">
-			<span class="text-xs text-text-ghost"
-				>{services.length} service{services.length !== 1 ? 's' : ''}</span
-			>
-			<span class="text-xs text-text-ghost"
-				>{services.filter((s) => s.is_active).length} active</span
-			>
-		</div>
-	{/if}
+							<!-- Expanded content blocks (full-width row below the card) -->
+							{#if expandedId === service.id}
+								<div class="col-span-full rounded-lg border border-border bg-card/95 p-5">
+									<div class="flex items-center justify-between mb-4">
+										<div class="flex items-center gap-3">
+											<h3
+												class="text-sm text-text-secondary"
+												style="font-family: 'Playfair Display', serif;"
+											>
+												{service.name}
+											</h3>
+											<span class="text-xs uppercase tracking-[0.12em] text-text-ghost"
+												>Content Blocks</span
+											>
+										</div>
+										{#if $isAdmin}
+											<button
+												onclick={() => openContentCreate(service.id, service.name)}
+												class="flex items-center gap-1 px-2.5 py-1 rounded text-xs text-gold hover:bg-gold-glow border border-border transition-colors"
+											>
+												<Plus class="h-3 w-3" /> Add Content
+											</button>
+										{/if}
+									</div>
+
+									{#if serviceContent[service.id]?.length > 0}
+										<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+											{#each serviceContent[service.id] as content (content.id)}
+												<div
+													class="group rounded border border-border-subtle px-3 py-2.5 bg-surface-subtle hover:border-border transition-colors cursor-pointer"
+													role="button"
+													tabindex="0"
+													onclick={() => openContentEdit(content, service.name)}
+													onkeydown={(e) => {
+														if (e.key === 'Enter') openContentEdit(content, service.name);
+													}}
+												>
+													<div class="flex items-center justify-between">
+														<div class="flex items-center gap-2">
+															<FileText class="h-3 w-3 {contentTypeColor(content.content_type)}" />
+															<span class="text-xs font-medium text-text-secondary"
+																>{content.title}</span
+															>
+														</div>
+														{#if $isAdmin}
+															<button
+																onclick={(e) => {
+																	e.stopPropagation();
+																	deleteContent(content);
+																}}
+																class="p-0.5 opacity-0 group-hover:opacity-100 text-text-ghost hover:text-red-400 transition-all"
+																title="Delete"
+															>
+																<Trash2 class="h-3 w-3" />
+															</button>
+														{/if}
+													</div>
+													<div class="flex items-center gap-2 mt-1">
+														<span class="text-[10px] {contentTypeColor(content.content_type)}"
+															>{contentTypeLabel(content.content_type)}</span
+														>
+														<span class="text-[10px] text-text-ghost">v{content.version}</span>
+														{#if Array.isArray(content.content_json)}
+															<span class="text-[10px] text-text-ghost"
+																>{content.content_json.length} section{content.content_json
+																	.length !== 1
+																	? 's'
+																	: ''}</span
+															>
+														{/if}
+														{#if content.page_slug}
+															<span class="text-[10px] text-text-ghost font-mono"
+																>/care/{content.page_slug}</span
+															>
+														{/if}
+													</div>
+													{#if content.summary}
+														<p class="text-[10px] text-text-ghost mt-1 line-clamp-2">
+															{content.summary}
+														</p>
+													{/if}
+												</div>
+											{/each}
+										</div>
+									{:else}
+										<div class="flex items-center gap-2 py-3">
+											<FileText class="h-4 w-4 text-text-ghost" />
+											<span class="text-xs text-text-ghost">No content blocks yet.</span>
+										</div>
+									{/if}
+
+									<!-- Content type checklist -->
+									<div class="mt-3 flex flex-wrap gap-1.5">
+										{#each contentTypes as ct (ct.value)}
+											{@const exists = serviceContent[service.id]?.some(
+												(c) => c.content_type === ct.value
+											)}
+											<button
+												class="px-2 py-0.5 rounded text-[10px] border transition-colors {exists
+													? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
+													: 'border-border-subtle bg-transparent text-text-ghost hover:border-border hover:text-text-tertiary'}"
+												onclick={() => {
+													if (!exists && $isAdmin) {
+														cType = ct.value;
+														openContentCreate(service.id, service.name);
+													}
+												}}
+												title={exists ? `${ct.label} exists — click to edit` : `Add ${ct.label}`}
+											>
+												{exists ? '✓' : '+'}
+												{ct.shortLabel}
+											</button>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						{/each}
+					</div>
+				</div>
+			{/each}
+
+			<!-- Summary -->
+			<div class="flex items-center gap-6 pt-4 border-t border-border-subtle">
+				<span class="text-xs text-text-ghost"
+					>{services.length} service{services.length !== 1 ? 's' : ''}</span
+				>
+				<span class="text-xs text-text-ghost"
+					>{services.filter((s) => s.is_active).length} active</span
+				>
+			</div>
+		{/if}
 	</div>
 </div>

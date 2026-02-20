@@ -122,7 +122,11 @@
 							<Sidebar.MenuItem>
 								<Sidebar.MenuButton isActive={page.url.pathname.startsWith(item.href)}>
 									{#snippet child({ props })}
-										<a href={resolve(item.href)} {...props} class="flex items-center justify-between w-full">
+										<a
+											href={resolve(item.href)}
+											{...props}
+											class="flex items-center justify-between w-full"
+										>
 											<span class="flex items-center gap-2">
 												<item.icon class="h-4 w-4" />
 												<span>{item.label}</span>

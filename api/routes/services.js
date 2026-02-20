@@ -10,7 +10,7 @@ router.use(verifyToken);
 
 /** Strip characters that could inject additional filter clauses in Supabase .or() */
 function sanitizeSearch(input) {
-	return String(input).replace(/[,.()\[\]{}]/g, '');
+	return String(input).replace(/[,.()[\]{}]/g, '');
 }
 
 /** Admin-only guard middleware */
