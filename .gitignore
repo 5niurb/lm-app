@@ -7,7 +7,7 @@ api/node_modules
 .netlify
 .wrangler
 .cloudflare
-/.svelte-kit
+.svelte-kit
 /build
 
 # OS
