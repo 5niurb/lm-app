@@ -140,9 +140,10 @@ router.post('/status', validateTwilioSignature, async (req, res) => {
  * and message record that appears in the messages chat.
  *
  * Expected body (JSON from Studio):
- *   to       — caller's phone number ({{contact.channel.address}})
- *   body     — message text
- *   callSid  — the call SID (optional, for linking)
+ *   to           — caller's phone number ({{contact.channel.address}})
+ *   body         — message text
+ *   callSid      — the call SID (optional, for linking)
+ *   twilioNumber — the Twilio number that received the call ({{trigger.call.To}})
  */
 router.post('/studio-send', async (req, res) => {
 	// Verify shared secret — Studio HTTP Request widget sends this as a custom header.
@@ -152,7 +153,7 @@ router.post('/studio-send', async (req, res) => {
 		return res.status(403).json({ error: 'Forbidden' });
 	}
 
-	const { to, body: msgBody, callSid } = req.body;
+	const { to, body: msgBody, callSid, twilioNumber } = req.body;
 
 	if (!to || !msgBody) {
 		return res.status(400).json({ error: 'Both "to" and "body" are required' });
@@ -160,10 +161,11 @@ router.post('/studio-send', async (req, res) => {
 
 	const toNumber = normalizePhone(to);
 
-	// Use the same from-number logic as the messages API
+	// Use the Twilio number that received the call (passed from Studio flow).
+	// Falls back to env vars if not provided (backwards compat).
 	const fromNumber =
+		(twilioNumber && normalizePhone(twilioNumber)) ||
 		process.env.TWILIO_SMS_FROM_NUMBER ||
-		process.env.TWILIO_TEST1_PHONE_NUMBER ||
 		process.env.TWILIO_PHONE_NUMBER ||
 		process.env.TWILIO_MAIN_PHONE_NUMBER;
 

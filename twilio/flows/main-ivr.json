@@ -1,5 +1,5 @@
 {
-	"description": "LeMed Main IVR — Updated 2026-02-20 (new greeting audio)",
+	"description": "LeMed Main IVR — Updated 2026-02-20 (SMS sends from called number)",
 	"flags": {
 		"allow_concurrent_calls": true
 	},
@@ -155,7 +155,7 @@
 		{
 			"name": "send_sms_closed",
 			"properties": {
-				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\",\"twilioNumber\":\"{{trigger.call.To}}\"}",
 				"content_type": "application/json;charset=utf-8",
 				"method": "POST",
 				"offset": {
@@ -545,7 +545,7 @@
 		{
 			"name": "send_sms_lea",
 			"properties": {
-				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\",\"twilioNumber\":\"{{trigger.call.To}}\"}",
 				"content_type": "application/json;charset=utf-8",
 				"method": "POST",
 				"offset": {
@@ -627,7 +627,7 @@
 		{
 			"name": "send_sms_clinicalmd",
 			"properties": {
-				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\",\"twilioNumber\":\"{{trigger.call.To}}\"}",
 				"content_type": "application/json;charset=utf-8",
 				"method": "POST",
 				"offset": {
@@ -760,7 +760,7 @@
 		{
 			"name": "send_message_accounts",
 			"properties": {
-				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\",\"twilioNumber\":\"{{trigger.call.To}}\"}",
 				"content_type": "application/json;charset=utf-8",
 				"method": "POST",
 				"offset": {
@@ -814,7 +814,7 @@
 		{
 			"name": "send_sms_accounts_vmail",
 			"properties": {
-				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\",\"twilioNumber\":\"{{trigger.call.To}}\"}",
 				"content_type": "application/json;charset=utf-8",
 				"method": "POST",
 				"offset": {
