@@ -50,13 +50,19 @@
 
 	const sourceLabels = {
 		aesthetic_record: 'Aesthetic Record',
-		gohighlevel: 'GoHighLevel',
 		textmagic: 'TextMagic',
 		google_sheet: 'Google Sheet',
 		manual: 'Manual',
-		inbound_call: 'Inbound Call',
-		website_form: 'Website Form'
+		inbound_call: 'Phone',
+		website_form: 'Website'
 	};
+
+	function formatPatientSince(raw) {
+		if (!raw) return null;
+		const d = new Date(raw);
+		if (isNaN(d)) return raw; // fallback to raw string
+		return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+	}
 
 	$effect(() => {
 		loadContacts();
@@ -580,13 +586,13 @@
 						<div>
 							<p class="text-xs text-text-tertiary mb-0.5">City</p>
 							<p class="text-sm text-text-primary">
-								{expandedContact.metadata?.city || '—'}
+								{expandedContact.metadata?.address?.city || '—'}
 							</p>
 						</div>
 						<div>
 							<p class="text-xs text-text-tertiary mb-0.5">State</p>
 							<p class="text-sm text-text-primary">
-								{expandedContact.metadata?.state || '—'}
+								{expandedContact.metadata?.address?.state || '—'}
 							</p>
 						</div>
 						<div>
@@ -613,35 +619,55 @@
 				</div>
 
 				<!-- Patient / Business Info -->
-				<div class="card-elevated rounded-lg p-4">
-					<p
-						class="section-label text-xs font-medium text-text-tertiary mb-3 uppercase tracking-[0.1em]"
-					>
-						Patient Info
-					</p>
-					<div class="grid gap-3 grid-cols-2">
-						<div>
-							<p class="text-xs text-text-tertiary mb-0.5">AR ID</p>
-							<p class="text-sm font-mono text-text-secondary">
-								{expandedContact.metadata?.ar_id || '—'}
-							</p>
-						</div>
-						<div>
-							<p class="text-xs text-text-tertiary mb-0.5">Last Visited</p>
-							<p class="text-sm text-text-primary">
-								{expandedContact.metadata?.last_visited || '—'}
-							</p>
-						</div>
-						<div>
-							<p class="text-xs text-text-tertiary mb-0.5">Total Sales</p>
-							<p class="text-sm text-text-primary">
-								{expandedContact.metadata?.total_sales
-									? `$${Math.round(Number(expandedContact.metadata.total_sales)).toLocaleString()}`
-									: '—'}
-							</p>
+				{#if expandedContact.source === 'aesthetic_record' || expandedContact.tags?.includes('patient')}
+					<div class="card-elevated rounded-lg p-4">
+						<p
+							class="section-label text-xs font-medium text-text-tertiary mb-3 uppercase tracking-[0.1em]"
+						>
+							Patient Info
+						</p>
+						<div class="grid gap-3 grid-cols-2">
+							{#if expandedContact.metadata?.ar_created_date}
+								<div class="col-span-2">
+									<p class="text-xs text-text-tertiary mb-0.5">Patient Since</p>
+									<p class="text-sm text-gold font-medium">
+										{formatPatientSince(expandedContact.metadata.ar_created_date)}
+									</p>
+								</div>
+							{/if}
+							<div>
+								<p class="text-xs text-text-tertiary mb-0.5">AR ID</p>
+								<p class="text-sm font-mono text-text-secondary">
+									{expandedContact.source_id && expandedContact.source === 'aesthetic_record'
+										? expandedContact.source_id
+										: '—'}
+								</p>
+							</div>
+							<div>
+								<p class="text-xs text-text-tertiary mb-0.5">Last Visited</p>
+								<p class="text-sm text-text-primary">
+									{expandedContact.metadata?.last_visited || '—'}
+								</p>
+							</div>
+							<div>
+								<p class="text-xs text-text-tertiary mb-0.5">Total Sales</p>
+								<p class="text-sm text-text-primary">
+									{expandedContact.metadata?.total_sales
+										? `$${Math.round(Number(expandedContact.metadata.total_sales)).toLocaleString()}`
+										: '—'}
+								</p>
+							</div>
+							{#if expandedContact.metadata?.referral_source}
+								<div>
+									<p class="text-xs text-text-tertiary mb-0.5">Referral</p>
+									<p class="text-sm text-text-primary">
+										{expandedContact.metadata.referral_source}
+									</p>
+								</div>
+							{/if}
 						</div>
 					</div>
-				</div>
+				{/if}
 
 				<!-- Recent calls -->
 				<div class="card-elevated rounded-lg p-4">

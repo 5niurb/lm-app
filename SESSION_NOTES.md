@@ -1,3 +1,78 @@
+## Session — 2026-02-19 (Session 36)
+**Focus:** AR patient re-sync, contact dedup, lead/patient exclusivity, Patient Since UI
+
+**Accomplished:**
+- **Re-synced AR patient export** (436 patients from fresh XLS) — updated 70, inserted 366 new contacts
+- **Fixed missing patient tags** — 434 of 436 AR contacts were missing `patient` tag; bulk-added
+- **Updated sync script** (`api/scripts/sync-ar-patients.mjs`) to always include `tags: ['patient']` and merge tags on update
+- **Built dedup script** (`api/scripts/dedup-contacts.mjs`) — merges contacts by phone_normalized:
+  - Source priority: aesthetic_record > textmagic > website_form > google_sheet > inbound_call > manual
+  - Deep-merges metadata, unions tags, concatenates notes, repoints FKs, stores absorbed_sources
+  - Enforces lead/patient mutual exclusivity (patient wins, lead removed)
+  - Dry-run mode by default, `--apply` to execute
+- **Ran dedup** — merged 401 groups, deleted 423 duplicates, fixed 4 remaining lead+patient conflicts
+- **Added "Patient Since" to contacts UI** — gold text, prominently displayed in Patient Info drawer section
+- **Fixed AR ID display** — now pulls from `source_id` (correct) instead of `metadata.ar_id` (empty)
+- **Fixed address display** — corrected path from `metadata?.city` to `metadata.address.city`
+- **Added Referral Source** field to Patient Info section
+- **Updated source labels** — `inbound_call` → "Phone", `website_form` → "Website"
+- **Patient Info section** now conditionally renders (only for AR patients or patient-tagged contacts)
+- **Verified DB constraint** already allows `inbound_call` and `website_form` sources
+- **Created migration** `005-update-contact-sources.sql` for documentation
+
+**Diagram:**
+```
+Before Dedup:                    After Dedup:
+┌──────────────────┐            ┌──────────────────┐
+│ 985 contacts     │            │ 562 contacts     │
+│ 401 dupe groups  │  ──merge─► │ 0 dupe groups    │
+│ 381 lead+patient │            │ 0 lead+patient   │
+│ 832 patients     │            │ 422 patients     │
+└──────────────────┘            │ 140 leads        │
+                                └──────────────────┘
+Contact Drawer:
+┌─────────────────────────┐
+│ Aarti Dhawan            │
+│ aarticouture@gmail.com  │
+├─────────────────────────┤
+│ Tags: [Patient]         │
+├─────────────────────────┤
+│ Contact Details         │
+│ City: Los Angeles  CA   │
+│ Source: Aesthetic Record │
+├─────────────────────────┤
+│ Patient Since: Oct 2024 │ ← NEW (gold text)
+│ AR ID: 100              │ ← fixed (from source_id)
+│ Last Visited: 10/22/24  │
+│ Total Sales: $280       │
+└─────────────────────────┘
+```
+
+**Scripts Created/Modified:**
+- `api/scripts/sync-ar-patients.mjs` — AR patient import (modified: tags + address fix)
+- `api/scripts/analyze-contacts.mjs` — Contact analysis utility (created)
+- `api/scripts/dedup-contacts.mjs` — Contact deduplication (created)
+- `api/db/migrations/005-update-contact-sources.sql` — Source constraint update (created)
+
+**Files Modified:**
+- `src/routes/(auth)/contacts/+page.svelte` — Patient Since, source labels, address paths, conditional Patient Info
+
+**Current State:**
+- 562 contacts: 422 patients, 140 leads, 0 duplicates, 0 lead+patient conflicts
+- Dev servers: API :3001, SvelteKit :5173
+- Build passes clean
+
+**Issues:**
+- None
+
+**Next Steps:**
+- Commit and push all changes
+- Deploy frontend to Cloudflare Pages
+- Consider adding dedup logic to the TextMagic sync cron job (prevent future dupes)
+- Continue Phase 1A/1B development
+
+---
+
 ## Session — 2026-02-19 (Session 35)
 **Focus:** Commit uncommitted work from Sessions 33-34
 
