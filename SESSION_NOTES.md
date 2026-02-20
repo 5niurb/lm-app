@@ -1,3 +1,36 @@
+## Session — 2026-02-19 (Session 39)
+**Focus:** Message day separators + commit & deploy
+
+**Accomplished:**
+- **Added day separators to message thread** — "Today", "Yesterday", or "Mon, Feb 18" between messages from different days
+- **formatDayLabel() helper** — smart date formatting with year only for prior years
+- **Refresh guard** — isRefreshing flag prevents overlapping poll calls in messages
+- **Committed all accumulated work** (`e6c1b84`) — 22 files, security hardening + day separators + service content API
+- **Deployed frontend** to Cloudflare Pages — verified: frontend 200, API health OK, CORS OK
+
+**Diagram:**
+```
+Message Thread (before):        Message Thread (after):
+┌────────────────────┐          ┌────────────────────┐
+│ Hi there    5:24AM │          │ ─── YESTERDAY ──── │
+│ Thanks!     5:30AM │          │ Hi there    5:24AM │
+│ See you     9:15AM │          │ Thanks!     5:30AM │
+│ (no date context)  │          │ ──── TODAY ─────── │
+└────────────────────┘          │ See you     9:15AM │
+                                └────────────────────┘
+```
+
+**Current State:**
+- All work committed and pushed, frontend deployed
+- 562 contacts, 0 duplicates
+- No dev servers running
+
+**Next Steps:**
+- Address GitHub Dependabot alerts (2 high, 6 moderate, 4 low)
+- Continue Phase 1A/1B development
+
+---
+
 ## Session — 2026-02-19 (Session 37)
 **Focus:** Design & Build workflow — code review + fix all features
 
@@ -34,14 +67,28 @@
 └─────────────┘               └──────────────┘               └──────────────┘
 ```
 
+**QA Results (Session 38 continuation):**
+- Security utils tests: 49/49 PASS (sanitizeSearch + escHtml)
+- Google Calendar DST tests: 11/11 PASS (laTimeToISO across PST/PDT)
+- Frontend fix tests: 27/27 PASS (Content-Type, E.164, notifications)
+- Existing vitest: 20/20 PASS
+- Existing API health: 6/6 PASS
+- **Total: 113 tests, all passing**
+
+**Shipped:**
+- Commit `e4a85a6` — SMS webhook signature validation + 87 new QA tests
+- Frontend deployed to Cloudflare Pages (https://lemedspa.app) ✓
+- API auto-deployed via Render (https://api.lemedspa.app) ✓
+- Production health verified: API ok, CORS ok, frontend 200
+
 **Current State:**
-- All code review fixes applied, build passes
-- QA phase next (generate + run tests)
+- D&B workflow COMPLETE — all 21 fixes applied, QA passed, deployed to production
 - No dev servers running
 
 **Next Steps:**
-- Run QA subagents to generate and run tests
-- Ship: commit, deploy, verify production health
+- Address GitHub Dependabot alerts (2 high, 6 moderate, 4 low)
+- Consider extracting `laTimeToISO` into a shared utility for direct import in tests
+- Normal feature work can resume
 
 ---
 
