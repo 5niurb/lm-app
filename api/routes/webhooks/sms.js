@@ -3,6 +3,7 @@ import express from 'express';
 import twilio from 'twilio';
 import { supabaseAdmin } from '../../services/supabase.js';
 import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
+import { forwardToTextMagic } from './sms-forward.js';
 
 const router = Router();
 
@@ -104,6 +105,9 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 	} catch (e) {
 		console.error('Failed to process incoming SMS:', e.message);
 	}
+
+	// Forward to TextMagic for parallel operation (fire-and-forget)
+	forwardToTextMagic(req.body);
 
 	// Respond with empty TwiML (no auto-reply — replies managed from the app)
 	res.type('text/xml');
