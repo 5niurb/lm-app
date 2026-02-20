@@ -53,7 +53,7 @@
 					"next": "x0a-MainGreetingMenu_Open"
 				},
 				{
-					"event": "fail",
+					"event": "failed",
 					"next": "x0a-MainGreetingMenu_Open"
 				}
 			],
@@ -415,7 +415,7 @@
 					"next": "play_sms_sent_goodbye"
 				},
 				{
-					"event": "fail",
+					"event": "failed",
 					"next": "record_lea_vmail"
 				}
 			],
@@ -496,7 +496,7 @@
 					"next": "play_sms_sent_goodbye"
 				},
 				{
-					"event": "fail",
+					"event": "failed",
 					"next": "record_clinicalmd_vmail"
 				}
 			],
@@ -628,7 +628,7 @@
 					"next": "play_MsgSentGoodbye"
 				},
 				{
-					"event": "fail",
+					"event": "failed",
 					"next": "gather_accounts_vmail"
 				}
 			],
@@ -682,7 +682,7 @@
 					"next": "play_sms_sent_goodbye"
 				},
 				{
-					"event": "fail",
+					"event": "failed",
 					"next": "record_accounts_vmail"
 				}
 			],
