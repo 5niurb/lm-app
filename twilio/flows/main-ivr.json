@@ -213,7 +213,7 @@
 					"x": 310,
 					"y": 420
 				},
-				"play": "https://lm-ivr-assets-2112.twil.io/assets/0a-Main-Elise.wav",
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/main-greeting-victoria-wav.wav",
 				"profanity_filter": "false",
 				"speech_model": "default",
 				"speech_timeout": "10",
@@ -889,7 +889,7 @@
 					"x": 400,
 					"y": 2060
 				},
-				"play": "https://periwinkle-partridge-9538.twil.io/assets/1a1-messageSentGoodbye.wav"
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/message-sent-Victoria-wav.wav"
 			},
 			"transitions": [
 				{
@@ -906,8 +906,7 @@
 					"x": -300,
 					"y": 860
 				},
-				"say": "A text message has been sent to your phone. You can reply directly to that message. Goodbye.",
-				"voice": "Polly.Joanna"
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/message-sent-Victoria-wav.wav"
 			},
 			"transitions": [
 				{

@@ -333,7 +333,7 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 					.eq('id', convId);
 			}
 
-			twiml.play('https://lm-ivr-assets-2112.twil.io/assets/message-sent-wav.wav');
+			twiml.play('https://lm-ivr-assets-2112.twil.io/assets/message-sent-Victoria-wav.wav');
 		} catch (err) {
 			console.error('[connect-operator-text] Failed to send SMS:', err.message);
 			twiml.say(
