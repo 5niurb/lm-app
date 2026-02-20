@@ -217,10 +217,7 @@ router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
 			action: `${baseUrl}/api/twilio/connect-operator-text`,
 			method: 'POST'
 		});
-		gather.say(
-			{ voice: 'Polly.Joanna' },
-			'Sorry, no one is available right now. To start a two-way text conversation, press 1. Otherwise, please leave a message after the beep.'
-		);
+		gather.play('https://lm-ivr-assets-2112.twil.io/assets/0b-Apologize-missed-Elise.wav');
 
 		// Timeout fallback — record voicemail
 		twiml.record({
