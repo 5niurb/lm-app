@@ -135,7 +135,7 @@ router.get('/:id/recording', logAction('voicemails.playRecording'), async (req, 
 	// Look up the voicemail to get the recording URL
 	const { data: vm, error } = await supabaseAdmin
 		.from('voicemails')
-		.select('recording_url, recording_sid')
+		.select('recording_url, recording_sid, storage_path')
 		.eq('id', id)
 		.single();
 
@@ -145,6 +145,25 @@ router.get('/:id/recording', logAction('voicemails.playRecording'), async (req, 
 
 	if (!vm.recording_url && !vm.recording_sid) {
 		return res.status(404).json({ error: 'No recording available' });
+	}
+
+	// Check Supabase Storage first (preserved recordings)
+	if (vm.storage_path) {
+		try {
+			const { data: fileData, error: dlErr } = await supabaseAdmin.storage
+				.from('voicemails')
+				.download(vm.storage_path);
+			if (!dlErr && fileData) {
+				const buffer = Buffer.from(await fileData.arrayBuffer());
+				const ext = vm.storage_path.endsWith('.wav') ? 'audio/wav' : 'audio/mpeg';
+				res.set('Content-Type', ext);
+				res.set('Content-Length', buffer.length.toString());
+				res.set('Cache-Control', 'private, max-age=3600');
+				return res.send(buffer);
+			}
+		} catch (e) {
+			console.error('Storage download failed, falling back to Twilio:', e.message);
+		}
 	}
 
 	try {
@@ -247,6 +266,140 @@ router.patch('/:id/unread', logAction('voicemails.markUnread'), async (req, res)
 	}
 
 	return res.json({ data });
+});
+
+/**
+ * PATCH /api/voicemails/:id/save
+ * Preserve a voicemail by downloading the recording to Supabase Storage.
+ */
+router.patch('/:id/save', logAction('voicemails.save'), async (req, res) => {
+	const { id } = req.params;
+
+	const { data: vm, error: fetchErr } = await supabaseAdmin
+		.from('voicemails')
+		.select('id, recording_url, recording_sid, preserved, storage_path')
+		.eq('id', id)
+		.single();
+
+	if (fetchErr || !vm) {
+		return res.status(404).json({ error: 'Voicemail not found' });
+	}
+
+	if (vm.preserved && vm.storage_path) {
+		return res.json({ data: vm, message: 'Already preserved' });
+	}
+
+	const accountSid = process.env.TWILIO_ACCOUNT_SID;
+	const authToken = process.env.TWILIO_AUTH_TOKEN;
+	let recordingUrl = vm.recording_url;
+
+	if (recordingUrl && !recordingUrl.endsWith('.mp3') && !recordingUrl.endsWith('.wav')) {
+		recordingUrl = recordingUrl + '.mp3';
+	}
+	if (!recordingUrl && vm.recording_sid) {
+		recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${vm.recording_sid}.mp3`;
+	}
+
+	if (!recordingUrl) {
+		return res.status(404).json({ error: 'No recording URL available' });
+	}
+
+	try {
+		const twilioRes = await fetch(recordingUrl, {
+			headers: {
+				Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+			}
+		});
+
+		if (!twilioRes.ok) {
+			return res.status(502).json({ error: 'Failed to download from Twilio' });
+		}
+
+		const audioBuffer = Buffer.from(await twilioRes.arrayBuffer());
+		const contentType = twilioRes.headers.get('content-type') || 'audio/mpeg';
+		const ext = contentType.includes('wav') ? 'wav' : 'mp3';
+		const storagePath = `voicemails/${id}.${ext}`;
+
+		const { error: uploadErr } = await supabaseAdmin.storage
+			.from('voicemails')
+			.upload(storagePath, audioBuffer, { contentType, upsert: true });
+
+		if (uploadErr) {
+			console.error('Supabase Storage upload failed:', uploadErr.message);
+			return res.status(500).json({ error: 'Failed to upload to storage' });
+		}
+
+		const { data: updated, error: updateErr } = await supabaseAdmin
+			.from('voicemails')
+			.update({ preserved: true, storage_path: storagePath })
+			.eq('id', id)
+			.select()
+			.single();
+
+		if (updateErr) {
+			console.error('Failed to update voicemail:', updateErr.message);
+			return res.status(500).json({ error: 'Saved to storage but failed to update DB' });
+		}
+
+		return res.json({ data: updated });
+	} catch (e) {
+		console.error('Voicemail save error:', e.message);
+		return res.status(500).json({ error: 'Failed to preserve voicemail' });
+	}
+});
+
+/**
+ * DELETE /api/voicemails/:id
+ * Delete a voicemail from DB, Twilio, and Supabase Storage.
+ */
+router.delete('/:id', logAction('voicemails.delete'), async (req, res) => {
+	const { id } = req.params;
+
+	const { data: vm, error: fetchErr } = await supabaseAdmin
+		.from('voicemails')
+		.select('id, recording_sid, storage_path')
+		.eq('id', id)
+		.single();
+
+	if (fetchErr || !vm) {
+		return res.status(404).json({ error: 'Voicemail not found' });
+	}
+
+	if (vm.storage_path) {
+		const { error: storageErr } = await supabaseAdmin.storage
+			.from('voicemails')
+			.remove([vm.storage_path]);
+		if (storageErr) {
+			console.error('Storage delete failed (continuing):', storageErr.message);
+		}
+	}
+
+	if (vm.recording_sid) {
+		try {
+			const accountSid = process.env.TWILIO_ACCOUNT_SID;
+			const authToken = process.env.TWILIO_AUTH_TOKEN;
+			await fetch(
+				`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${vm.recording_sid}`,
+				{
+					method: 'DELETE',
+					headers: {
+						Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+					}
+				}
+			);
+		} catch (e) {
+			console.error('Twilio recording delete failed (continuing):', e.message);
+		}
+	}
+
+	const { error: deleteErr } = await supabaseAdmin.from('voicemails').delete().eq('id', id);
+
+	if (deleteErr) {
+		console.error('Failed to delete voicemail from DB:', deleteErr.message);
+		return res.status(500).json({ error: 'Failed to delete voicemail' });
+	}
+
+	return res.json({ success: true });
 });
 
 export default router;

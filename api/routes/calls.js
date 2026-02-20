@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
+import { lookupContactByPhone } from '../services/phone-lookup.js';
 
 const router = Router();
 
@@ -23,7 +24,7 @@ router.get('/', logAction('calls.list'), async (req, res) => {
 	let query = supabaseAdmin
 		.from('call_logs')
 		.select(
-			'*, voicemails(id, transcription, transcription_status, is_new, recording_url, duration, mailbox)',
+			'*, voicemails(id, transcription, transcription_status, is_new, recording_url, duration, mailbox, preserved, storage_path)',
 			{ count: 'exact' }
 		);
 
@@ -68,6 +69,20 @@ router.get('/', logAction('calls.list'), async (req, res) => {
 	if (error) {
 		console.error('Failed to fetch call logs:', error.message);
 		return res.status(500).json({ error: 'Failed to fetch call logs' });
+	}
+
+	// Enrich rows missing contact info with live contact lookup
+	if (data?.length) {
+		const needsLookup = data.filter((c) => !c.contact_id);
+		for (const call of needsLookup) {
+			const phone = call.direction === 'inbound' ? call.from_number : call.to_number;
+			if (!phone) continue;
+			const { contactId, contactName } = await lookupContactByPhone(phone);
+			if (contactId) {
+				call.contact_id = contactId;
+				call.caller_name = contactName || call.caller_name;
+			}
+		}
 	}
 
 	return res.json({

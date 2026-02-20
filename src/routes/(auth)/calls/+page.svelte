@@ -14,7 +14,10 @@
 		Voicemail,
 		Play,
 		Pause,
-		MessageSquare
+		MessageSquare,
+		Bookmark,
+		BookmarkCheck,
+		Trash2
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
@@ -130,15 +133,16 @@
 		if (call.disposition === 'voicemail' && vm) {
 			if (vm.transcription) {
 				const preview =
-					vm.transcription.length > 90
-						? vm.transcription.slice(0, 90).trim() + '...'
+					vm.transcription.length > 80
+						? vm.transcription.slice(0, 80).trim() + '...'
 						: vm.transcription;
 				return {
 					text: preview,
 					type: 'voicemail',
 					hasAudio: !!vm.recording_url,
 					vmId: vm.id,
-					vmIsNew: vm.is_new
+					vmIsNew: vm.is_new,
+					vmPreserved: !!vm.preserved
 				};
 			}
 			if (vm.transcription_status === 'pending') {
@@ -146,14 +150,16 @@
 					text: 'Transcribing voicemail...',
 					type: 'voicemail-pending',
 					hasAudio: !!vm.recording_url,
-					vmId: vm.id
+					vmId: vm.id,
+					vmPreserved: !!vm.preserved
 				};
 			}
 			return {
 				text: 'Voicemail left',
 				type: 'voicemail',
 				hasAudio: !!vm.recording_url,
-				vmId: vm.id
+				vmId: vm.id,
+				vmPreserved: !!vm.preserved
 			};
 		}
 
@@ -246,6 +252,34 @@
 			console.error('Failed to play recording:', e);
 			playingId = null;
 			revokeBlobUrl();
+		}
+	}
+
+	/** Save (preserve) a voicemail to permanent storage */
+	async function saveVoicemail(vmId) {
+		try {
+			await api(`/api/voicemails/${vmId}/save`, { method: 'PATCH' });
+			if (calls) {
+				calls = calls.map((c) => {
+					if (c.voicemails?.[0]?.id === vmId) {
+						c.voicemails[0].preserved = true;
+					}
+					return c;
+				});
+			}
+		} catch (e) {
+			console.error('Failed to save voicemail:', e);
+		}
+	}
+
+	/** Delete a voicemail */
+	async function deleteVoicemail(vmId) {
+		if (!confirm('Delete this voicemail? This cannot be undone.')) return;
+		try {
+			await api(`/api/voicemails/${vmId}`, { method: 'DELETE' });
+			loadCalls();
+		} catch (e) {
+			console.error('Failed to delete voicemail:', e);
 		}
 	}
 </script>
@@ -473,24 +507,61 @@
 								<!-- Action summary line -->
 								<div class="flex items-center gap-2 mt-1">
 									{#if summary.type === 'voicemail' || summary.type === 'voicemail-pending'}
-										<Voicemail class="h-3.5 w-3.5 shrink-0 text-gold/70" />
-										<span class="text-xs text-text-tertiary truncate italic">{summary.text}</span>
+										<!-- Play button — prominent pill -->
 										{#if summary.hasAudio}
 											<button
-												class="shrink-0 flex items-center gap-1 text-[10px] uppercase tracking-wider text-gold/60 hover:text-gold transition-colors"
+												class="shrink-0 inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border transition-all {playingId ===
+												summary.vmId
+													? 'border-gold bg-gold/15 text-gold'
+													: 'border-gold/40 text-gold/70 hover:bg-gold/10 hover:text-gold hover:border-gold'}"
 												onclick={(e) => {
 													e.stopPropagation();
 													togglePlay(summary.vmId);
 												}}
 											>
 												{#if playingId === summary.vmId}
-													<Pause class="h-3 w-3" />
-													<span>Stop</span>
+													<Pause class="h-3.5 w-3.5" />
+													<span class="text-xs font-medium">Pause</span>
 												{:else}
-													<Play class="h-3 w-3" />
-													<span>Play</span>
+													<Play class="h-3.5 w-3.5" />
+													<span class="text-xs font-medium">Play</span>
 												{/if}
 											</button>
+										{/if}
+										<!-- Transcription preview -->
+										<span class="text-xs text-text-tertiary truncate italic min-w-0 flex-1">
+											{summary.text}
+										</span>
+										<!-- Save/Delete actions -->
+										{#if summary.vmId}
+											<div class="flex items-center gap-1 shrink-0">
+												<button
+													class="inline-flex items-center justify-center h-6 w-6 rounded transition-colors {summary.vmPreserved
+														? 'text-gold'
+														: 'text-text-ghost hover:text-gold/70'}"
+													title={summary.vmPreserved ? 'Saved permanently' : 'Save voicemail'}
+													onclick={(e) => {
+														e.stopPropagation();
+														if (!summary.vmPreserved) saveVoicemail(summary.vmId);
+													}}
+												>
+													{#if summary.vmPreserved}
+														<BookmarkCheck class="h-3.5 w-3.5" />
+													{:else}
+														<Bookmark class="h-3.5 w-3.5" />
+													{/if}
+												</button>
+												<button
+													class="inline-flex items-center justify-center h-6 w-6 rounded text-text-ghost hover:text-red-400 transition-colors"
+													title="Delete voicemail"
+													onclick={(e) => {
+														e.stopPropagation();
+														deleteVoicemail(summary.vmId);
+													}}
+												>
+													<Trash2 class="h-3.5 w-3.5" />
+												</button>
+											</div>
 										{/if}
 									{:else if summary.type === 'answered'}
 										<span class="text-xs text-emerald-400/60">{summary.text}</span>

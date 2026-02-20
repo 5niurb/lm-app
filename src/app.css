@@ -529,7 +529,7 @@ h3 {
 
 /* Theme transition — smooth 300ms ambient shift */
 html {
-	font-size: 17px; /* Bump from 16px default — scales all rem-based text up ~6% */
+	font-size: 18px; /* Bumped 16→17→18px — scales all rem-based text */
 	transition:
 		background-color 0.4s ease,
 		color 0.4s ease;

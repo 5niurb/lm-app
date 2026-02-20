@@ -192,6 +192,8 @@ CREATE TABLE public.voicemails (
                         CHECK (mailbox IN ('lea', 'clinical_md', 'accounts', 'care_team')),
   is_new                BOOLEAN DEFAULT true,
   assigned_to           UUID REFERENCES public.profiles(id),
+  preserved             BOOLEAN DEFAULT false,
+  storage_path          TEXT,
   created_at            TIMESTAMPTZ DEFAULT now()
 );
 
