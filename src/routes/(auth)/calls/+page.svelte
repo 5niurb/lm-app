@@ -205,6 +205,17 @@
 		return { text: call.status || call.disposition || '', type: 'default' };
 	}
 
+	/** @type {string|null} Current blob URL to revoke on cleanup */
+	let currentBlobUrl = null;
+
+	/** Revoke the previous blob URL to prevent memory leaks */
+	function revokeBlobUrl() {
+		if (currentBlobUrl) {
+			URL.revokeObjectURL(currentBlobUrl);
+			currentBlobUrl = null;
+		}
+	}
+
 	/** Play/pause voicemail audio inline */
 	async function togglePlay(vmId) {
 		if (playingId === vmId) {
@@ -213,6 +224,7 @@
 			return;
 		}
 		if (audioEl) audioEl.pause();
+		revokeBlobUrl();
 
 		const proxyUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:3001'}/api/voicemails/${vmId}/recording`;
 		const currentSession = (await import('$lib/stores/auth.js')).session;
@@ -227,14 +239,17 @@
 			});
 			if (!res.ok) throw new Error('Failed to load recording');
 			const blob = await res.blob();
-			audioEl.src = URL.createObjectURL(blob);
+			currentBlobUrl = URL.createObjectURL(blob);
+			audioEl.src = currentBlobUrl;
 			audioEl.play();
 			audioEl.onended = () => {
 				playingId = null;
+				revokeBlobUrl();
 			};
 		} catch (e) {
 			console.error('Failed to play recording:', e);
 			playingId = null;
+			revokeBlobUrl();
 		}
 	}
 </script>

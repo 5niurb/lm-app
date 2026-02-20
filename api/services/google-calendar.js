@@ -109,14 +109,30 @@ export function parseEvent(gcalEvent) {
 }
 
 /**
+ * Convert a YYYY-MM-DD + HH:MM:SS in LA timezone to an ISO string.
+ * Uses Intl to resolve the correct UTC offset (handles DST automatically).
+ * @param {string} dateStr - YYYY-MM-DD
+ * @param {string} time - HH:MM:SS
+ * @returns {string} ISO 8601 UTC string
+ */
+function laTimeToISO(dateStr, time) {
+	// Build a Date from the LA local representation.
+	// toLocaleString round-trip resolves the correct DST offset.
+	const naive = new Date(`${dateStr}T${time}`);
+	const laStr = naive.toLocaleString('en-US', { timeZone: TIMEZONE });
+	const utcMs = naive.getTime() - (new Date(laStr).getTime() - naive.getTime());
+	return new Date(utcMs).toISOString();
+}
+
+/**
  * Get the start and end of a day in LA timezone as ISO strings.
+ * Correctly handles PST/PDT transitions.
  * @param {string} dateStr - YYYY-MM-DD
  * @returns {{ timeMin: string, timeMax: string }}
  */
 function dayBounds(dateStr) {
-	// Create start/end in LA timezone
-	const timeMin = new Date(`${dateStr}T00:00:00-08:00`).toISOString();
-	const timeMax = new Date(`${dateStr}T23:59:59-08:00`).toISOString();
+	const timeMin = laTimeToISO(dateStr, '00:00:00');
+	const timeMax = laTimeToISO(dateStr, '23:59:59');
 	return { timeMin, timeMax };
 }
 
@@ -137,8 +153,8 @@ export async function getEventsForDay(dateStr) {
  * @returns {Promise<Array>}
  */
 export async function getEventsForRange(startDate, endDate) {
-	const timeMin = new Date(`${startDate}T00:00:00-08:00`).toISOString();
-	const timeMax = new Date(`${endDate}T23:59:59-08:00`).toISOString();
+	const timeMin = laTimeToISO(startDate, '00:00:00');
+	const timeMax = laTimeToISO(endDate, '23:59:59');
 	return fetchEvents(timeMin, timeMax);
 }
 

@@ -11,6 +11,28 @@ import { supabaseAdmin } from './supabase.js';
 const RESEND_API_URL = 'https://api.resend.com/emails';
 const FROM_EMAIL = 'Le Med Spa <noreply@updates.lemedspa.com>';
 
+/** HTML entity encoding to prevent XSS in email content */
+function escHtml(str) {
+	return String(str ?? '')
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;');
+}
+
+/** Reusable Twilio client — instantiated once */
+let _twilioClient = null;
+function getTwilioClient() {
+	if (!_twilioClient) {
+		const accountSid = process.env.TWILIO_ACCOUNT_SID;
+		const authToken = process.env.TWILIO_AUTH_TOKEN;
+		if (accountSid && authToken) {
+			_twilioClient = new Twilio.Twilio(accountSid, authToken);
+		}
+	}
+	return _twilioClient;
+}
+
 // ============================================================================
 // SMS SENDING
 // ============================================================================
@@ -48,7 +70,8 @@ export async function sendSms({ to, body, clientId, clientName, metadata }) {
 	if (!toNumber.startsWith('+')) toNumber = '+' + toNumber;
 
 	try {
-		const client = new Twilio.Twilio(accountSid, authToken);
+		const client = getTwilioClient();
+		if (!client) return { success: false, error: 'Twilio client not available' };
 		const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
 		const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
 
@@ -258,7 +281,7 @@ function buildSmsBody(sequence, content, client) {
  * Otherwise falls back to a simple text email.
  */
 function buildEmailHtml(sequence, content, client) {
-	const name = client.full_name?.split(' ')[0] || 'there';
+	const name = escHtml(client.full_name?.split(' ')[0] || 'there');
 	const sections = content?.content_json || [];
 
 	// Gold color palette matching the app
@@ -274,10 +297,10 @@ function buildEmailHtml(sequence, content, client) {
 				(s) => `
       <div style="margin-bottom: 24px;">
         <h3 style="color: ${gold}; font-family: 'Georgia', serif; font-size: 16px; margin-bottom: 8px; font-weight: normal;">
-          ${s.heading}
+          ${escHtml(s.heading)}
         </h3>
         <p style="color: ${lightText}; font-size: 14px; line-height: 1.7; margin: 0;">
-          ${s.body}
+          ${escHtml(s.body)}
         </p>
       </div>
     `
@@ -287,13 +310,13 @@ function buildEmailHtml(sequence, content, client) {
 		sectionsHtml = `
       <div style="margin-bottom: 24px;">
         <p style="color: ${lightText}; font-size: 14px; line-height: 1.7; margin: 0;">
-          ${sequence.message_body.replace(/\{name\}/gi, name).replace(/\{first_name\}/gi, name)}
+          ${escHtml(sequence.message_body.replace(/\{name\}/gi, name).replace(/\{first_name\}/gi, name))}
         </p>
       </div>
     `;
 	}
 
-	const title = content?.title || sequence.subject_line || sequence.name;
+	const title = escHtml(content?.title || sequence.subject_line || sequence.name);
 
 	return `
 <!DOCTYPE html>
@@ -536,7 +559,11 @@ export async function processScheduledAutomation() {
 		.order('scheduled_at', { ascending: true })
 		.limit(50); // Process in batches
 
-	if (error || !pending || pending.length === 0) {
+	if (error) {
+		console.error('[automation] Failed to fetch scheduled entries:', error.message);
+		return { processed: 0, sent: 0, failed: 0 };
+	}
+	if (!pending || pending.length === 0) {
 		return { processed: 0, sent: 0, failed: 0 };
 	}
 

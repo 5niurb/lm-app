@@ -51,7 +51,7 @@
 	);
 
 	// Group appointments by day for week view
-	const weekAppointments = $derived(() => {
+	const weekAppointments = $derived.by(() => {
 		if (!appointments) return {};
 		const grouped = {};
 		for (const day of weekDays) {
@@ -418,7 +418,7 @@
 
 		<!-- Week View -->
 	{:else if view === 'week'}
-		{@const grouped = weekAppointments()}
+		{@const grouped = weekAppointments}
 		<div class="rounded border border-border overflow-hidden bg-card">
 			<!-- Week header -->
 			<div class="grid grid-cols-7 border-b border-border">

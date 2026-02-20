@@ -5,6 +5,24 @@ import { supabaseAdmin } from '../services/supabase.js';
 
 const router = Router();
 
+/** Sanitize search input for Supabase .or() filter — strips PostgREST operators */
+function sanitizeSearch(input) {
+	return String(input).replace(/[,.()\[\]{}]/g, '');
+}
+
+/** Allowlisted sort columns for contacts */
+const CONTACTS_SORT_ALLOWLIST = [
+	'full_name',
+	'first_name',
+	'last_name',
+	'phone',
+	'email',
+	'source',
+	'created_at',
+	'updated_at',
+	'last_synced_at'
+];
+
 // All contact routes require authentication
 router.use(verifyToken);
 
@@ -51,16 +69,18 @@ router.get('/', logAction('contacts.list'), async (req, res) => {
 		query = query.contains('lists', [req.query.list]);
 	}
 
-	// Search by name, phone, or email
+	// Search by name, phone, or email (sanitized against filter injection)
 	if (req.query.search) {
-		const s = req.query.search;
+		const s = sanitizeSearch(req.query.search);
 		query = query.or(
 			`full_name.ilike.%${s}%,first_name.ilike.%${s}%,last_name.ilike.%${s}%,phone.ilike.%${s}%,email.ilike.%${s}%`
 		);
 	}
 
-	// Sorting
-	const sortField = req.query.sort || 'full_name';
+	// Sorting (validated against allowlist)
+	const sortField = CONTACTS_SORT_ALLOWLIST.includes(req.query.sort)
+		? req.query.sort
+		: 'full_name';
 	const sortOrder = req.query.order === 'desc' ? false : true;
 	query = query.order(sortField, { ascending: sortOrder });
 
@@ -183,7 +203,7 @@ router.get('/stats', logAction('contacts.stats'), async (req, res) => {
  * Query params: q (search term), limit (default 10)
  */
 router.get('/search', logAction('contacts.search'), async (req, res) => {
-	const q = req.query.q;
+	const q = sanitizeSearch(req.query.q || '');
 	if (!q || q.length < 2) {
 		return res.json({ data: [] });
 	}

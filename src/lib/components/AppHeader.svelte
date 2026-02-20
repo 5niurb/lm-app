@@ -22,8 +22,20 @@
 	/** @type {Array<{ id: string, type: string, title: string, time: string, read: boolean }>} */
 	let notifications = $state([]);
 	let notifOpen = $state(false);
+	/** IDs the user has already seen (dismissed by opening the dropdown) */
+	let seenIds = new Set();
 
 	let unreadCount = $derived(notifications.filter((n) => !n.read).length);
+
+	// Mark all current notifications as seen when the dropdown is opened
+	$effect(() => {
+		if (notifOpen && notifications.length > 0) {
+			for (const n of notifications) {
+				seenIds.add(n.id);
+			}
+			notifications = notifications.map((n) => ({ ...n, read: true }));
+		}
+	});
 
 	$effect(() => {
 		loadClinicStatus();
@@ -51,23 +63,25 @@
 
 			if (callsRes.data) {
 				for (const call of callsRes.data) {
+					const nid = `call-${call.id}`;
 					items.push({
-						id: `call-${call.id}`,
+						id: nid,
 						type: 'missed_call',
 						title: `Missed call from ${call.caller_name || call.from_number || 'Unknown'}`,
 						time: call.created_at,
-						read: false
+						read: seenIds.has(nid)
 					});
 				}
 			}
 			if (vmRes.data) {
 				for (const vm of vmRes.data) {
+					const nid = `vm-${vm.id}`;
 					items.push({
-						id: `vm-${vm.id}`,
+						id: nid,
 						type: 'voicemail',
 						title: `New voicemail from ${vm.caller_name || vm.from_number || 'Unknown'}`,
 						time: vm.created_at,
-						read: false
+						read: seenIds.has(nid)
 					});
 				}
 			}

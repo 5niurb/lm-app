@@ -62,7 +62,6 @@ router.get('/:slug', async (req, res) => {
 router.post('/:slug/submit', async (req, res) => {
 	try {
 		const {
-			client_id,
 			client_name,
 			client_email,
 			client_phone,
@@ -71,6 +70,8 @@ router.post('/:slug/submit', async (req, res) => {
 			form_id,
 			service_id
 		} = req.body;
+		// NOTE: client_id is intentionally NOT accepted from the public endpoint
+		// to prevent anonymous callers from submitting consent as arbitrary patients.
 
 		// Validate required fields
 		if (!signature_data) {
@@ -96,10 +97,10 @@ router.post('/:slug/submit', async (req, res) => {
 			}
 		}
 
-		// Resolve or create client
-		let resolvedClientId = client_id;
+		// Resolve or create client — always from identifying info, never from body client_id
+		let resolvedClientId = null;
 
-		if (!resolvedClientId && (client_name || client_email || client_phone)) {
+		if (client_name || client_email || client_phone) {
 			// Try to find existing contact by email or phone
 			let existingContact = null;
 
@@ -114,13 +115,16 @@ router.post('/:slug/submit', async (req, res) => {
 			}
 
 			if (!existingContact && client_phone) {
-				const normalized = client_phone.replace(/\D/g, '');
+				const digits = client_phone.replace(/\D/g, '');
+				// Match digits-only format used by the rest of the codebase
+				const normalized =
+					digits.length === 10 ? '1' + digits : digits;
 				const { data } = await supabaseAdmin
 					.from('contacts')
 					.select('id')
-					.eq('phone_normalized', normalized.startsWith('1') ? `+${normalized}` : `+1${normalized}`)
+					.eq('phone_normalized', normalized)
 					.limit(1)
-					.single();
+					.maybeSingle();
 				existingContact = data;
 			}
 
@@ -142,9 +146,9 @@ router.post('/:slug/submit', async (req, res) => {
 						email: client_email?.toLowerCase().trim() || null,
 						phone: client_phone || null,
 						phone_normalized: phoneNorm
-							? phoneNorm.startsWith('1')
-								? `+${phoneNorm}`
-								: `+1${phoneNorm}`
+							? phoneNorm.length === 10
+								? '1' + phoneNorm
+								: phoneNorm
 							: null,
 						source: 'manual',
 						patient_status: 'new',

@@ -378,10 +378,12 @@
 	async function makeCall() {
 		if (!device || !dialNumber) return;
 
-		// Clean up the number
+		// Clean up the number and normalize to E.164
 		let number = dialNumber.replace(/[^\d+*#]/g, '');
 		if (number.length === 10 && !number.startsWith('+')) {
 			number = '+1' + number;
+		} else if (number.length === 11 && number.startsWith('1') && !number.startsWith('+')) {
+			number = '+' + number;
 		}
 
 		try {

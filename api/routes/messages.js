@@ -6,6 +6,11 @@ import { supabaseAdmin } from '../services/supabase.js';
 
 const router = Router();
 
+/** Sanitize search input for Supabase .or() filter */
+function sanitizeSearch(input) {
+	return String(input).replace(/[,.()\[\]{}]/g, '');
+}
+
 // All message routes require authentication
 router.use(verifyToken);
 
@@ -34,8 +39,9 @@ router.get('/conversations', logAction('messages.list'), async (req, res) => {
 	}
 
 	if (req.query.search) {
+		const s = sanitizeSearch(req.query.search);
 		query = query.or(
-			`phone_number.ilike.%${req.query.search}%,display_name.ilike.%${req.query.search}%,last_message.ilike.%${req.query.search}%`
+			`phone_number.ilike.%${s}%,display_name.ilike.%${s}%,last_message.ilike.%${s}%`
 		);
 	}
 
@@ -280,7 +286,7 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 		});
 	} catch (err) {
 		console.error('Failed to send message:', err.message);
-		return res.status(500).json({ error: err.message });
+		return res.status(500).json({ error: 'Failed to send message' });
 	}
 });
 

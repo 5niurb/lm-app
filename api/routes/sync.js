@@ -14,7 +14,7 @@ const router = Router();
 
 const TM_API_KEY = process.env.TEXTMAGIC_API_KEY;
 const TM_USERNAME = process.env.TEXTMAGIC_USERNAME;
-const SYNC_SECRET = process.env.SYNC_SECRET || 'lm-sync-2026';
+const SYNC_SECRET = process.env.SYNC_SECRET;
 const BASE_URL = 'https://rest.textmagic.com/api/v2';
 
 /**
@@ -55,6 +55,9 @@ function normalizePhone(phone) {
  */
 router.post('/textmagic', async (req, res) => {
 	// Simple auth — pg_cron sends this header
+	if (!SYNC_SECRET) {
+		return res.status(503).json({ error: 'SYNC_SECRET not configured' });
+	}
 	const key = req.headers['x-sync-key'] || req.query.key;
 	if (key !== SYNC_SECRET) {
 		return res.status(401).json({ error: 'Invalid sync key' });
@@ -173,6 +176,7 @@ router.post('/textmagic', async (req, res) => {
 					.eq('id', existing.id);
 
 				if (updateErr) {
+					console.error(`[sync] Update error for contact ${existing.id}:`, updateErr.message);
 					errors++;
 				} else {
 					updated++;
@@ -194,6 +198,7 @@ router.post('/textmagic', async (req, res) => {
 
 				const { error: insertErr } = await supabaseAdmin.from('contacts').insert(contactData);
 				if (insertErr) {
+					console.error(`[sync] Insert error for ${fullName || phoneNormalized}:`, insertErr.message);
 					errors++;
 				} else {
 					inserted++;

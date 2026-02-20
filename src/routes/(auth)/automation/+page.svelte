@@ -31,7 +31,7 @@
 	/** @type {any[]} */
 	let sequences = $state([]);
 	let seqLoading = $state(true);
-	let _seqError = $state('');
+	let seqError = $state('');
 
 	// Log
 	/** @type {any[]} */
@@ -159,7 +159,7 @@
 			const res = await api('/api/automation/sequences');
 			sequences = res.data || [];
 		} catch (e) {
-			_seqError = e.message;
+			seqError = e.message;
 		} finally {
 			seqLoading = false;
 		}
@@ -856,7 +856,11 @@
 	<div class="p-5">
 	<!-- SEQUENCES TAB -->
 	{#if activeTab === 'sequences'}
-		{#if seqLoading}
+		{#if seqError}
+			<div class="rounded border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+				Failed to load sequences: {seqError}
+			</div>
+		{:else if seqLoading}
 			<div class="space-y-3">
 				{#each Array(5) as _, i (i)}
 					<Skeleton class="h-14 w-full" />

@@ -44,6 +44,15 @@ function getSystemTheme() {
 /** The user's explicit theme choice (may be 'auto') */
 export const themeChoice = writable(getStoredTheme());
 
+// Listen for OS color scheme changes to re-trigger auto mode derivation
+if (browser) {
+	const mq = window.matchMedia('(prefers-color-scheme: dark)');
+	mq.addEventListener('change', () => {
+		// Nudge the store to re-derive when OS preference changes
+		themeChoice.update((c) => c);
+	});
+}
+
 /** The actual resolved theme after resolving 'auto' → system preference */
 export const theme = derived(themeChoice, ($choice) => {
 	if ($choice === 'auto') return getSystemTheme();

@@ -32,7 +32,7 @@
 	/** @type {Array<{ id: string, name: string, phone?: string, email?: string }>} */
 	let contactResults = $state([]);
 	/** @type {ReturnType<typeof setTimeout>|null} */
-	let searchTimer = $state(null);
+	let searchTimer = null;
 
 	// =========================================================================
 	// FRECENCY — localStorage-backed recent page tracking

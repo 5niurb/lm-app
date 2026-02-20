@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import twilio from 'twilio';
 import { supabaseAdmin } from '../services/supabase.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -49,7 +50,7 @@ const { VoiceGrant } = AccessToken;
  * Body: { identity: 'lea' }
  * Returns: { token, identity }
  */
-router.post('/token', (req, res) => {
+router.post('/token', verifyToken, (req, res) => {
 	const identity = req.body.identity || 'softphone-user';
 
 	const accountSid = process.env.TWILIO_ACCOUNT_SID;

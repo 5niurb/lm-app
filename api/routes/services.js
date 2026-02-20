@@ -8,6 +8,11 @@ const router = Router();
 // All service routes require authentication
 router.use(verifyToken);
 
+/** Strip characters that could inject additional filter clauses in Supabase .or() */
+function sanitizeSearch(input) {
+	return String(input).replace(/[,.()\[\]{}]/g, '');
+}
+
 /** Admin-only guard middleware */
 function requireAdmin(req, res, next) {
 	if (req.user.role !== 'admin') {
@@ -17,7 +22,115 @@ function requireAdmin(req, res, next) {
 }
 
 // =============================================================================
-// SERVICES (treatment catalog)
+// SERVICE CONTENT — literal /content/ routes MUST come before /:id params
+// =============================================================================
+
+/**
+ * GET /api/services/content/:contentId
+ * Get a single content block by ID.
+ */
+router.get('/content/:contentId', logAction('service_content.read'), async (req, res) => {
+	try {
+		const { data, error } = await supabaseAdmin
+			.from('service_content')
+			.select(
+				`
+        *,
+        service:services(id, name, slug, category)
+      `
+			)
+			.eq('id', req.params.contentId)
+			.single();
+
+		if (error) throw error;
+		if (!data) return res.status(404).json({ error: 'Content not found' });
+
+		res.json({ data });
+	} catch (err) {
+		console.error('Service content read error:', err.message);
+		res.status(500).json({ error: 'Failed to load content' });
+	}
+});
+
+/**
+ * PUT /api/services/content/:contentId
+ * Update a content block (admin only).
+ */
+router.put(
+	'/content/:contentId',
+	requireAdmin,
+	logAction('service_content.update'),
+	async (req, res) => {
+		const { title, summary, page_slug, content_json, is_active } = req.body;
+
+		try {
+			const updates = {};
+			if (title !== undefined) updates.title = title;
+			if (summary !== undefined) updates.summary = summary;
+			if (page_slug !== undefined) updates.page_slug = page_slug;
+			if (content_json !== undefined) updates.content_json = content_json;
+			if (is_active !== undefined) updates.is_active = is_active;
+
+			if (Object.keys(updates).length === 0) {
+				return res.status(400).json({ error: 'No fields to update' });
+			}
+
+			// Bump version on content change
+			if (content_json !== undefined) {
+				const { data: current } = await supabaseAdmin
+					.from('service_content')
+					.select('version')
+					.eq('id', req.params.contentId)
+					.single();
+				if (current) {
+					updates.version = (current.version || 1) + 1;
+				}
+			}
+
+			const { data, error } = await supabaseAdmin
+				.from('service_content')
+				.update(updates)
+				.eq('id', req.params.contentId)
+				.select()
+				.single();
+
+			if (error) throw error;
+			if (!data) return res.status(404).json({ error: 'Content not found' });
+
+			res.json({ data });
+		} catch (err) {
+			console.error('Service content update error:', err.message);
+			res.status(500).json({ error: 'Failed to update content' });
+		}
+	}
+);
+
+/**
+ * DELETE /api/services/content/:contentId
+ * Delete a content block (admin only).
+ */
+router.delete(
+	'/content/:contentId',
+	requireAdmin,
+	logAction('service_content.delete'),
+	async (req, res) => {
+		try {
+			const { error } = await supabaseAdmin
+				.from('service_content')
+				.delete()
+				.eq('id', req.params.contentId);
+
+			if (error) throw error;
+			res.status(204).end();
+		} catch (err) {
+			console.error('Service content delete error:', err.message);
+			res.status(500).json({ error: 'Failed to delete content' });
+		}
+	}
+);
+
+// =============================================================================
+// SERVICES (treatment catalog) — parameterized /:id routes after literal routes
 // =============================================================================
 
 /**
@@ -37,7 +150,8 @@ router.get('/', logAction('services.list'), async (req, res) => {
 			query = query.eq('is_active', req.query.active === 'true');
 		}
 		if (req.query.search) {
-			query = query.or(`name.ilike.%${req.query.search}%,description.ilike.%${req.query.search}%`);
+			const s = sanitizeSearch(req.query.search);
+			query = query.or(`name.ilike.%${s}%,description.ilike.%${s}%`);
 		}
 
 		query = query.order('sort_order', { ascending: true });
@@ -195,7 +309,7 @@ router.delete('/:id', requireAdmin, logAction('services.delete'), async (req, re
 });
 
 // =============================================================================
-// SERVICE CONTENT (per-service content blocks)
+// SERVICE CONTENT — per-service content lists + create
 // =============================================================================
 
 /**
@@ -224,33 +338,6 @@ router.get('/:serviceId/content', logAction('service_content.list'), async (req,
 	} catch (err) {
 		console.error('Service content list error:', err.message);
 		res.status(500).json({ error: 'Failed to load service content' });
-	}
-});
-
-/**
- * GET /api/services/content/:contentId
- * Get a single content block by ID.
- */
-router.get('/content/:contentId', logAction('service_content.read'), async (req, res) => {
-	try {
-		const { data, error } = await supabaseAdmin
-			.from('service_content')
-			.select(
-				`
-        *,
-        service:services(id, name, slug, category)
-      `
-			)
-			.eq('id', req.params.contentId)
-			.single();
-
-		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Content not found' });
-
-		res.json({ data });
-	} catch (err) {
-		console.error('Service content read error:', err.message);
-		res.status(500).json({ error: 'Failed to load content' });
 	}
 });
 
@@ -295,83 +382,6 @@ router.post(
 					.json({ error: 'An active content block of this type already exists for this service' });
 			}
 			res.status(500).json({ error: 'Failed to create content' });
-		}
-	}
-);
-
-/**
- * PUT /api/services/content/:contentId
- * Update a content block (admin only).
- */
-router.put(
-	'/content/:contentId',
-	requireAdmin,
-	logAction('service_content.update'),
-	async (req, res) => {
-		const { title, summary, page_slug, content_json, is_active } = req.body;
-
-		try {
-			const updates = {};
-			if (title !== undefined) updates.title = title;
-			if (summary !== undefined) updates.summary = summary;
-			if (page_slug !== undefined) updates.page_slug = page_slug;
-			if (content_json !== undefined) updates.content_json = content_json;
-			if (is_active !== undefined) updates.is_active = is_active;
-
-			if (Object.keys(updates).length === 0) {
-				return res.status(400).json({ error: 'No fields to update' });
-			}
-
-			// Bump version on content change
-			if (content_json !== undefined) {
-				const { data: current } = await supabaseAdmin
-					.from('service_content')
-					.select('version')
-					.eq('id', req.params.contentId)
-					.single();
-				if (current) {
-					updates.version = (current.version || 1) + 1;
-				}
-			}
-
-			const { data, error } = await supabaseAdmin
-				.from('service_content')
-				.update(updates)
-				.eq('id', req.params.contentId)
-				.select()
-				.single();
-
-			if (error) throw error;
-			if (!data) return res.status(404).json({ error: 'Content not found' });
-
-			res.json({ data });
-		} catch (err) {
-			console.error('Service content update error:', err.message);
-			res.status(500).json({ error: 'Failed to update content' });
-		}
-	}
-);
-
-/**
- * DELETE /api/services/content/:contentId
- * Delete a content block (admin only).
- */
-router.delete(
-	'/content/:contentId',
-	requireAdmin,
-	logAction('service_content.delete'),
-	async (req, res) => {
-		try {
-			const { error } = await supabaseAdmin
-				.from('service_content')
-				.delete()
-				.eq('id', req.params.contentId);
-
-			if (error) throw error;
-			res.status(204).end();
-		} catch (err) {
-			console.error('Service content delete error:', err.message);
-			res.status(500).json({ error: 'Failed to delete content' });
 		}
 	}
 );

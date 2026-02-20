@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import express from 'express';
 import { supabaseAdmin } from '../../services/supabase.js';
+import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
 
 const router = Router();
 
@@ -216,7 +217,7 @@ router.post('/event', async (req, res) => {
  * Twilio call status callback.
  * Updates the call_log as the call progresses through states.
  */
-router.post('/status', async (req, res) => {
+router.post('/status', validateTwilioSignature, async (req, res) => {
 	const { CallSid, CallStatus, CallDuration, From, To } = req.body;
 
 	if (!CallSid) {
@@ -310,7 +311,7 @@ router.post('/status', async (req, res) => {
  * creating duplicate voicemail entries. The first hit (with From) wins;
  * the second hit updates only if it has better data.
  */
-router.post('/recording', async (req, res) => {
+router.post('/recording', validateTwilioSignature, async (req, res) => {
 	const { CallSid, RecordingSid, RecordingUrl, RecordingDuration, From } = req.body;
 	const mailbox = req.body.mailbox || req.body.Mailbox || null;
 
@@ -397,7 +398,7 @@ router.post('/recording', async (req, res) => {
  * Twilio transcription callback.
  * Updates the voicemail with transcription text.
  */
-router.post('/transcription', async (req, res) => {
+router.post('/transcription', validateTwilioSignature, async (req, res) => {
 	const { RecordingSid, TranscriptionText, TranscriptionStatus } = req.body;
 
 	if (!RecordingSid) {

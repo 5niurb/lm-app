@@ -46,8 +46,13 @@ router.post('/verify-otp', async (req, res) => {
 		return res.status(400).json({ error: 'Email and OTP are required' });
 	}
 
-	// Skeleton OTP verification — accepts '000000' for development
-	// TODO: Replace with real OTP verification (check against stored OTP + expiry)
+	// OTP verification — dev bypass only in non-production
+	if (process.env.NODE_ENV === 'production') {
+		// TODO: Implement real OTP verification (check against stored OTP + expiry)
+		return res.status(501).json({ error: 'OTP verification not yet implemented' });
+	}
+
+	// Dev-only bypass
 	if (otp !== '000000') {
 		return res.status(401).json({ error: 'Invalid or expired OTP' });
 	}

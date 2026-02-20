@@ -16,6 +16,7 @@
 		PhoneOutgoing,
 		FileText
 	} from '@lucide/svelte';
+	import { untrack } from 'svelte';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 	import { resolve } from '$app/paths';
@@ -64,16 +65,20 @@
 		return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 	}
 
+	// Initial load only — event handlers call loadContacts() explicitly.
+	// untrack prevents the effect from re-running when page/search/tagFilter change.
 	$effect(() => {
-		loadContacts();
-		loadStats();
+		untrack(() => {
+			loadContacts();
+			loadStats();
+		});
 	});
 
 	async function loadContacts() {
 		try {
 			const params = new URLSearchParams({
-				page: page.toString(),
-				pageSize: pageSize.toString()
+				page: String(page),
+				pageSize: String(pageSize)
 			});
 
 			if (search) params.set('search', search);

@@ -14,11 +14,13 @@ export async function api(path, options = {}) {
 	const currentSession = get(session);
 	const token = currentSession?.access_token;
 
+	// Only set Content-Type if caller hasn't provided one (e.g. FormData needs auto boundary)
+	const callerSetContentType = options.headers && 'Content-Type' in options.headers;
 	const res = await fetch(`${API_URL}${path}`, {
 		...options,
 		credentials: 'include',
 		headers: {
-			'Content-Type': 'application/json',
+			...(!callerSetContentType ? { 'Content-Type': 'application/json' } : {}),
 			...(token ? { Authorization: `Bearer ${token}` } : {}),
 			...options.headers
 		}
@@ -26,7 +28,7 @@ export async function api(path, options = {}) {
 
 	if (!res.ok) {
 		const body = await res.json().catch(() => ({ error: res.statusText }));
-		throw new Error(body.error || `API Error: ${res.status}`);
+		throw new Error(body.error || body.message || `API Error: ${res.status}`);
 	}
 
 	if (res.status === 204) return null;

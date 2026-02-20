@@ -39,6 +39,8 @@
 
 	/** @type {number|null} Auto-refresh interval */
 	let refreshInterval = null;
+	/** Guard to prevent overlapping refresh calls */
+	let isRefreshing = false;
 
 	// ─── Twilio number selector ───
 	/** @type {Array<{sid: string, phoneNumber: string, friendlyName: string}>} */
@@ -131,15 +133,21 @@
 	}
 
 	async function refreshAll() {
-		await loadConversations();
-		// If viewing a thread, refresh messages too
-		if (selectedConvo) {
-			const prevCount = messages.length;
-			await loadMessages(selectedConvo.id);
-			// Auto-scroll if new messages arrived
-			if (messages.length > prevCount) {
-				setTimeout(scrollToBottom, 100);
+		if (isRefreshing) return;
+		isRefreshing = true;
+		try {
+			await loadConversations();
+			// If viewing a thread, refresh messages too
+			if (selectedConvo) {
+				const prevCount = messages.length;
+				await loadMessages(selectedConvo.id);
+				// Auto-scroll if new messages arrived
+				if (messages.length > prevCount) {
+					setTimeout(scrollToBottom, 100);
+				}
 			}
+		} finally {
+			isRefreshing = false;
 		}
 	}
 
@@ -262,6 +270,26 @@
 	function goBack() {
 		selectedConvo = null;
 		messages = [];
+	}
+
+	/**
+	 * Format a date as a day label for message separators.
+	 * Returns "Today", "Yesterday", or "Mon, Feb 18" / "Mon, Feb 18, 2025" for older.
+	 * @param {Date} date
+	 * @returns {string}
+	 */
+	function formatDayLabel(date) {
+		const now = new Date();
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+		const diffDays = Math.round((today - msgDay) / 86400000);
+
+		if (diffDays === 0) return 'Today';
+		if (diffDays === 1) return 'Yesterday';
+
+		const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+		if (date.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+		return date.toLocaleDateString('en-US', opts);
 	}
 
 	/**
@@ -543,8 +571,20 @@
 						<p class="text-sm text-text-tertiary">No messages in this conversation yet.</p>
 					</div>
 				{:else}
-					{#each messages as msg (msg.id)}
+					{#each messages as msg, i (msg.id)}
 						{@const senderName = getSenderName(msg)}
+						{@const msgDate = new Date(msg.created_at)}
+						{@const prevDate = i > 0 ? new Date(messages[i - 1].created_at) : null}
+						{@const showDaySep = !prevDate || msgDate.toDateString() !== prevDate.toDateString()}
+						{#if showDaySep}
+							<div class="flex items-center gap-3 py-1">
+								<div class="flex-1 h-px bg-border"></div>
+								<span class="text-[10px] text-text-tertiary font-medium uppercase tracking-wider shrink-0">
+									{formatDayLabel(msgDate)}
+								</span>
+								<div class="flex-1 h-px bg-border"></div>
+							</div>
+						{/if}
 						<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
 							<div
 								class="max-w-[75%] rounded-2xl px-4 py-2.5 {msg.direction === 'outbound'

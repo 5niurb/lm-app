@@ -217,7 +217,7 @@
 						preserveAspectRatio="none"
 					>
 						<defs
-							><linearGradient id="spark-gold" x1="0" y1="0" x2="0" y2="1"
+							><linearGradient id="spark-gold-total" x1="0" y1="0" x2="0" y2="1"
 								><stop offset="0%" stop-color="var(--gold)" stop-opacity="0.3" /><stop
 									offset="100%"
 									stop-color="var(--gold)"
@@ -233,7 +233,7 @@
 							points={sparkPoints(dailyStats, 'total', sparkTotalMax)}
 						/>
 						<polygon
-							fill="url(#spark-gold)"
+							fill="url(#spark-gold-total)"
 							points={sparkFill(dailyStats, 'total', sparkTotalMax)}
 						/>
 					</svg>
@@ -267,7 +267,7 @@
 						preserveAspectRatio="none"
 					>
 						<defs
-							><linearGradient id="spark-red" x1="0" y1="0" x2="0" y2="1"
+							><linearGradient id="spark-red-missed" x1="0" y1="0" x2="0" y2="1"
 								><stop offset="0%" stop-color="#f87171" stop-opacity="0.3" /><stop
 									offset="100%"
 									stop-color="#f87171"
@@ -283,7 +283,7 @@
 							points={sparkPoints(dailyStats, 'missed', sparkMissedMax)}
 						/>
 						<polygon
-							fill="url(#spark-red)"
+							fill="url(#spark-red-missed)"
 							points={sparkFill(dailyStats, 'missed', sparkMissedMax)}
 						/>
 					</svg>
