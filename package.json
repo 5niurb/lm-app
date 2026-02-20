@@ -38,6 +38,11 @@
 		"vite": "^7.3.1",
 		"vitest": "^4.0.18"
 	},
+	"overrides": {
+		"@sveltejs/kit": {
+			"cookie": "^0.7.0"
+		}
+	},
 	"dependencies": {
 		"@internationalized/date": "^3.11.0",
 		"@lucide/svelte": "^0.563.1",
