@@ -77,6 +77,10 @@ app.use('/api/public/content', publicContentRoutes);
 import publicConsentRoutes from './routes/public-consent.js';
 app.use('/api/public/consent', publicConsentRoutes);
 
+// Cron processing — secret-key auth (no user token), called by pg_cron + pg_net
+import cronRoutes from './routes/cron-process.js';
+app.use('/api/cron', cronRoutes);
+
 // API routes
 import authRoutes from './routes/auth.js';
 import callRoutes from './routes/calls.js';

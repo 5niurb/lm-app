@@ -15,7 +15,10 @@
 		ChevronDown,
 		ChevronRight,
 		FileText,
-		Link2
+		Link2,
+		Eye,
+		ShieldX,
+		ClipboardCheck
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { isAdmin } from '$lib/stores/auth.js';
@@ -36,6 +39,18 @@
 	let logLoading = $state(true);
 	let logCount = $state(0);
 	let logPage = $state(1);
+
+	// Consents
+	/** @type {any[]} */
+	let consents = $state([]);
+	let consentsLoading = $state(true);
+	let consentsCount = $state(0);
+	let consentsPage = $state(1);
+	let consentStatusFilter = $state('');
+	let consentServiceFilter = $state('');
+	/** @type {any} */
+	let selectedConsent = $state(null);
+	let consentDetailLoading = $state(false);
 
 	// Stats
 	/** @type {any} */
@@ -122,6 +137,9 @@
 	$effect(() => {
 		if (activeTab === 'log') {
 			loadLog();
+		}
+		if (activeTab === 'consents') {
+			loadConsents();
 		}
 	});
 
@@ -233,6 +251,72 @@
 				return 'destructive';
 			default:
 				return 'outline';
+		}
+	}
+
+	function consentStatusBadge(status) {
+		switch (status) {
+			case 'completed':
+				return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+			case 'voided':
+				return 'bg-red-500/10 text-red-400 border-red-500/20';
+			case 'expired':
+				return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+			case 'pending':
+				return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+			default:
+				return 'bg-white/5 text-white/50 border-white/10';
+		}
+	}
+
+	// --- Consents ---
+
+	async function loadConsents() {
+		consentsLoading = true;
+		try {
+			let url = `/api/automation/consents?page=${consentsPage}&pageSize=25`;
+			if (consentStatusFilter) url += `&status=${consentStatusFilter}`;
+			if (consentServiceFilter) url += `&service_id=${consentServiceFilter}`;
+			const res = await api(url);
+			consents = res.data || [];
+			consentsCount = res.count || 0;
+		} catch {
+			consents = [];
+		} finally {
+			consentsLoading = false;
+		}
+	}
+
+	async function openConsentDetail(consent) {
+		selectedConsent = consent;
+		consentDetailLoading = true;
+		try {
+			const res = await api(`/api/automation/consents/${consent.id}`);
+			selectedConsent = res.data;
+		} catch {
+			// Keep the list-level data
+		} finally {
+			consentDetailLoading = false;
+		}
+	}
+
+	async function voidConsent(consent) {
+		if (
+			!confirm(
+				`Void this consent from ${consent.client?.full_name || 'Unknown'}?\n\nThis action marks it as invalid and cannot be easily undone.`
+			)
+		)
+			return;
+		try {
+			const res = await api(`/api/automation/consents/${consent.id}`, {
+				method: 'PATCH',
+				body: JSON.stringify({ status: 'voided' })
+			});
+			selectedConsent = res.data;
+			showToast('Consent voided');
+			await loadConsents();
+		} catch (e) {
+			showToast(e.message, 'error');
 		}
 	}
 
@@ -545,7 +629,8 @@
 		</div>
 	{/if}
 
-	<!-- Tabs -->
+	<!-- Tabs + Content Card -->
+	<div class="rounded border border-border overflow-hidden bg-card">
 	<div class="flex gap-1 border-b border-border-subtle">
 		<button
 			onclick={() => (activeTab = 'sequences')}
@@ -566,6 +651,17 @@
 		>
 			Execution Log
 			{#if activeTab === 'log'}
+				<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gold"></div>
+			{/if}
+		</button>
+		<button
+			onclick={() => (activeTab = 'consents')}
+			class="px-4 py-2.5 text-sm transition-colors relative {activeTab === 'consents'
+				? 'text-gold'
+				: 'text-text-tertiary hover:text-text-secondary'}"
+		>
+			Consents
+			{#if activeTab === 'consents'}
 				<div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gold"></div>
 			{/if}
 		</button>
@@ -757,6 +853,7 @@
 		</div>
 	{/if}
 
+	<div class="p-5">
 	<!-- SEQUENCES TAB -->
 	{#if activeTab === 'sequences'}
 		{#if seqLoading}
@@ -933,7 +1030,7 @@
 			</div>
 		{:else}
 			<!-- Log table -->
-			<div class="rounded border border-border-subtle overflow-hidden">
+			<div class="rounded border border-border-subtle overflow-hidden bg-card">
 				<div class="overflow-x-auto">
 					<table class="w-full text-sm">
 						<thead>
@@ -1013,6 +1110,321 @@
 				</div>
 			{/if}
 		{/if}
+	{/if}
+
+	<!-- CONSENTS TAB -->
+	{#if activeTab === 'consents'}
+		<!-- Filters -->
+		<div class="flex items-center gap-3 mb-4">
+			<select
+				bind:value={consentStatusFilter}
+				onchange={() => {
+					consentsPage = 1;
+					loadConsents();
+				}}
+				class="px-3 py-1.5 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
+			>
+				<option value="">All Statuses</option>
+				<option value="completed">Completed</option>
+				<option value="voided">Voided</option>
+				<option value="expired">Expired</option>
+				<option value="pending">Pending</option>
+			</select>
+			<select
+				bind:value={consentServiceFilter}
+				onchange={() => {
+					consentsPage = 1;
+					loadConsents();
+				}}
+				class="px-3 py-1.5 rounded border border-border-default bg-surface-subtle text-sm focus:border-gold focus:outline-none transition-colors"
+			>
+				<option value="">All Services</option>
+				{#each services as s (s.id)}
+					<option value={s.id}>{s.name}</option>
+				{/each}
+			</select>
+			<span class="text-xs text-text-ghost ml-auto"
+				>{consentsCount} submission{consentsCount !== 1 ? 's' : ''}</span
+			>
+		</div>
+
+		{#if consentsLoading}
+			<div class="space-y-2">
+				{#each Array(6) as _, i (i)}
+					<Skeleton class="h-10 w-full" />
+				{/each}
+			</div>
+		{:else if consents.length === 0}
+			<div class="flex flex-col items-center justify-center h-48 text-center">
+				<ClipboardCheck class="h-10 w-10 text-gold-dim mb-3" />
+				<p class="text-sm text-text-tertiary">No consent submissions yet.</p>
+				<p class="text-xs text-text-ghost mt-1">
+					Submissions will appear here when patients sign consent forms.
+				</p>
+			</div>
+		{:else}
+			<div class="rounded border border-border-subtle overflow-hidden bg-card">
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr
+								class="border-b border-border-subtle text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
+							>
+								<th class="text-left px-4 py-2.5 font-normal">Patient</th>
+								<th class="text-left px-4 py-2.5 font-normal">Form</th>
+								<th class="text-left px-4 py-2.5 font-normal">Service</th>
+								<th class="text-left px-4 py-2.5 font-normal">Status</th>
+								<th class="text-left px-4 py-2.5 font-normal">Signed</th>
+								<th class="text-right px-4 py-2.5 font-normal w-16"></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each consents as consent (consent.id)}
+								<tr
+									class="border-b border-border-subtle hover:bg-gold-glow transition-colors cursor-pointer"
+									onclick={() => openConsentDetail(consent)}
+								>
+									<td class="px-4 py-2.5">
+										<span class="text-text-secondary">{consent.client?.full_name || 'Walk-in'}</span
+										>
+									</td>
+									<td class="px-4 py-2.5 text-text-secondary">
+										{consent.form?.title || '—'}
+									</td>
+									<td class="px-4 py-2.5">
+										{#if consent.service?.name}
+											<span
+												class="text-[10px] px-1.5 py-0.5 rounded border border-border-subtle text-gold-dim"
+											>
+												{consent.service.name}
+											</span>
+										{:else}
+											<span class="text-text-ghost">—</span>
+										{/if}
+									</td>
+									<td class="px-4 py-2.5">
+										<span
+											class="px-2 py-0.5 rounded text-[10px] border {consentStatusBadge(
+												consent.status
+											)}"
+										>
+											{consent.status}
+										</span>
+									</td>
+									<td class="px-4 py-2.5 text-xs text-text-tertiary">
+										{formatDate(consent.signed_at)}
+									</td>
+									<td class="px-4 py-2.5 text-right">
+										<button
+											onclick={(e) => {
+												e.stopPropagation();
+												openConsentDetail(consent);
+											}}
+											class="p-1 rounded text-text-ghost hover:text-gold transition-colors"
+											title="View details"
+										>
+											<Eye class="h-3.5 w-3.5" />
+										</button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Pagination -->
+			{#if consentsCount > 25}
+				<div class="flex items-center justify-between pt-2">
+					<span class="text-xs text-text-ghost">{consentsCount} total submissions</span>
+					<div class="flex gap-2">
+						<button
+							onclick={() => {
+								consentsPage = Math.max(1, consentsPage - 1);
+								loadConsents();
+							}}
+							disabled={consentsPage === 1}
+							class="px-3 py-1 rounded text-xs border border-border-default text-text-tertiary hover:text-white disabled:opacity-30 transition-colors"
+						>
+							Prev
+						</button>
+						<span class="px-3 py-1 text-xs text-text-tertiary">
+							Page {consentsPage} of {Math.ceil(consentsCount / 25)}
+						</span>
+						<button
+							onclick={() => {
+								consentsPage++;
+								loadConsents();
+							}}
+							disabled={consentsPage >= Math.ceil(consentsCount / 25)}
+							class="px-3 py-1 rounded text-xs border border-border-default text-text-tertiary hover:text-white disabled:opacity-30 transition-colors"
+						>
+							Next
+						</button>
+					</div>
+				</div>
+			{/if}
+		{/if}
+	{/if}
+
+	<!-- CONSENT DETAIL DRAWER -->
+	{#if selectedConsent}
+		<div
+			class="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm"
+			onclick={(e) => {
+				if (e.target === e.currentTarget) selectedConsent = null;
+			}}
+		>
+			<div class="w-full max-w-lg bg-card border-l border-border shadow-2xl overflow-y-auto">
+				<div class="p-6 space-y-5">
+					<!-- Header -->
+					<div class="flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<ClipboardCheck class="h-4 w-4 text-gold" />
+							<h2 class="text-base tracking-wide text-white">Consent Submission</h2>
+						</div>
+						<button
+							onclick={() => (selectedConsent = null)}
+							class="text-text-tertiary hover:text-white transition-colors"
+						>
+							<X class="h-4 w-4" />
+						</button>
+					</div>
+
+					<!-- Status + Void -->
+					<div class="flex items-center gap-3">
+						<span
+							class="px-2.5 py-1 rounded text-xs font-medium border {consentStatusBadge(
+								selectedConsent.status
+							)}"
+						>
+							{selectedConsent.status}
+						</span>
+						{#if $isAdmin && selectedConsent.status === 'completed'}
+							<button
+								onclick={() => voidConsent(selectedConsent)}
+								class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border border-red-500/20 text-red-400/70 hover:text-red-400 hover:border-red-500/40 transition-colors"
+							>
+								<ShieldX class="h-3 w-3" />
+								Void Consent
+							</button>
+						{/if}
+					</div>
+
+					<!-- Patient Info -->
+					<div class="rounded border border-border-subtle bg-gold-glow p-4 space-y-2">
+						<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary">Patient</span>
+						<div class="text-sm text-text-primary font-medium">
+							{selectedConsent.client?.full_name || 'Walk-in Patient'}
+						</div>
+						{#if selectedConsent.client?.phone}
+							<div class="flex items-center gap-2 text-xs text-text-secondary">
+								<MessageSquare class="h-3 w-3 text-text-ghost" />
+								{selectedConsent.client.phone}
+							</div>
+						{/if}
+						{#if selectedConsent.client?.email}
+							<div class="flex items-center gap-2 text-xs text-text-secondary">
+								<Mail class="h-3 w-3 text-text-ghost" />
+								{selectedConsent.client.email}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Form + Service -->
+					<div class="grid gap-3 sm:grid-cols-2">
+						<div class="rounded border border-border-subtle p-3">
+							<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary block mb-1"
+								>Form</span
+							>
+							<span class="text-sm text-text-secondary">{selectedConsent.form?.title || '—'}</span>
+						</div>
+						<div class="rounded border border-border-subtle p-3">
+							<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary block mb-1"
+								>Service</span
+							>
+							<span class="text-sm text-text-secondary">{selectedConsent.service?.name || '—'}</span
+							>
+						</div>
+					</div>
+
+					<!-- Questionnaire Responses -->
+					{#if selectedConsent.responses && Object.keys(selectedConsent.responses).length > 0}
+						<div class="rounded border border-border-subtle p-4 space-y-3">
+							<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
+								>Questionnaire Responses</span
+							>
+							{#each Object.entries(selectedConsent.responses) as [question, answer] (question)}
+								<div class="border-b border-border-subtle pb-2 last:border-0 last:pb-0">
+									<p class="text-xs text-text-secondary font-medium">{question}</p>
+									<p class="text-xs text-text-tertiary mt-0.5">
+										{#if typeof answer === 'boolean'}
+											<span class={answer ? 'text-emerald-400' : 'text-red-400'}
+												>{answer ? '✓ Yes' : '✗ No'}</span
+											>
+										{:else}
+											{answer}
+										{/if}
+									</p>
+								</div>
+							{/each}
+						</div>
+					{/if}
+
+					<!-- Signature -->
+					{#if selectedConsent.signature_data}
+						<div class="rounded border border-border-subtle p-4 space-y-2">
+							<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
+								>Signature</span
+							>
+							<div class="rounded bg-background border border-border-subtle p-2">
+								<img
+									src={selectedConsent.signature_data}
+									alt="Patient signature"
+									class="w-full h-auto max-h-32 object-contain rounded"
+								/>
+							</div>
+						</div>
+					{/if}
+
+					<!-- Metadata -->
+					<div class="rounded border border-border-subtle p-4 space-y-2 text-xs text-text-ghost">
+						<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary block"
+							>Details</span
+						>
+						<div class="grid gap-1">
+							<div class="flex justify-between">
+								<span>Signed At</span>
+								<span class="text-text-tertiary"
+									>{selectedConsent.signed_at
+										? new Date(selectedConsent.signed_at).toLocaleString()
+										: '—'}</span
+								>
+							</div>
+							{#if selectedConsent.ip_address}
+								<div class="flex justify-between">
+									<span>IP Address</span>
+									<span class="text-text-tertiary font-mono">{selectedConsent.ip_address}</span>
+								</div>
+							{/if}
+							{#if selectedConsent.user_agent}
+								<div class="flex justify-between">
+									<span>User Agent</span>
+									<span
+										class="text-text-tertiary truncate max-w-[250px]"
+										title={selectedConsent.user_agent}>{selectedConsent.user_agent}</span
+									>
+								</div>
+							{/if}
+							<div class="flex justify-between">
+								<span>Submission ID</span>
+								<span class="text-text-tertiary font-mono text-[10px]">{selectedConsent.id}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	{/if}
 
 	<!-- TEST SEND MODAL -->
@@ -1164,4 +1576,6 @@
 			</div>
 		</div>
 	{/if}
+	</div>
+	</div>
 </div>

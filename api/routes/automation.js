@@ -578,4 +578,51 @@ router.get('/consents/:id', logAction('automation.consents.read'), async (req, r
 	}
 });
 
+/**
+ * PATCH /api/automation/consents/:id
+ * Update a consent submission status (admin only).
+ * Primary use: voiding a consent.
+ *
+ * Body: { status: 'voided' | 'completed' | 'expired' }
+ */
+router.patch(
+	'/consents/:id',
+	requireAdmin,
+	logAction('automation.consents.update'),
+	async (req, res) => {
+		const { status } = req.body;
+
+		const validStatuses = ['completed', 'voided', 'expired', 'pending'];
+		if (!status || !validStatuses.includes(status)) {
+			return res
+				.status(400)
+				.json({ error: `status is required and must be one of: ${validStatuses.join(', ')}` });
+		}
+
+		try {
+			const { data, error } = await supabaseAdmin
+				.from('consent_submissions')
+				.update({ status })
+				.eq('id', req.params.id)
+				.select(
+					`
+          *,
+          client:contacts(id, full_name, phone, email),
+          form:service_content(id, title, content_type),
+          service:services(id, name, slug)
+        `
+				)
+				.single();
+
+			if (error) throw error;
+			if (!data) return res.status(404).json({ error: 'Consent submission not found' });
+
+			res.json({ data });
+		} catch (err) {
+			console.error('Consent submission update error:', err.message);
+			res.status(500).json({ error: 'Failed to update consent submission' });
+		}
+	}
+);
+
 export default router;
