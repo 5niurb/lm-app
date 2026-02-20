@@ -40,6 +40,10 @@ npm-debug.log*
 # Claude Code — track shared settings, skills, hooks, rules; ignore local settings
 .claude/settings.local.json
 
+# Subagent temp files
+.tmp/
+supabase/.temp/
+
 # Audio assets (hosted on Twilio, not in git)
 twilio/assets/
 

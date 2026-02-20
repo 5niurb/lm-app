@@ -2,6 +2,7 @@ import { Router } from 'express';
 import express from 'express';
 import twilio from 'twilio';
 import { supabaseAdmin } from '../../services/supabase.js';
+import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.use(express.json());
  * Twilio sends: From, To, Body, MessageSid, NumMedia, MediaUrl0, etc.
  * We log the message, find/create conversation, and respond with empty TwiML.
  */
-router.post('/incoming', async (req, res) => {
+router.post('/incoming', validateTwilioSignature, async (req, res) => {
 	const { MessageSid, From, To, Body, NumMedia } = req.body;
 
 	if (!MessageSid) {
@@ -113,7 +114,7 @@ router.post('/incoming', async (req, res) => {
  * POST /api/webhooks/sms/status
  * Twilio SMS status callback — updates message delivery status.
  */
-router.post('/status', async (req, res) => {
+router.post('/status', validateTwilioSignature, async (req, res) => {
 	const { MessageSid, MessageStatus } = req.body;
 
 	if (!MessageSid || !MessageStatus) {

@@ -1,3 +1,50 @@
+## Session — 2026-02-19 (Session 37)
+**Focus:** Design & Build workflow — code review + fix all features
+
+**Accomplished:**
+- **Code reviewed all 51 custom files** across 9 parallel subagent batches
+- **Fixed 21 issues** across API and frontend:
+  - XSS prevention in automation email HTML (escHtml)
+  - Auth: Twilio /token endpoint gated behind verifyToken middleware
+  - Auth: OTP bypass gated behind NODE_ENV !== 'production'
+  - Security: Removed hardcoded SYNC_SECRET fallback
+  - Security: Twilio webhook signature validation middleware (voice + sms)
+  - Security: Supabase filter injection prevention in contacts, messages, services search
+  - Security: Removed client_id from public consent form (prevents impersonation)
+  - Bug: Services route ordering — /content/:id routes before /:id params
+  - Bug: Google Calendar DST hardcoding (-08:00 → dynamic offset)
+  - Bug: Dashboard duplicate SVG gradient IDs
+  - Bug: Appointments $derived() → $derived.by() fix
+  - Bug: Automation error banner (seqError was unreachable)
+  - Bug: AppHeader notification badge permanently stuck (hardcoded read:false)
+  - Bug: Contacts double-fetch from unguarded $effect (added untrack)
+  - Perf: Messages polling overlap guard (isRefreshing flag)
+  - Perf: Calls page audio blob URL leak (revokeObjectURL)
+  - Perf: CommandPalette searchTimer reactive state → plain variable
+  - Fix: Softphone E.164 normalization for 11-digit numbers
+  - Fix: API client Content-Type conditional for FormData
+  - Fix: Theme store OS preference change listener
+  - Fix: Consent phone_normalized format + maybeSingle()
+
+**Diagram:**
+```
+┌─────────────┐   9 agents    ┌──────────────┐    21 fixes    ┌──────────────┐
+│  51 files   │ ──parallel──► │  Code Review │ ────────────► │  All Fixed   │
+│  (API+FE)   │               │  PASS/FAIL   │               │  Build ✓     │
+└─────────────┘               └──────────────┘               └──────────────┘
+```
+
+**Current State:**
+- All code review fixes applied, build passes
+- QA phase next (generate + run tests)
+- No dev servers running
+
+**Next Steps:**
+- Run QA subagents to generate and run tests
+- Ship: commit, deploy, verify production health
+
+---
+
 ## Session — 2026-02-19 (Session 36)
 **Focus:** AR patient re-sync, contact dedup, lead/patient exclusivity, Patient Since UI
 
