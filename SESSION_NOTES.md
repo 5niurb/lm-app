@@ -1,3 +1,56 @@
+## Session — 2026-02-19 (Session 35)
+**Focus:** Commit uncommitted work from Sessions 33-34
+
+**Accomplished:**
+- **Committed 4 groups of uncommitted changes** left over from previous sessions:
+  1. **Design consistency** (`9bef12f`): `bg-card` class added to all card containers across 10 pages, AppHeader hardcoded rgba→CSS vars, theme store color refinements
+  2. **Command palette frecency** (`6a06b1f`): localStorage-backed "Recent" section in Cmd+K palette — tracks visits with time-weighted scoring (decays 4x→0.5x over a week), shows top 5 frecent items
+  3. **Consents management** (`c9e9aaf`): Full Consents tab in automation page (table, status/service filters, pagination, detail slide-over drawer with patient info/responses/signature), PATCH /api/automation/consents/:id for voiding, cron-process route mounted
+  4. **SQL scripts** (`f9e955e`): seed-remaining-services.sql + setup-pg-cron.sql
+- **Cleaned up**: Removed `nul` artifact, added `.vs/` and `nul` to .gitignore
+- **Deployed with direct Render URL** — `PUBLIC_API_URL=https://lm-app-api.onrender.com` (custom domain `api.lemedspa.app` has DNS issues)
+
+**Diagram:**
+```
+Automation Page — Consents Tab:
+┌─────────────────────────────────────────────┐
+│ [Sequences] [Execution Log] [Consents]      │
+├─────────────────────────────────────────────┤
+│ Filters: [All Statuses ▼] [All Services ▼] │
+├─────────────────────────────────────────────┤
+│ Patient │ Form │ Service │ Status │ Signed  │
+│─────────│──────│─────────│────────│─────────│
+│ Jane D  │ Neur │ Botox   │ ✓done  │ 2h ago  │──► Detail Drawer
+│ Walk-in │ Fill │ Fillers │ ⊘void  │ 1d ago  │    (info, responses,
+│         │      │         │        │         │     signature, void btn)
+└─────────────────────────────────────────────┘
+```
+
+**Commits:**
+- `9bef12f` — [design] Add bg-card to all card containers and migrate header tokens
+- `6a06b1f` — [ui] Add frecency tracking to command palette — shows Recent items
+- `c9e9aaf` — [automation] Add consents tab with table, filters, detail drawer, and void API
+- `f9e955e` — [db] Add seed and pg_cron setup scripts
+
+**Current State:**
+- All work committed and pushed to GitHub
+- Frontend last deployed with `PUBLIC_API_URL=https://lm-app-api.onrender.com` (direct Render URL)
+- Custom domain `api.lemedspa.app` not resolving — needs DNS investigation
+
+**Issues:**
+- `api.lemedspa.app` custom domain not resolving (DNS config issue on Render)
+- Frontend built with direct Render URL as workaround
+- GCP service account env vars still not set (Schedule page won't show real data)
+- Consent form end-to-end testing not yet completed (was blocked by API issues)
+
+**Next Steps:**
+- Fix `api.lemedspa.app` DNS → rebuild frontend with correct API URL
+- Consent form end-to-end testing (sign + submit from phone, verify in DB + admin view)
+- One-time GCP setup: create service account, share AR calendar, set env vars
+- Deploy Studio flow to Twilio for after-hours IVR
+
+---
+
 ## Session — 2026-02-18 (Session 34)
 **Focus:** Deploy + Cmd+K command palette
 
