@@ -53,18 +53,35 @@ router.post('/token', verifyToken, (req, res) => {
 });
 
 /**
+ * Extract a phone number from a SIP URI or return as-is if already a number.
+ * SIP devices send To as: sip:+18181234567@lemedflex.sip.twilio.com
+ * Browser softphone sends: +18181234567
+ */
+function extractPhoneFromSipUri(to) {
+	if (!to) return null;
+	const sipMatch = to.match(/^sip:([^@]+)@/);
+	return sipMatch ? sipMatch[1] : to;
+}
+
+/**
  * POST /api/twilio/voice
- * TwiML handler for outbound calls initiated from the browser softphone.
- * Twilio hits this URL when the softphone makes a call.
+ * TwiML handler for outbound calls from the browser softphone OR SIP devices.
+ * Twilio hits this URL when either source initiates a call.
  *
- * The softphone sends the target number as a `To` parameter.
+ * Browser softphone sends To as a phone number; SIP devices send a SIP URI.
  * Also logs the outbound call to call_logs.
  */
 router.post('/voice', async (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
-	const to = req.body.To;
+	const rawTo = req.body.To;
 	const callSid = req.body.CallSid;
 	const from = req.body.From || req.body.Caller || process.env.TWILIO_PHONE_NUMBER;
+	const isSip = rawTo?.startsWith('sip:') || !!req.body.SipDomainSid;
+	const to = extractPhoneFromSipUri(rawTo);
+	const baseUrl =
+		process.env.RENDER_EXTERNAL_URL ||
+		process.env.FRONTEND_URL_PUBLIC ||
+		'https://api.lemedspa.app';
 
 	if (to) {
 		// Log outbound call to DB with contact lookup
@@ -80,7 +97,7 @@ router.post('/voice', async (req, res) => {
 					caller_name: contactName,
 					contact_id: contactId,
 					metadata: {
-						source: 'softphone',
+						source: isSip ? 'sip' : 'softphone',
 						caller_identity: req.body.From || 'unknown'
 					}
 				});
@@ -89,19 +106,17 @@ router.post('/voice', async (req, res) => {
 			}
 		}
 
-		// Outbound call from browser — dial the number
+		// Dial the target number
 		const dial = twiml.dial({
 			callerId: process.env.TWILIO_PHONE_NUMBER || '+12134442242',
 			timeout: 20,
-			action: '/api/twilio/outbound-status',
+			action: `${baseUrl}/api/twilio/outbound-status`,
 			method: 'POST'
 		});
 
 		if (to.startsWith('client:')) {
-			// Calling another browser client
 			dial.client(to.replace('client:', ''));
 		} else {
-			// Calling a phone number
 			dial.number(to);
 		}
 	} else {
