@@ -318,7 +318,7 @@ router.post('/status', validateTwilioSignature, async (req, res) => {
  */
 router.post('/recording', validateTwilioSignature, async (req, res) => {
 	const { CallSid, RecordingSid, RecordingUrl, RecordingDuration, From } = req.body;
-	const mailbox = req.body.mailbox || req.body.Mailbox || null;
+	const mailbox = req.query.mailbox || req.body.mailbox || req.body.Mailbox || null;
 
 	if (!RecordingSid) {
 		// Nothing to record without a RecordingSid
@@ -353,11 +353,35 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 		}
 	} else {
 		// First time seeing this recording — create the voicemail
-		const { data: callLog } = await supabaseAdmin
-			.from('call_logs')
-			.select('id')
-			.eq('twilio_sid', CallSid)
-			.maybeSingle();
+		let callLog = null;
+		if (CallSid) {
+			const { data } = await supabaseAdmin
+				.from('call_logs')
+				.select('id')
+				.eq('twilio_sid', CallSid)
+				.maybeSingle();
+			callLog = data;
+
+			// If no call_log exists (e.g. Studio webhook timed out on cold start),
+			// create a basic one so the voicemail has a parent record
+			if (!callLog && From) {
+				const { data: created } = await supabaseAdmin
+					.from('call_logs')
+					.insert({
+						twilio_sid: CallSid,
+						direction: 'inbound',
+						from_number: From,
+						to_number: req.body.To || req.body.Called || process.env.TWILIO_PHONE_NUMBER || '',
+						status: 'completed',
+						disposition: 'voicemail',
+						caller_name: null,
+						metadata: { source: 'recording_fallback' }
+					})
+					.select('id')
+					.single();
+				callLog = created;
+			}
+		}
 
 		const { error } = await supabaseAdmin.from('voicemails').insert({
 			call_log_id: callLog?.id || null,
