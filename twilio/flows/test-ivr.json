@@ -1,5 +1,5 @@
 {
-	"description": "LeMed IVR test",
+	"description": "LeMed Main IVR — Updated 2026-02-20 (new greeting audio)",
 	"flags": {
 		"allow_concurrent_calls": true
 	},
@@ -16,11 +16,11 @@
 			"transitions": [
 				{
 					"event": "incomingMessage",
-					"next": "x0a-MainGreetingMenu_Open"
+					"next": "log_incoming_call"
 				},
 				{
 					"event": "incomingCall",
-					"next": "x0a-MainGreetingMenu_Open"
+					"next": "log_incoming_call"
 				},
 				{
 					"event": "incomingConversationMessage"
@@ -30,10 +30,179 @@
 				},
 				{
 					"event": "incomingParent",
-					"next": "x0a-MainGreetingMenu_Open"
+					"next": "log_incoming_call"
 				}
 			],
 			"type": "trigger"
+		},
+		{
+			"name": "log_incoming_call",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&From={{trigger.call.From}}&To={{trigger.call.To}}&CallerName={{trigger.call.CallerName}}&CallerCity={{trigger.call.CallerCity}}&CallerState={{trigger.call.CallerState}}&CallerCountry={{trigger.call.CallerCountry}}",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 180,
+					"y": -10
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/voice/incoming"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "check_hours"
+				},
+				{
+					"event": "failed",
+					"next": "check_hours"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "check_hours",
+			"properties": {
+				"content_type": "application/json;charset=utf-8",
+				"method": "GET",
+				"offset": {
+					"x": 180,
+					"y": 120
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/voice/hours-check"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "split_hours_status"
+				},
+				{
+					"event": "failed",
+					"next": "x0a-MainGreetingMenu_Open"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "split_hours_status",
+			"properties": {
+				"input": "{{widgets.check_hours.parsed.status}}",
+				"offset": {
+					"x": 180,
+					"y": 270
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch",
+					"next": "x0a-MainGreetingMenu_Open"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.check_hours.parsed.status}}"],
+							"friendly_name": "open",
+							"type": "equal_to",
+							"value": "open"
+						}
+					],
+					"event": "match",
+					"next": "x0a-MainGreetingMenu_Open"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.check_hours.parsed.status}}"],
+							"friendly_name": "closed",
+							"type": "equal_to",
+							"value": "closed"
+						}
+					],
+					"event": "match",
+					"next": "gather_closed"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "gather_closed",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": -100,
+					"y": 420
+				},
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/Closed-text-us-wav.wav",
+				"stop_gather": true,
+				"timeout": 2
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "send_sms_closed"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_closed_vmail"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "send_sms_closed",
+			"properties": {
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": -300,
+					"y": 620
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "play_sms_sent_goodbye"
+				},
+				{
+					"event": "failed",
+					"next": "record_closed_vmail"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "record_closed_vmail",
+			"properties": {
+				"max_length": 3600,
+				"offset": {
+					"x": -100,
+					"y": 620
+				},
+				"play_beep": "true",
+				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=operator",
+				"timeout": 5,
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+			},
+			"transitions": [
+				{
+					"event": "recordingComplete"
+				},
+				{
+					"event": "noAudio"
+				},
+				{
+					"event": "hangup"
+				}
+			],
+			"type": "record-voicemail"
 		},
 		{
 			"name": "x0a-MainGreetingMenu_Open",
@@ -43,9 +212,9 @@
 				"number_of_digits": 1,
 				"offset": {
 					"x": 310,
-					"y": 80
+					"y": 420
 				},
-				"play": "https://periwinkle-partridge-9538.twil.io/assets/0a-LM_Main_Greeting_9.14.25.wav",
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/new-victoria-main-greeting-wav.wav",
 				"profanity_filter": "false",
 				"speech_model": "default",
 				"speech_timeout": "10",
@@ -62,7 +231,7 @@
 				},
 				{
 					"event": "timeout",
-					"next": "connect_call_HighLevel"
+					"next": "connect_operator_redirect"
 				}
 			],
 			"type": "gather-input-on-call"
@@ -73,7 +242,7 @@
 				"input": "{{widgets.x0a-MainGreetingMenu_Open.Digits}}",
 				"offset": {
 					"x": 660,
-					"y": 360
+					"y": 600
 				}
 			},
 			"transitions": [
@@ -90,7 +259,7 @@
 						}
 					],
 					"event": "match",
-					"next": "connect_call_HighLevel"
+					"next": "connect_operator_redirect"
 				},
 				{
 					"conditions": [
@@ -127,9 +296,55 @@
 					],
 					"event": "match",
 					"next": "x2b-Company_Directory"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "4",
+							"type": "equal_to",
+							"value": "4"
+						}
+					],
+					"event": "match"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.x0a-MainGreetingMenu_Open.Digits}}"],
+							"friendly_name": "9",
+							"type": "equal_to",
+							"value": "9"
+						}
+					],
+					"event": "match"
 				}
 			],
 			"type": "split-based-on"
+		},
+		{
+			"name": "connect_operator_redirect",
+			"properties": {
+				"method": "POST",
+				"offset": {
+					"x": 1340,
+					"y": 800
+				},
+				"timeout": "14400",
+				"url": "https://api.lemedspa.app/api/twilio/connect-operator"
+			},
+			"transitions": [
+				{
+					"event": "return"
+				},
+				{
+					"event": "timeout"
+				},
+				{
+					"event": "fail"
+				}
+			],
+			"type": "add-twiml-redirect"
 		},
 		{
 			"name": "x2a-Hours_Location",
@@ -140,9 +355,9 @@
 				"number_of_digits": 1,
 				"offset": {
 					"x": -40,
-					"y": 600
+					"y": 850
 				},
-				"play": "https://periwinkle-partridge-9538.twil.io/assets/2a-HoursLocation.wav",
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/Hours-Location-Elise-wav.wav",
 				"profanity_filter": "true",
 				"speech_model": "default",
 				"speech_timeout": "10",
@@ -169,7 +384,7 @@
 				"input": "{{widgets.x2a-Hours_Location.Digits}}",
 				"offset": {
 					"x": -230,
-					"y": 900
+					"y": 1100
 				}
 			},
 			"transitions": [
@@ -198,8 +413,7 @@
 							"value": "0"
 						}
 					],
-					"event": "match",
-					"next": "connect_call_HighLevel"
+					"event": "match"
 				}
 			],
 			"type": "split-based-on"
@@ -212,7 +426,7 @@
 				"loop": 1,
 				"offset": {
 					"x": 370,
-					"y": 760
+					"y": 1000
 				},
 				"play": "https://periwinkle-partridge-9538.twil.io/assets/2b-CompanyDirectory.wav",
 				"speech_model": "default",
@@ -240,7 +454,7 @@
 				"input": "{{widgets.x2b-Company_Directory.Digits}}",
 				"offset": {
 					"x": 1060,
-					"y": 820
+					"y": 1060
 				}
 			},
 			"transitions": [
@@ -258,7 +472,7 @@
 						}
 					],
 					"event": "match",
-					"next": "Lea_voicemail"
+					"next": "gather_lea_vmail"
 				},
 				{
 					"conditions": [
@@ -270,7 +484,7 @@
 						}
 					],
 					"event": "match",
-					"next": "ClinicalMD_Vmail"
+					"next": "gather_clinicalmd_vmail"
 				},
 				{
 					"conditions": [
@@ -293,24 +507,79 @@
 							"value": "0"
 						}
 					],
-					"event": "match",
-					"next": "connect_call_HighLevel"
+					"event": "match"
 				}
 			],
 			"type": "split-based-on"
 		},
 		{
-			"name": "Lea_voicemail",
+			"name": "gather_lea_vmail",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 320,
+					"y": 1340
+				},
+				"say": "You've reached Lea's voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
+				"stop_gather": true,
+				"timeout": 2,
+				"voice": "Polly.Joanna"
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "send_sms_lea"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_lea_vmail"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "send_sms_lea",
+			"properties": {
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 100,
+					"y": 1600
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "play_sms_sent_goodbye"
+				},
+				{
+					"event": "failed",
+					"next": "record_lea_vmail"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "record_lea_vmail",
 			"properties": {
 				"max_length": 3600,
 				"offset": {
 					"x": 320,
-					"y": 1370
+					"y": 1800
 				},
 				"play_beep": "true",
+				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=lea",
 				"timeout": 5,
-				"transcribe": false,
-				"trim": "trim-silence"
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -326,17 +595,73 @@
 			"type": "record-voicemail"
 		},
 		{
-			"name": "ClinicalMD_Vmail",
+			"name": "gather_clinicalmd_vmail",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 790,
+					"y": 1340
+				},
+				"say": "You've reached the clinical team's voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
+				"stop_gather": true,
+				"timeout": 2,
+				"voice": "Polly.Joanna"
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "send_sms_clinicalmd"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_clinicalmd_vmail"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "send_sms_clinicalmd",
+			"properties": {
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 590,
+					"y": 1600
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "play_sms_sent_goodbye"
+				},
+				{
+					"event": "failed",
+					"next": "record_clinicalmd_vmail"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "record_clinicalmd_vmail",
 			"properties": {
 				"max_length": 3600,
 				"offset": {
 					"x": 990,
-					"y": 1120
+					"y": 1600
 				},
 				"play_beep": "true",
+				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=clinical_md",
 				"timeout": 5,
-				"transcribe": false,
-				"trim": "trim-silence"
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -359,9 +684,9 @@
 				"loop": 1,
 				"offset": {
 					"x": 1380,
-					"y": 1110
+					"y": 1340
 				},
-				"play": "https://periwinkle-partridge-9538.twil.io/assets/3c-Accounts%20Greeting%20Menu%20(Elabs%20Will).mp3",
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/Ops-vmail-Barry-wav.wav",
 				"speech_timeout": "auto",
 				"stop_gather": true,
 				"timeout": 5
@@ -386,7 +711,7 @@
 				"input": "{{widgets.x3c-AccountsOps_Menu.Digits}}",
 				"offset": {
 					"x": 1120,
-					"y": 1390
+					"y": 1620
 				}
 			},
 			"transitions": [
@@ -415,7 +740,7 @@
 						}
 					],
 					"event": "match",
-					"next": "record_voicemail_accounts"
+					"next": "gather_accounts_vmail"
 				},
 				{
 					"conditions": [
@@ -434,16 +759,15 @@
 		},
 		{
 			"name": "send_message_accounts",
-			"type": "make-http-request",
 			"properties": {
-				"method": "POST",
-				"content_type": "application/json;charset=utf-8",
 				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
-				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
 				"offset": {
 					"x": 670,
-					"y": 1570
-				}
+					"y": 1800
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
 			},
 			"transitions": [
 				{
@@ -451,22 +775,80 @@
 					"next": "play_MsgSentGoodbye"
 				},
 				{
-					"event": "failed"
+					"event": "failed",
+					"next": "gather_accounts_vmail"
 				}
-			]
+			],
+			"type": "make-http-request"
 		},
 		{
-			"name": "record_voicemail_accounts",
+			"name": "gather_accounts_vmail",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 1020,
+					"y": 1820
+				},
+				"say": "You've reached our accounts department voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
+				"stop_gather": true,
+				"timeout": 2,
+				"voice": "Polly.Joanna"
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "send_sms_accounts_vmail"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_accounts_vmail"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "send_sms_accounts_vmail",
+			"properties": {
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 820,
+					"y": 2040
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "play_sms_sent_goodbye"
+				},
+				{
+					"event": "failed",
+					"next": "record_accounts_vmail"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "record_accounts_vmail",
 			"properties": {
 				"max_length": 3600,
 				"offset": {
-					"x": 1020,
-					"y": 1680
+					"x": 1120,
+					"y": 2040
 				},
 				"play_beep": "true",
+				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=accounts",
 				"timeout": 5,
-				"transcribe": false,
-				"trim": "trim-silence"
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -483,26 +865,25 @@
 		},
 		{
 			"name": "connect_call_accounts",
-			"type": "add-twiml-redirect",
 			"properties": {
-				"url": "https://api.lemedspa.app/api/twilio/connect-operator",
-				"method": "POST",
+				"caller_id": "{{contact.channel.address}}",
+				"noun": "number",
 				"offset": {
 					"x": 1390,
-					"y": 1640
-				}
+					"y": 1880
+				},
+				"timeout": 30,
+				"to": "+12134442242"
 			},
 			"transitions": [
 				{
-					"event": "return"
+					"event": "callCompleted"
 				},
 				{
-					"event": "timeout"
-				},
-				{
-					"event": "fail"
+					"event": "hangup"
 				}
-			]
+			],
+			"type": "connect-call-to"
 		},
 		{
 			"name": "play_MsgSentGoodbye",
@@ -510,9 +891,9 @@
 				"loop": 1,
 				"offset": {
 					"x": 400,
-					"y": 1820
+					"y": 2060
 				},
-				"play": "https://periwinkle-partridge-9538.twil.io/assets/1a1-messageSentGoodbye.wav"
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/message-sent-Victoria-wav.wav"
 			},
 			"transitions": [
 				{
@@ -522,27 +903,21 @@
 			"type": "say-play"
 		},
 		{
-			"name": "connect_call_HighLevel",
-			"type": "add-twiml-redirect",
+			"name": "play_sms_sent_goodbye",
 			"properties": {
-				"url": "https://api.lemedspa.app/api/twilio/connect-operator",
-				"method": "POST",
+				"loop": 1,
 				"offset": {
-					"x": 1340,
-					"y": 550
-				}
+					"x": -300,
+					"y": 860
+				},
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/message-sent-Victoria-wav.wav"
 			},
 			"transitions": [
 				{
-					"event": "return"
-				},
-				{
-					"event": "timeout"
-				},
-				{
-					"event": "fail"
+					"event": "audioComplete"
 				}
-			]
+			],
+			"type": "say-play"
 		}
 	]
 }
