@@ -186,10 +186,10 @@ CREATE TABLE public.voicemails (
   recording_sid         TEXT,
   duration              INTEGER DEFAULT 0,
   transcription         TEXT,
-  transcription_status  TEXT DEFAULT 'pending'
+  transcription_status  TEXT DEFAULT NULL
                         CHECK (transcription_status IN ('pending', 'completed', 'failed')),
   mailbox               TEXT
-                        CHECK (mailbox IN ('lea', 'clinical_md', 'accounts', 'care_team')),
+                        CHECK (mailbox IN ('lea', 'clinical_md', 'accounts', 'care_team', 'operator')),
   is_new                BOOLEAN DEFAULT true,
   assigned_to           UUID REFERENCES public.profiles(id),
   preserved             BOOLEAN DEFAULT false,

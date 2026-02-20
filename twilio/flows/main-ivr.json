@@ -1,5 +1,5 @@
 {
-	"description": "LeMed Main IVR — Updated 2026-02-20",
+	"description": "LeMed Main IVR — Updated 2026-02-20 (new greeting audio)",
 	"flags": {
 		"allow_concurrent_calls": true
 	},
@@ -214,7 +214,7 @@
 					"x": 310,
 					"y": 420
 				},
-				"play": "https://lm-ivr-assets-2112.twil.io/assets/main-greeting-victoria-new-wav.wav",
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/new-victoria-main-greeting-wav.wav",
 				"profanity_filter": "false",
 				"speech_model": "default",
 				"speech_timeout": "10",

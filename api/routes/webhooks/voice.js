@@ -421,7 +421,7 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 			recording_url: RecordingUrl || '',
 			recording_sid: RecordingSid,
 			duration: parseInt(RecordingDuration, 10) || 0,
-			transcription_status: 'pending',
+			transcription_status: null,
 			mailbox: mailbox
 		});
 
