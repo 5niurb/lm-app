@@ -232,7 +232,7 @@ router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
 	if (dialStatus === 'no-answer' || dialStatus === 'busy' || dialStatus === 'failed') {
 		const gather = twiml.gather({
 			numDigits: 1,
-			timeout: 5,
+			timeout: 2,
 			action: `${baseUrl}/api/twilio/connect-operator-text`,
 			method: 'POST'
 		});
@@ -241,7 +241,9 @@ router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
 		// Timeout fallback — record voicemail
 		twiml.record({
 			maxLength: 120,
-			transcribe: false,
+			transcribe: true,
+			transcribeCallback: `${baseUrl}/api/webhooks/voice/transcription`,
+			trim: 'trim-silence',
 			recordingStatusCallback: `${baseUrl}/api/webhooks/voice/recording?mailbox=operator`,
 			recordingStatusCallbackMethod: 'POST',
 			recordingStatusCallbackEvent: 'completed',
@@ -274,7 +276,9 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 			'https://api.lemedspa.app';
 		twiml.record({
 			maxLength: 120,
-			transcribe: false,
+			transcribe: true,
+			transcribeCallback: `${baseUrl}/api/webhooks/voice/transcription`,
+			trim: 'trim-silence',
 			recordingStatusCallback: `${baseUrl}/api/webhooks/voice/recording?mailbox=operator`,
 			recordingStatusCallbackMethod: 'POST',
 			recordingStatusCallbackEvent: 'completed',

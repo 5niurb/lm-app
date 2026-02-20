@@ -135,7 +135,7 @@
 				},
 				"play": "https://lm-ivr-assets-2112.twil.io/assets/Closed-text-us-wav.wav",
 				"stop_gather": true,
-				"timeout": 5
+				"timeout": 2
 			},
 			"transitions": [
 				{
@@ -187,8 +187,9 @@
 				"play_beep": "true",
 				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=operator",
 				"timeout": 5,
-				"transcribe": false,
-				"trim": "trim-silence"
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -213,7 +214,7 @@
 					"x": 310,
 					"y": 420
 				},
-				"play": "https://lm-ivr-assets-2112.twil.io/assets/main-greeting-victoria-wav.wav",
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/main-greeting-victoria-new-wav.wav",
 				"profanity_filter": "false",
 				"speech_model": "default",
 				"speech_timeout": "10",
@@ -523,7 +524,7 @@
 				},
 				"say": "You've reached Lea's voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
 				"stop_gather": true,
-				"timeout": 5,
+				"timeout": 2,
 				"voice": "Polly.Joanna"
 			},
 			"transitions": [
@@ -576,8 +577,9 @@
 				"play_beep": "true",
 				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=lea",
 				"timeout": 5,
-				"transcribe": false,
-				"trim": "trim-silence"
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -604,7 +606,7 @@
 				},
 				"say": "You've reached the clinical team's voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
 				"stop_gather": true,
-				"timeout": 5,
+				"timeout": 2,
 				"voice": "Polly.Joanna"
 			},
 			"transitions": [
@@ -657,8 +659,9 @@
 				"play_beep": "true",
 				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=clinical_md",
 				"timeout": 5,
-				"transcribe": false,
-				"trim": "trim-silence"
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -790,7 +793,7 @@
 				},
 				"say": "You've reached our accounts department voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
 				"stop_gather": true,
-				"timeout": 5,
+				"timeout": 2,
 				"voice": "Polly.Joanna"
 			},
 			"transitions": [
@@ -843,8 +846,9 @@
 				"play_beep": "true",
 				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=accounts",
 				"timeout": 5,
-				"transcribe": false,
-				"trim": "trim-silence"
+				"transcribe": true,
+				"trim": "trim-silence",
+				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
