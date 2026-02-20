@@ -3,7 +3,11 @@ import twilio from 'twilio';
 import { supabaseAdmin } from '../services/supabase.js';
 import { verifyToken } from '../middleware/auth.js';
 import { validateTwilioSignature } from '../middleware/twilioSignature.js';
-import { lookupContactByPhone } from '../services/phone-lookup.js';
+import {
+	lookupContactByPhone,
+	findConversation,
+	normalizePhone
+} from '../services/phone-lookup.js';
 
 const router = Router();
 
@@ -283,21 +287,18 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 				statusCallback: `${baseUrl}/api/webhooks/sms/status`
 			});
 
-			// Create conversation + message record
-			const { contactId, contactName } = await lookupContactByPhone(callerNumber);
-			const { data: existing } = await supabaseAdmin
-				.from('conversations')
-				.select('id')
-				.eq('phone_number', callerNumber)
-				.maybeSingle();
+			// Create conversation + message record — one thread per customer
+			const normalizedCaller = normalizePhone(callerNumber);
+			const { contactId, contactName } = await lookupContactByPhone(normalizedCaller);
+			const existingConv = await findConversation(normalizedCaller);
 
-			let convId = existing?.id;
+			let convId = existingConv?.id;
 
 			if (!convId) {
 				const { data: newConv } = await supabaseAdmin
 					.from('conversations')
 					.insert({
-						phone_number: callerNumber,
+						phone_number: normalizedCaller,
 						twilio_number: twilioNumber,
 						display_name: contactName,
 						contact_id: contactId,

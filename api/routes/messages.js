@@ -3,6 +3,7 @@ import twilio from 'twilio';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
+import { findConversation, normalizePhone } from '../services/phone-lookup.js';
 
 const router = Router();
 
@@ -67,11 +68,12 @@ router.get('/conversations/:id', logAction('messages.read'), async (req, res) =>
 	const { id } = req.params;
 	const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
 
+	// Fetch the NEWEST messages (descending), then reverse for chronological display
 	let query = supabaseAdmin
 		.from('messages')
 		.select('*, sender:profiles!messages_sent_by_fkey(full_name, email)')
 		.eq('conversation_id', id)
-		.order('created_at', { ascending: true })
+		.order('created_at', { ascending: false })
 		.limit(pageSize);
 
 	if (req.query.before) {
@@ -85,10 +87,13 @@ router.get('/conversations/:id', logAction('messages.read'), async (req, res) =>
 		return res.status(500).json({ error: 'Failed to fetch messages' });
 	}
 
+	// Reverse to chronological order (oldest → newest) for display
+	const messages = (data || []).reverse();
+
 	// Mark conversation as read
 	await supabaseAdmin.from('conversations').update({ unread_count: 0 }).eq('id', id);
 
-	return res.json({ data: data || [] });
+	return res.json({ data: messages });
 });
 
 /**
@@ -131,19 +136,8 @@ router.get('/lookup', logAction('messages.lookup'), async (req, res) => {
 	if (digits.length === 11 && digits.startsWith('1')) variants.push(digits.slice(1));
 	if (digits.length === 10) variants.push('+1' + digits, '1' + digits);
 
-	// Look for existing conversation
-	let conversation = null;
-	for (const v of variants) {
-		const { data } = await supabaseAdmin
-			.from('conversations')
-			.select('*')
-			.eq('phone_number', v)
-			.maybeSingle();
-		if (data) {
-			conversation = data;
-			break;
-		}
-	}
+	// Look for existing conversation — one thread per customer
+	const conversation = await findConversation(phone);
 
 	// Look for contact
 	let contact = null;
@@ -175,10 +169,7 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 		return res.status(400).json({ error: 'Both "to" and "body" are required' });
 	}
 
-	// Normalize phone number
-	let toNumber = to.replace(/[^\d+]/g, '');
-	if (toNumber.length === 10) toNumber = '+1' + toNumber;
-	if (!toNumber.startsWith('+')) toNumber = '+' + toNumber;
+	const toNumber = normalizePhone(to);
 
 	// Use explicitly provided from number, or fall back to env defaults
 	const fromNumber =
@@ -207,22 +198,14 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 			...(statusCallback && { statusCallback })
 		});
 
-		// Find or create conversation (scoped to twilio number)
+		// Find or create conversation — one thread per customer phone number
 		let convId = conversationId;
 		if (!convId) {
-			// Look up existing conversation by phone number + twilio number
-			let existingQuery = supabaseAdmin
-				.from('conversations')
-				.select('id')
-				.eq('phone_number', toNumber);
-			if (fromNumber) existingQuery = existingQuery.eq('twilio_number', fromNumber);
+			const existingConv = await findConversation(toNumber);
 
-			const { data: existing } = await existingQuery.maybeSingle();
-
-			if (existing) {
-				convId = existing.id;
+			if (existingConv) {
+				convId = existingConv.id;
 			} else {
-				// Look up contact
 				const phoneDigits = toNumber.replace(/\D/g, '');
 				const { data: contact } = await supabaseAdmin
 					.from('contacts')

@@ -4,7 +4,11 @@ import twilio from 'twilio';
 import { supabaseAdmin } from '../../services/supabase.js';
 import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
 import { forwardToTextMagic } from './sms-forward.js';
-import { lookupContactByPhone } from '../../services/phone-lookup.js';
+import {
+	lookupContactByPhone,
+	findConversation,
+	normalizePhone
+} from '../../services/phone-lookup.js';
 
 const router = Router();
 
@@ -26,7 +30,7 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 		return res.sendStatus(200);
 	}
 
-	const fromNumber = From || 'unknown';
+	const fromNumber = normalizePhone(From || 'unknown');
 	const toNumber = To || '';
 	const body = Body || '';
 
@@ -40,29 +44,24 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 	}
 
 	try {
-		// Find or create conversation (scoped to the Twilio number that received it)
-		let existingQuery = supabaseAdmin
-			.from('conversations')
-			.select('id, unread_count')
-			.eq('phone_number', fromNumber);
-		if (toNumber) existingQuery = existingQuery.eq('twilio_number', toNumber);
-
-		const { data: existing } = await existingQuery.maybeSingle();
+		// Find or create conversation — one thread per customer phone number
+		const existing = await findConversation(fromNumber);
 
 		let convId;
 
 		if (existing) {
 			convId = existing.id;
-			// Update conversation with new message preview
-			await supabaseAdmin
-				.from('conversations')
-				.update({
-					last_message: body.substring(0, 200),
-					last_at: new Date().toISOString(),
-					unread_count: (existing.unread_count || 0) + 1,
-					status: 'active'
-				})
-				.eq('id', existing.id);
+			// Update conversation with new message preview + fill twilio_number if missing
+			const updatePayload = {
+				last_message: body.substring(0, 200),
+				last_at: new Date().toISOString(),
+				unread_count: (existing.unread_count || 0) + 1,
+				status: 'active'
+			};
+			if (!existing.twilio_number && toNumber) {
+				updatePayload.twilio_number = toNumber;
+			}
+			await supabaseAdmin.from('conversations').update(updatePayload).eq('id', existing.id);
 		} else {
 			// Look up contact by phone (shared utility handles format variants)
 			const { contactId, contactName } = await lookupContactByPhone(fromNumber);
@@ -159,10 +158,7 @@ router.post('/studio-send', async (req, res) => {
 		return res.status(400).json({ error: 'Both "to" and "body" are required' });
 	}
 
-	// Normalize phone number
-	let toNumber = to.replace(/[^\d+]/g, '');
-	if (toNumber.length === 10) toNumber = '+1' + toNumber;
-	if (!toNumber.startsWith('+')) toNumber = '+' + toNumber;
+	const toNumber = normalizePhone(to);
 
 	// Use the same from-number logic as the messages API
 	const fromNumber =
@@ -190,30 +186,26 @@ router.post('/studio-send', async (req, res) => {
 			...(statusCallback && { statusCallback })
 		});
 
-		// Find or create conversation (keyed on the caller's number)
-		const { data: existing } = await supabaseAdmin
-			.from('conversations')
-			.select('id')
-			.eq('phone_number', toNumber)
-			.maybeSingle();
+		// Find or create conversation — one thread per customer phone number
+		const existingConv = await findConversation(toNumber);
 
 		let convId;
 
-		if (existing) {
-			convId = existing.id;
+		if (existingConv) {
+			convId = existingConv.id;
 		} else {
-			// Look up contact by phone (shared utility handles format variants)
 			const { contactId, contactName } = await lookupContactByPhone(toNumber);
 
 			const { data: newConv } = await supabaseAdmin
 				.from('conversations')
 				.insert({
 					phone_number: toNumber,
+					twilio_number: fromNumber || null,
 					display_name: contactName,
 					contact_id: contactId,
 					last_message: msgBody.substring(0, 200),
 					last_at: new Date().toISOString(),
-					unread_count: 0 // Outbound — no unread
+					unread_count: 0
 				})
 				.select('id')
 				.single();

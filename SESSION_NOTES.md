@@ -1,3 +1,54 @@
+## Session — 2026-02-20 (Session 40)
+**Focus:** IVR testing, softphone auth fix, CI hardening, Victoria audio updates
+
+**Accomplished:**
+- **Softphone auth fix** — replaced raw `fetch()` with `api()` helper that auto-attaches Bearer token
+- **CI failure fix** — updated test assertion from TTS `'press 1'` to `<Play>` audio, ran Prettier on all files
+- **Pre-push git hook** — `.husky/pre-push` runs format:check, lint, test, test:api before push
+- **IVR press-0 fix** — non-'1' digits in connect-operator-text now record voicemail instead of hanging up
+- **After-hours bypass** — `FORCE_HOURS_OPEN` env var in hours-check endpoint for testing
+- **Call log cold-start fix** — recording handler creates fallback call_log if Studio webhook timed out
+- **Mailbox query param fix** — read mailbox from `req.query` first (Twilio sends as `?mailbox=operator`)
+- **Victoria audio updates** — main greeting, message-sent, apologize/missed-call all updated to Victoria recordings
+- **Studio flow rev 59** — deployed with Victoria audio, updated routing (0=operator, 1=text, 2=hours, 3=more)
+- **.m4a support** — upload-assets.js now handles .m4a files (audio/mp4 content type)
+
+**Diagram:**
+```
+Caller → Twilio Studio (rev 59)
+          │
+          ├─ Press 0 → /connect-operator → SIP + Softphone
+          │              │
+          │              └─ No answer → Victoria apologize (.m4a)
+          │                              ├─ Press 1 → SMS + Victoria msg-sent (.wav)
+          │                              ├─ Other key → Record voicemail
+          │                              └─ Timeout → Record voicemail
+          │
+          ├─ Press 1 → SMS 2-way text
+          ├─ Press 2 → Hours/location
+          └─ Press 3 → More options
+```
+
+**Current State:**
+- All code committed and pushed to main (6 commits this session)
+- Render auto-deployed, API healthy
+- `FORCE_HOURS_OPEN=true` still active on Render (remove when done testing)
+- Studio flow deployed as rev 59 (test flow SID: FW9d3adadbd331019576b71c0a586fc491)
+- Softphone working — loads and rings on inbound calls
+- Frontend deployed to Cloudflare Pages
+
+**Issues:**
+- `claude/start-building-bjJ26` branch is 128 commits behind main (deferred sync)
+- Studio flow not yet deployed to production flow SID (`FW839cc419ccdd08f5199da5606f463f87`)
+
+**Next Steps:**
+- Test full IVR flow with Victoria audio (all paths)
+- Remove `FORCE_HOURS_OPEN` on Render after testing
+- Deploy Studio flow to production flow SID
+- Sync `claude/start-building-bjJ26` branch with main
+
+---
+
 ## Session — 2026-02-19 (Session 39)
 **Focus:** Message day separators + commit & deploy
 

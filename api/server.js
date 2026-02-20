@@ -116,11 +116,11 @@ const KEEP_ALIVE_URL =
 	process.env.RENDER_EXTERNAL_URL ||
 	(process.env.NODE_ENV === 'production' ? 'https://lm-app-api.onrender.com' : null);
 if (KEEP_ALIVE_URL) {
-	const INTERVAL = 14 * 60 * 1000; // 14 minutes
+	const INTERVAL = 5 * 60 * 1000; // 5 minutes (well within Render's 15-min sleep threshold)
 	setInterval(() => {
 		fetch(`${KEEP_ALIVE_URL}/api/health`)
 			.then((r) => console.log(`[keep-alive] ${r.status}`))
 			.catch((e) => console.warn(`[keep-alive] failed: ${e.message}`));
 	}, INTERVAL);
-	console.log(`Keep-alive ping enabled: ${KEEP_ALIVE_URL} every 14m`);
+	console.log(`Keep-alive ping enabled: ${KEEP_ALIVE_URL} every 5m`);
 }
