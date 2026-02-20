@@ -21,7 +21,7 @@ export function formatDuration(seconds) {
 	if (!seconds || seconds <= 0) return '0:00';
 	const h = Math.floor(seconds / 3600);
 	const m = Math.floor((seconds % 3600) / 60);
-	const s = seconds % 60;
+	const s = Math.floor(seconds % 60);
 	const pad = (/** @type {number} */ n) => n.toString().padStart(2, '0');
 	return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
@@ -42,7 +42,9 @@ export function formatRelativeDate(date) {
 	if (diffMin < 1) return 'Just now';
 	if (diffMin < 60) return `${diffMin}m ago`;
 	if (diffHr < 24) return `${diffHr}h ago`;
-	if (diffDay === 1) return 'Yesterday';
+	const yesterday = new Date(now);
+	yesterday.setDate(yesterday.getDate() - 1);
+	if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
 	if (diffDay < 7) return `${diffDay}d ago`;
 	return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -97,4 +99,45 @@ export function formatDateHeader(dateStr) {
  */
 export function getDurationMinutes(start, end) {
 	return Math.round((new Date(end) - new Date(start)) / 60000);
+}
+
+/**
+ * Format a number as USD currency (e.g. "$150.00", "$1,250.00")
+ * Used for service prices, payment amounts, and invoice totals.
+ *
+ * @param {number} amount - Amount in dollars (not cents)
+ * @param {object} [options]
+ * @param {boolean} [options.showCents=true] - Show decimal places
+ * @returns {string}
+ */
+export function formatCurrency(amount, options = {}) {
+	const { showCents = true } = options;
+	if (amount == null || isNaN(amount)) return '$0.00';
+	return amount.toLocaleString('en-US', {
+		style: 'currency',
+		currency: 'USD',
+		minimumFractionDigits: showCents ? 2 : 0,
+		maximumFractionDigits: showCents ? 2 : 0,
+	});
+}
+
+/**
+ * Normalize a phone number to E.164 format for Twilio API calls.
+ * Assumes US numbers (+1) if no country code is present.
+ *
+ * Examples:
+ *   "(818) 463-3772" → "+18184633772"
+ *   "818-463-3772"   → "+18184633772"
+ *   "+18184633772"   → "+18184633772"
+ *   "8184633772"     → "+18184633772"
+ *
+ * @param {string} phone
+ * @returns {string | null} E.164 formatted number, empty string if no input, null if invalid
+ */
+export function normalizePhone(phone) {
+	if (!phone) return '';
+	const digits = phone.replace(/\D/g, '');
+	if (digits.length === 10) return `+1${digits}`;
+	if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+	return null;
 }
