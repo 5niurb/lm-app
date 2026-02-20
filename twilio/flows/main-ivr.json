@@ -1,5 +1,5 @@
 {
-	"description": "LeMed Main 9.16.25",
+	"description": "LeMed Main IVR — Updated 2026-02-19",
 	"flags": {
 		"allow_concurrent_calls": true
 	},
@@ -16,11 +16,11 @@
 			"transitions": [
 				{
 					"event": "incomingMessage",
-					"next": "x0a-MainGreetingMenu_Open"
+					"next": "log_incoming_call"
 				},
 				{
 					"event": "incomingCall",
-					"next": "x0a-MainGreetingMenu_Open"
+					"next": "log_incoming_call"
 				},
 				{
 					"event": "incomingConversationMessage"
@@ -30,10 +30,34 @@
 				},
 				{
 					"event": "incomingParent",
-					"next": "x0a-MainGreetingMenu_Open"
+					"next": "log_incoming_call"
 				}
 			],
 			"type": "trigger"
+		},
+		{
+			"name": "log_incoming_call",
+			"properties": {
+				"body": "CallSid={{trigger.call.CallSid}}&From={{trigger.call.From}}&To={{trigger.call.To}}&CallerName={{trigger.call.CallerName}}&CallerCity={{trigger.call.CallerCity}}&CallerState={{trigger.call.CallerState}}&CallerCountry={{trigger.call.CallerCountry}}",
+				"content_type": "application/x-www-form-urlencoded;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 180,
+					"y": -10
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/voice/incoming"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "x0a-MainGreetingMenu_Open"
+				},
+				{
+					"event": "fail",
+					"next": "x0a-MainGreetingMenu_Open"
+				}
+			],
+			"type": "make-http-request"
 		},
 		{
 			"name": "x0a-MainGreetingMenu_Open",
@@ -62,7 +86,7 @@
 				},
 				{
 					"event": "timeout",
-					"next": "connect_call_HighLevel"
+					"next": "connect_operator_redirect"
 				}
 			],
 			"type": "gather-input-on-call"
@@ -90,7 +114,7 @@
 						}
 					],
 					"event": "match",
-					"next": "connect_call_HighLevel"
+					"next": "connect_operator_redirect"
 				},
 				{
 					"conditions": [
@@ -152,6 +176,30 @@
 				}
 			],
 			"type": "split-based-on"
+		},
+		{
+			"name": "connect_operator_redirect",
+			"properties": {
+				"method": "POST",
+				"offset": {
+					"x": 1340,
+					"y": 550
+				},
+				"timeout": "14400",
+				"url": "https://api.lemedspa.app/api/twilio/connect-operator"
+			},
+			"transitions": [
+				{
+					"event": "return"
+				},
+				{
+					"event": "timeout"
+				},
+				{
+					"event": "fail"
+				}
+			],
+			"type": "add-twiml-redirect"
 		},
 		{
 			"name": "x2a-Hours_Location",
@@ -279,7 +327,7 @@
 						}
 					],
 					"event": "match",
-					"next": "Lea_voicemail"
+					"next": "gather_lea_vmail"
 				},
 				{
 					"conditions": [
@@ -291,7 +339,7 @@
 						}
 					],
 					"event": "match",
-					"next": "ClinicalMD_Vmail"
+					"next": "gather_clinicalmd_vmail"
 				},
 				{
 					"conditions": [
@@ -320,14 +368,69 @@
 			"type": "split-based-on"
 		},
 		{
-			"name": "Lea_voicemail",
+			"name": "gather_lea_vmail",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 320,
+					"y": 1100
+				},
+				"say": "You've reached Lea's voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
+				"stop_gather": true,
+				"timeout": 5,
+				"voice": "Polly.Joanna"
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "send_sms_lea"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_lea_vmail"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "send_sms_lea",
+			"properties": {
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 100,
+					"y": 1370
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "play_sms_sent_goodbye"
+				},
+				{
+					"event": "fail",
+					"next": "record_lea_vmail"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "record_lea_vmail",
 			"properties": {
 				"max_length": 3600,
 				"offset": {
 					"x": 320,
-					"y": 1370
+					"y": 1570
 				},
 				"play_beep": "true",
+				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=lea",
 				"timeout": 5,
 				"transcribe": false,
 				"trim": "trim-silence"
@@ -346,14 +449,69 @@
 			"type": "record-voicemail"
 		},
 		{
-			"name": "ClinicalMD_Vmail",
+			"name": "gather_clinicalmd_vmail",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 790,
+					"y": 1100
+				},
+				"say": "You've reached the clinical team's voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
+				"stop_gather": true,
+				"timeout": 5,
+				"voice": "Polly.Joanna"
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "send_sms_clinicalmd"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_clinicalmd_vmail"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "send_sms_clinicalmd",
+			"properties": {
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 590,
+					"y": 1370
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "play_sms_sent_goodbye"
+				},
+				{
+					"event": "fail",
+					"next": "record_clinicalmd_vmail"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "record_clinicalmd_vmail",
 			"properties": {
 				"max_length": 3600,
 				"offset": {
 					"x": 990,
-					"y": 1120
+					"y": 1370
 				},
 				"play_beep": "true",
+				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=clinical_md",
 				"timeout": 5,
 				"transcribe": false,
 				"trim": "trim-silence"
@@ -435,7 +593,7 @@
 						}
 					],
 					"event": "match",
-					"next": "record_voicemail_accounts"
+					"next": "gather_accounts_vmail"
 				},
 				{
 					"conditions": [
@@ -455,37 +613,91 @@
 		{
 			"name": "send_message_accounts",
 			"properties": {
-				"body": "(LeMedSpa) Thank you for reaching out. How can we help you?",
-				"channel": "{{trigger.message.ChannelSid}}",
-				"from": "{{flow.channel.address}}",
-				"message_type": "custom",
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
 				"offset": {
 					"x": 670,
 					"y": 1570
 				},
-				"service": "{{trigger.message.InstanceSid}}",
-				"to": "{{contact.channel.address}}"
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
 			},
 			"transitions": [
 				{
-					"event": "sent",
+					"event": "success",
 					"next": "play_MsgSentGoodbye"
 				},
 				{
-					"event": "failed"
+					"event": "fail",
+					"next": "play_MsgSentGoodbye"
 				}
 			],
-			"type": "send-message"
+			"type": "make-http-request"
 		},
 		{
-			"name": "record_voicemail_accounts",
+			"name": "gather_accounts_vmail",
+			"properties": {
+				"gather_language": "en-US",
+				"loop": 1,
+				"number_of_digits": 1,
+				"offset": {
+					"x": 1020,
+					"y": 1580
+				},
+				"say": "You've reached our accounts department voicemail. Leave a message after the beep, or press 1 to start a two-way text conversation.",
+				"stop_gather": true,
+				"timeout": 5,
+				"voice": "Polly.Joanna"
+			},
+			"transitions": [
+				{
+					"event": "keypress",
+					"next": "send_sms_accounts_vmail"
+				},
+				{
+					"event": "speech"
+				},
+				{
+					"event": "timeout",
+					"next": "record_accounts_vmail"
+				}
+			],
+			"type": "gather-input-on-call"
+		},
+		{
+			"name": "send_sms_accounts_vmail",
+			"properties": {
+				"body": "{\"to\":\"{{contact.channel.address}}\",\"body\":\"(LeMedSpa) Thank you for reaching out. How can we help you?\",\"callSid\":\"{{trigger.call.CallSid}}\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 820,
+					"y": 1800
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+			},
+			"transitions": [
+				{
+					"event": "success",
+					"next": "play_sms_sent_goodbye"
+				},
+				{
+					"event": "fail",
+					"next": "record_accounts_vmail"
+				}
+			],
+			"type": "make-http-request"
+		},
+		{
+			"name": "record_accounts_vmail",
 			"properties": {
 				"max_length": 3600,
 				"offset": {
-					"x": 1020,
-					"y": 1680
+					"x": 1120,
+					"y": 1800
 				},
 				"play_beep": "true",
+				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=accounts",
 				"timeout": 5,
 				"transcribe": false,
 				"trim": "trim-silence"
@@ -537,79 +749,28 @@
 			},
 			"transitions": [
 				{
-					"event": "audioComplete",
-					"next": "fcn_NewSMSEmailNotify"
+					"event": "audioComplete"
 				}
 			],
 			"type": "say-play"
 		},
 		{
-			"name": "redirect_FlexSIP",
+			"name": "play_sms_sent_goodbye",
 			"properties": {
-				"method": "GET",
+				"loop": 1,
 				"offset": {
-					"x": 2160,
-					"y": -160
+					"x": 100,
+					"y": 1620
 				},
-				"timeout": "14400",
-				"url": "https://handler.twilio.com/twiml/EH6dfadeabe0337c465b8b9b36c8082bea"
+				"say": "A text message has been sent to your phone. You can reply directly to that message. Goodbye.",
+				"voice": "Polly.Joanna"
 			},
 			"transitions": [
 				{
-					"event": "return"
-				},
-				{
-					"event": "timeout"
-				},
-				{
-					"event": "fail"
+					"event": "audioComplete"
 				}
 			],
-			"type": "add-twiml-redirect"
-		},
-		{
-			"name": "fcn_NewSMSEmailNotify",
-			"properties": {
-				"environment_sid": "ZE32489791a328b811b2e45667533353f3",
-				"function_sid": "ZH3376f7c025608bfc73d292d78badb026",
-				"offset": {
-					"x": 790,
-					"y": 2060
-				},
-				"service_sid": "ZS3a9508ce8846c9ac327f9968608b8004",
-				"url": "https://lmflex-1608.twil.io/NewSMSEmailNotify"
-			},
-			"transitions": [
-				{
-					"event": "success"
-				},
-				{
-					"event": "fail"
-				}
-			],
-			"type": "run-function"
-		},
-		{
-			"name": "connect_call_HighLevel",
-			"properties": {
-				"caller_id": "{{contact.channel.address}}",
-				"noun": "number",
-				"offset": {
-					"x": 1340,
-					"y": 550
-				},
-				"timeout": 30,
-				"to": "+18184632211"
-			},
-			"transitions": [
-				{
-					"event": "callCompleted"
-				},
-				{
-					"event": "hangup"
-				}
-			],
-			"type": "connect-call-to"
+			"type": "say-play"
 		}
 	]
 }
