@@ -17,7 +17,8 @@
 		PhoneOutgoing,
 		Mail,
 		UserPlus,
-		ArrowRight
+		ArrowRight,
+		Clock
 	} from '@lucide/svelte';
 
 	let visible = $state(false);
@@ -32,6 +33,84 @@
 	let contactResults = $state([]);
 	/** @type {ReturnType<typeof setTimeout>|null} */
 	let searchTimer = $state(null);
+
+	// =========================================================================
+	// FRECENCY — localStorage-backed recent page tracking
+	// =========================================================================
+	const STORAGE_KEY = 'lm-command-palette-recent';
+	const MAX_HISTORY = 20;
+	const MAX_RECENT_SHOWN = 5;
+
+	/**
+	 * @typedef {{ id: string, visits: number, lastVisit: number }} FrecencyEntry
+	 */
+
+	/** Load frecency data from localStorage */
+	function loadFrecency() {
+		try {
+			const raw = localStorage.getItem(STORAGE_KEY);
+			if (!raw) return [];
+			return /** @type {FrecencyEntry[]} */ (JSON.parse(raw));
+		} catch {
+			return [];
+		}
+	}
+
+	/** Save frecency data to localStorage */
+	function saveFrecency(/** @type {FrecencyEntry[]} */ entries) {
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+		} catch {
+			// Storage full or unavailable — silently fail
+		}
+	}
+
+	/** Record a visit to a page/action item */
+	function recordVisit(/** @type {string} */ itemId) {
+		const entries = loadFrecency();
+		const existing = entries.find((e) => e.id === itemId);
+		const now = Date.now();
+
+		if (existing) {
+			existing.visits += 1;
+			existing.lastVisit = now;
+		} else {
+			entries.push({ id: itemId, visits: 1, lastVisit: now });
+		}
+
+		// Prune to MAX_HISTORY, keeping highest-scored entries
+		if (entries.length > MAX_HISTORY) {
+			entries.sort((a, b) => getFrecencyScore(b) - getFrecencyScore(a));
+			entries.length = MAX_HISTORY;
+		}
+
+		saveFrecency(entries);
+	}
+
+	/**
+	 * Calculate frecency score for an entry.
+	 * Score = visits × recencyMultiplier
+	 * Recency decays: <1h = 4x, <1d = 2x, <3d = 1.5x, <7d = 1x, older = 0.5x
+	 */
+	function getFrecencyScore(/** @type {FrecencyEntry} */ entry) {
+		const hoursSince = (Date.now() - entry.lastVisit) / (1000 * 60 * 60);
+		let recency = 0.5;
+		if (hoursSince < 1) recency = 4;
+		else if (hoursSince < 24) recency = 2;
+		else if (hoursSince < 72) recency = 1.5;
+		else if (hoursSince < 168) recency = 1;
+		return entry.visits * recency;
+	}
+
+	/** Get top frecent item IDs */
+	function getRecentIds() {
+		const entries = loadFrecency();
+		if (entries.length === 0) return [];
+		return entries
+			.sort((a, b) => getFrecencyScore(b) - getFrecencyScore(a))
+			.slice(0, MAX_RECENT_SHOWN)
+			.map((e) => e.id);
+	}
 
 	const pages = [
 		{ id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', group: 'Pages' },
@@ -69,9 +148,26 @@
 		}
 	];
 
+	/** All page + action items mapped by id for quick lookup */
+	const itemsById = new Map([...pages, ...actions].map((i) => [i.id, i]));
+
 	let filteredItems = $derived.by(() => {
 		const q = query.toLowerCase().trim();
-		if (!q) return [...pages, ...actions];
+
+		if (!q) {
+			// No query — show Recent group first, then pages, then actions
+			const recentIds = getRecentIds();
+			/** @type {any[]} */
+			const recentItems = [];
+			for (const rid of recentIds) {
+				const item = itemsById.get(rid);
+				if (item) {
+					recentItems.push({ ...item, group: 'Recent', icon: Clock });
+				}
+			}
+			return [...recentItems, ...pages, ...actions];
+		}
+
 		return [
 			...pages.filter(
 				(p) => p.label.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
@@ -177,8 +273,17 @@
 		}
 	}
 
-	/** @param {{ href?: string }} item */
+	/** @param {{ id?: string, href?: string }} item */
 	async function selectItem(item) {
+		// Record visit for frecency tracking (only pages + actions, not contacts)
+		if (item.id && !item.id.startsWith('contact-')) {
+			// If it's a Recent item, record the underlying page/action id
+			const baseId = item.id;
+			const original = itemsById.get(baseId);
+			if (original) recordVisit(original.id);
+			else recordVisit(baseId);
+		}
+
 		close();
 		await tick();
 		if (item.href) {
