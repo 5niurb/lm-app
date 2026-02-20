@@ -87,7 +87,7 @@ describe('connect-operator-status handler', () => {
 		expect(xml).toContain('<Gather');
 		expect(xml).toContain('numDigits="1"');
 		expect(xml).toContain('connect-operator-text');
-		expect(xml).toContain('press 1');
+		expect(xml).toContain('<Play>');
 		expect(xml).toContain('<Record');
 	});
 

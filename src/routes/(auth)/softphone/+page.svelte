@@ -12,10 +12,8 @@
 		Headset,
 		Clock
 	} from '@lucide/svelte';
-	import { PUBLIC_API_URL } from '$env/static/public';
 	import { formatPhone } from '$lib/utils/formatters.js';
-
-	const API_URL = PUBLIC_API_URL || 'http://localhost:3001';
+	import { api } from '$lib/api/client.js';
 
 	/** @type {any} Twilio Device class — dynamically imported to avoid SSR issues */
 	let TwilioDevice = null;
@@ -192,18 +190,10 @@
 
 			statusMessage = 'Getting token...';
 
-			const res = await fetch(`${API_URL}/api/twilio/token`, {
+			const { token } = await api('/api/twilio/token', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ identity })
 			});
-
-			if (!res.ok) {
-				const body = await res.json().catch(() => ({ error: res.statusText }));
-				throw new Error(body.error || `Token request failed: ${res.status}`);
-			}
-
-			const { token } = await res.json();
 			// Request browser notification permission
 			requestNotificationPermission();
 
