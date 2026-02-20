@@ -338,7 +338,7 @@
 	<!-- Call Volume Chart + Quick Links -->
 	<div class="grid gap-4 lg:grid-cols-3">
 		<!-- Daily call volume chart -->
-		<div class="lg:col-span-2 rounded border border-border overflow-hidden">
+		<div class="lg:col-span-2 rounded border border-border overflow-hidden bg-card">
 			<div class="px-5 py-4 border-b border-border">
 				<h2 class="text-base tracking-wide">Call Volume</h2>
 				<p class="text-xs text-muted-foreground mt-0.5">Daily calls over the past week.</p>
@@ -420,7 +420,7 @@
 		</div>
 
 		<!-- Quick Links panel -->
-		<div class="rounded border border-border overflow-hidden">
+		<div class="rounded border border-border overflow-hidden bg-card">
 			<div class="px-5 py-4 border-b border-border">
 				<h2 class="text-base tracking-wide">Quick Access</h2>
 			</div>
@@ -534,7 +534,7 @@
 
 	<!-- Today's Schedule -->
 	{#if upcomingAppointments !== null}
-		<div class="rounded border border-border overflow-hidden">
+		<div class="rounded border border-border overflow-hidden bg-card">
 			<div class="px-5 py-4 border-b border-border flex items-center justify-between">
 				<div>
 					<h2 class="text-base tracking-wide">Today's Schedule</h2>
@@ -587,7 +587,7 @@
 	{/if}
 
 	<!-- Recent Calls -->
-	<div class="rounded border border-border overflow-hidden">
+	<div class="rounded border border-border overflow-hidden bg-card">
 		<div class="px-5 py-4 border-b border-border flex items-center justify-between">
 			<div>
 				<h2 class="text-base tracking-wide">Recent Calls</h2>

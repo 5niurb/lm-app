@@ -707,6 +707,7 @@
 	{/if}
 
 	<!-- ========== SERVICE LIST ========== -->
+	<div class="rounded border border-border overflow-hidden bg-card p-5">
 	{#if loading}
 		<div class="space-y-3">
 			{#each Array(4) as _, i (i)}<Skeleton class="h-16 w-full" />{/each}
@@ -994,4 +995,5 @@
 			>
 		</div>
 	{/if}
+	</div>
 </div>

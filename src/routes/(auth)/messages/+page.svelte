@@ -283,7 +283,7 @@
 	<title>Messages — Le Med Spa</title>
 </svelte:head>
 
-<div class="flex h-[calc(100vh-4rem)] overflow-hidden -m-6">
+<div class="flex h-[calc(100vh-4rem)] overflow-hidden -m-6 bg-card">
 	<!-- Conversation List (left panel) -->
 	<div
 		class="w-full sm:w-80 lg:w-96 border-r border-border flex flex-col shrink-0 {selectedConvo

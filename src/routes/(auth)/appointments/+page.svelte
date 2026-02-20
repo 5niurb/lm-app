@@ -298,7 +298,7 @@
 
 	<!-- Loading -->
 	{#if appointments === null}
-		<div class="rounded border border-border p-5">
+		<div class="rounded border border-border p-5 bg-card">
 			<div class="space-y-2">
 				{#each Array(8) as _, i (i)}
 					<Skeleton class="h-14 w-full" />
@@ -310,7 +310,7 @@
 	{:else if view === 'day'}
 		{#if dayAppointments && dayAppointments.length === 0}
 			<!-- Empty state -->
-			<div class="rounded border border-border p-5">
+			<div class="rounded border border-border p-5 bg-card">
 				<div class="flex h-64 items-center justify-center">
 					<div class="text-center">
 						<div
@@ -349,7 +349,7 @@
 			{/if}
 
 			<!-- Time grid -->
-			<div class="rounded border border-border overflow-hidden">
+			<div class="rounded border border-border overflow-hidden bg-card">
 				<div class="relative flex">
 					<!-- Time labels column -->
 					<div class="w-20 shrink-0 border-r border-border-subtle bg-surface-subtle">
@@ -419,7 +419,7 @@
 		<!-- Week View -->
 	{:else if view === 'week'}
 		{@const grouped = weekAppointments()}
-		<div class="rounded border border-border overflow-hidden">
+		<div class="rounded border border-border overflow-hidden bg-card">
 			<!-- Week header -->
 			<div class="grid grid-cols-7 border-b border-border">
 				{#each weekDays as day (day.date)}

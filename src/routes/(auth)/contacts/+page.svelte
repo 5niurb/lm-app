@@ -257,7 +257,7 @@
 		</div>
 	{/if}
 
-	<div class="rounded border border-border overflow-hidden">
+	<div class="rounded border border-border overflow-hidden bg-card">
 		<div class="px-5 py-4 border-b border-border">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 				<form

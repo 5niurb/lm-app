@@ -158,7 +158,7 @@
 	}
 </script>
 
-<header class="flex h-14 items-center gap-2 border-b border-[rgba(197,165,90,0.08)] px-4">
+<header class="flex h-14 items-center gap-2 border-b border-[var(--border-subtle)] px-4">
 	<SidebarTrigger />
 	<Separator orientation="vertical" class="h-6" />
 
@@ -169,18 +169,18 @@
 				<div
 					class="h-2 w-2 rounded-full {clinicOpen
 						? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]'
-						: 'bg-[rgba(255,255,255,0.15)]'}"
+						: 'bg-[var(--text-ghost)]'}"
 				></div>
 				<span
 					class="text-[11px] font-medium {clinicOpen
 						? 'text-emerald-400/80'
-						: 'text-[rgba(255,255,255,0.3)]'}"
+						: 'text-[var(--text-tertiary)]'}"
 				>
 					{clinicOpen ? 'Open' : 'Closed'}
 				</span>
 			</div>
 			{#if nextChange}
-				<span class="text-[10px] text-[rgba(255,255,255,0.15)]">{nextChange}</span>
+				<span class="text-[10px] text-[var(--text-ghost)]">{nextChange}</span>
 			{/if}
 		</div>
 	{/if}
@@ -191,13 +191,13 @@
 	<Button
 		variant="ghost"
 		size="sm"
-		class="h-8 gap-1.5 text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.6)] hidden sm:flex"
+		class="h-8 gap-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hidden sm:flex"
 		onclick={() => onOpenCommandPalette?.()}
 	>
 		<Search class="h-3.5 w-3.5" />
 		<span class="text-xs">Search</span>
 		<kbd
-			class="ml-1 inline-flex h-5 items-center gap-0.5 rounded border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] px-1.5 text-[10px] text-[rgba(255,255,255,0.25)]"
+			class="ml-1 inline-flex h-5 items-center gap-0.5 rounded border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-1.5 text-[10px] text-[var(--text-ghost)]"
 		>
 			<Command class="h-2.5 w-2.5" />K
 		</kbd>
@@ -207,7 +207,7 @@
 	<Button
 		variant="ghost"
 		size="sm"
-		class="h-8 gap-1.5 text-[rgba(255,255,255,0.4)] hover:text-[#C5A55A]"
+		class="h-8 gap-1.5 text-[var(--text-secondary)] hover:text-[var(--gold)]"
 		onclick={() => goto(resolve('/softphone'))}
 	>
 		<Phone class="h-3.5 w-3.5" />
@@ -221,7 +221,7 @@
 				<Button
 					variant="ghost"
 					size="sm"
-					class="relative h-8 w-8 text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]"
+					class="relative h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
 					{...props}
 				>
 					<Bell class="h-4 w-4" />

@@ -80,9 +80,9 @@ export function applyTheme(resolved) {
 	const meta = document.querySelector('meta[name="theme-color"]');
 	if (meta) {
 		const colors = {
-			midnight: '#0a0a0c',
-			dusk: '#2a2626',
-			champagne: '#f7f3ec'
+			midnight: '#000000',
+			dusk: '#141210',
+			champagne: '#fdfcf9'
 		};
 		meta.setAttribute('content', colors[resolved]);
 	}
@@ -97,18 +97,18 @@ export const themes = [
 		id: /** @type {const} */ ('midnight'),
 		label: 'Midnight',
 		description: 'Evening ambiance',
-		colors: { bg: '#1b1f22', sidebar: '#161619', accent: '#c5a55a' }
+		colors: { bg: '#000000', sidebar: '#0f1e38', accent: '#d8b98f' }
 	},
 	{
 		id: /** @type {const} */ ('dusk'),
 		label: 'Dusk',
 		description: 'Golden hour',
-		colors: { bg: '#2a2626', sidebar: '#231f1f', accent: '#d4a847' }
+		colors: { bg: '#141210', sidebar: '#100e0c', accent: '#c8a87a' }
 	},
 	{
 		id: /** @type {const} */ ('champagne'),
 		label: 'Champagne',
 		description: 'Morning light',
-		colors: { bg: '#f7f3ec', sidebar: '#ede8df', accent: '#b8962e' }
+		colors: { bg: '#fdfcf9', sidebar: '#fdfcf9', accent: '#b89b76' }
 	}
 ];

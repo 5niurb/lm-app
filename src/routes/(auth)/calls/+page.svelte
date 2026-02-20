@@ -258,7 +258,7 @@
 	{/if}
 
 	<!-- Main list card -->
-	<div class="rounded border border-border overflow-hidden">
+	<div class="rounded border border-border overflow-hidden bg-card">
 		<!-- Search + filters -->
 		<div class="px-5 py-4 border-b border-border">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">

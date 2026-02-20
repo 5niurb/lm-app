@@ -326,7 +326,7 @@
 			{#if activeTab === 'hours'}
 				<div class="space-y-6">
 					<!-- Clinic info -->
-					<div class="rounded border border-border overflow-hidden">
+					<div class="rounded border border-border overflow-hidden bg-card">
 						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">Clinic Information</h2>
 						</div>
@@ -357,7 +357,7 @@
 					</div>
 
 					<!-- Weekly schedule -->
-					<div class="rounded border border-border overflow-hidden">
+					<div class="rounded border border-border overflow-hidden bg-card">
 						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">Weekly Schedule</h2>
 							<p class="text-xs text-text-tertiary mt-0.5">
@@ -445,7 +445,7 @@
 				<!-- ===================== PHONE SYSTEM ===================== -->
 			{:else if activeTab === 'phone'}
 				<div class="space-y-6">
-					<div class="rounded border border-border overflow-hidden">
+					<div class="rounded border border-border overflow-hidden bg-card">
 						<div class="px-5 py-4 border-b border-border flex items-center justify-between">
 							<div>
 								<h2 class="text-base tracking-wide">Phone Extensions</h2>
@@ -600,7 +600,7 @@
 				<!-- ===================== CALL ROUTING ===================== -->
 			{:else if activeTab === 'routing'}
 				<div class="space-y-6">
-					<div class="rounded border border-border overflow-hidden">
+					<div class="rounded border border-border overflow-hidden bg-card">
 						<div class="px-5 py-4 border-b border-border flex items-center justify-between">
 							<div>
 								<h2 class="text-base tracking-wide">Call Routing Rules</h2>
@@ -849,7 +849,7 @@
 				<!-- ===================== SECURITY ===================== -->
 			{:else if activeTab === 'security'}
 				<div class="space-y-6">
-					<div class="rounded border border-border overflow-hidden">
+					<div class="rounded border border-border overflow-hidden bg-card">
 						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">Security Status</h2>
 							<p class="text-xs text-text-tertiary mt-0.5">
@@ -915,7 +915,7 @@
 					</div>
 
 					<!-- MFA Settings (display only for now) -->
-					<div class="rounded border border-border overflow-hidden">
+					<div class="rounded border border-border overflow-hidden bg-card">
 						<div class="px-5 py-4 border-b border-border">
 							<h2 class="text-base tracking-wide">MFA Configuration</h2>
 						</div>

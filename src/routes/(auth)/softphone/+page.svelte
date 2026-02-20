@@ -534,7 +534,7 @@
 
 	<div class="grid gap-6 lg:grid-cols-2">
 		<!-- Softphone Panel -->
-		<div class="rounded border border-border overflow-hidden">
+		<div class="rounded border border-border overflow-hidden bg-card">
 			<div class="px-5 py-4 border-b border-border">
 				<div class="flex items-center gap-2">
 					<Headset class="h-5 w-5 text-gold" />
@@ -709,7 +709,7 @@
 		</div>
 
 		<!-- Call History Panel -->
-		<div class="rounded border border-border overflow-hidden">
+		<div class="rounded border border-border overflow-hidden bg-card">
 			<div class="px-5 py-4 border-b border-border">
 				<div class="flex items-center gap-2">
 					<Clock class="h-5 w-5 text-gold" />
