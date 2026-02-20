@@ -1,3 +1,53 @@
+## Session — 2026-02-20 (Session 41)
+**Focus:** Phone log contact names, voicemail redesign, save/delete, font bump
+
+**Accomplished:**
+- **Contact name fix** — calls API now enriches stale call_logs with live contact lookup (uses `lookupContactByPhone` from phone-lookup.js). Known contacts now show names on old calls.
+- **Voicemail play button redesign** — replaced invisible 10px/60% opacity text with a prominent gold pill button (Play/Pause), always visible, matching the call-back/message action icon style.
+- **Voicemail transcription preview** — truncated to 80 chars (was 90), shown between play button and save/delete actions.
+- **Voicemail save (preserve)** — `PATCH /api/voicemails/:id/save` downloads recording from Twilio → uploads to Supabase Storage `voicemails/` bucket → sets `preserved=true` + `storage_path`. UI: bookmark icon, gold when saved.
+- **Voicemail delete** — `DELETE /api/voicemails/:id` removes from DB + Twilio recording + Supabase Storage. UI: trash icon with confirmation.
+- **Recording proxy upgrade** — checks Supabase Storage first, falls back to Twilio. Saved voicemails survive Twilio's retention purge.
+- **DB migration 006** — added `preserved` and `storage_path` columns to voicemails table. Created `voicemails` storage bucket in Supabase.
+- **Font size bump** — 17px → 18px root (third bump: 16→17→18).
+- **Voicemail select expanded** — calls API now includes `preserved`, `storage_path` in voicemails join.
+
+**Diagram:**
+```
+Phone Log Call Row (voicemail):
+┌──────────────────────────────────────────────────────────────────────┐
+│ ↙ Contact Name  [📞 Call] [💬 Msg]  [▶ Play]  "Transcription..."  🔖🗑  2:34 PM │
+└──────────────────────────────────────────────────────────────────────┘
+
+Recording Proxy Chain:
+  Browser → GET /api/voicemails/:id/recording
+              ├─ 1. Check Supabase Storage (preserved) → serve if found
+              └─ 2. Fall back to Twilio proxy → stream audio
+
+Save Flow:
+  [Bookmark click] → PATCH /save → Twilio download → Supabase Storage upload → DB update
+```
+
+**Current State:**
+- All code committed and pushed to main (2 commits this session: 6451192, 7a1c74e)
+- Frontend deployed to Cloudflare Pages, API auto-deploying on Render
+- DB migration applied, storage bucket created
+- 120 tests passing, 0 lint errors
+- ~90 unstaged files remain from Prettier formatting drift (not substantive)
+
+**Issues:**
+- Twilio recording retention still at default — user needs to manually set to 90 days in Twilio Console
+- `FORCE_HOURS_OPEN=true` still active on Render (from Session 40)
+- `claude/start-building-bjJ26` branch still 130+ commits behind main
+
+**Next Steps:**
+- Set Twilio recording retention to 90 days (Console → Settings → Recording)
+- Remove `FORCE_HOURS_OPEN` on Render when done testing
+- Test voicemail save/delete/play in production
+- Batch commit Prettier formatting drift
+
+---
+
 ## Session — 2026-02-20 (Session 40)
 **Focus:** IVR testing, softphone auth fix, CI hardening, Victoria audio, duplicate thread fix
 
