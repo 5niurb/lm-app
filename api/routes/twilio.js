@@ -232,7 +232,7 @@ router.post('/connect-operator', (req, res) => {
 /**
  * POST /api/twilio/connect-operator-status
  * Called after the operator dial completes.
- * If nobody answered, falls back to voicemail.
+ * If nobody answered, offers "press 1 to text" then falls back to voicemail.
  * All URLs MUST be absolute (see connect-operator comment).
  */
 router.post('/connect-operator-status', (req, res) => {
@@ -244,10 +244,18 @@ router.post('/connect-operator-status', (req, res) => {
 		'https://api.lemedspa.app';
 
 	if (dialStatus === 'no-answer' || dialStatus === 'busy' || dialStatus === 'failed') {
-		twiml.say(
+		const gather = twiml.gather({
+			numDigits: 1,
+			timeout: 5,
+			action: `${baseUrl}/api/twilio/connect-operator-text`,
+			method: 'POST'
+		});
+		gather.say(
 			{ voice: 'Polly.Joanna' },
-			'Sorry, no one is available right now. Please leave a message after the beep.'
+			'Sorry, no one is available right now. To start a two-way text conversation, press 1. Otherwise, please leave a message after the beep.'
 		);
+
+		// Timeout fallback — record voicemail
 		twiml.record({
 			maxLength: 120,
 			transcribe: false,
@@ -261,6 +269,102 @@ router.post('/connect-operator-status', (req, res) => {
 	}
 	// If answered (completed), call is already done — just end gracefully
 
+	res.type('text/xml');
+	res.send(twiml.toString());
+});
+
+/**
+ * POST /api/twilio/connect-operator-text
+ * Called when caller presses 1 during the voicemail greeting.
+ * Sends an SMS to initiate a 2-way text conversation, then hangs up.
+ */
+router.post('/connect-operator-text', async (req, res) => {
+	const twiml = new twilio.twiml.VoiceResponse();
+	const callerNumber = req.body.From || req.body.Caller;
+	const twilioNumber = req.body.Called || req.body.To || process.env.TWILIO_PHONE_NUMBER;
+	const digit = req.body.Digits;
+
+	if (digit === '1' && callerNumber) {
+		try {
+			const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+			const baseUrl =
+				process.env.RENDER_EXTERNAL_URL ||
+				process.env.FRONTEND_URL_PUBLIC ||
+				'https://api.lemedspa.app';
+
+			const msgBody = '(LeMedSpa) Thank you for reaching out. How can we help you?';
+
+			const twilioMsg = await client.messages.create({
+				to: callerNumber,
+				from: twilioNumber,
+				body: msgBody,
+				statusCallback: `${baseUrl}/api/webhooks/sms/status`
+			});
+
+			// Create conversation + message record
+			const { contactId, contactName } = await lookupContactByPhone(callerNumber);
+			const { data: existing } = await supabaseAdmin
+				.from('conversations')
+				.select('id')
+				.eq('phone_number', callerNumber)
+				.maybeSingle();
+
+			let convId = existing?.id;
+
+			if (!convId) {
+				const { data: newConv } = await supabaseAdmin
+					.from('conversations')
+					.insert({
+						phone_number: callerNumber,
+						twilio_number: twilioNumber,
+						display_name: contactName,
+						contact_id: contactId,
+						last_message: msgBody.substring(0, 200),
+						last_at: new Date().toISOString(),
+						unread_count: 0
+					})
+					.select('id')
+					.single();
+
+				convId = newConv?.id;
+			}
+
+			if (convId) {
+				await supabaseAdmin.from('messages').insert({
+					conversation_id: convId,
+					direction: 'outbound',
+					body: msgBody,
+					from_number: twilioNumber,
+					to_number: callerNumber,
+					twilio_sid: twilioMsg.sid,
+					status: twilioMsg.status || 'sent',
+					metadata: { source: 'ivr_press1' }
+				});
+
+				await supabaseAdmin
+					.from('conversations')
+					.update({
+						last_message: msgBody.substring(0, 200),
+						last_at: new Date().toISOString(),
+						status: 'active'
+					})
+					.eq('id', convId);
+			}
+
+			twiml.say(
+				{ voice: 'Polly.Joanna' },
+				'A text message has been sent to your phone. You can reply directly to that message. Goodbye.'
+			);
+		} catch (err) {
+			console.error('[connect-operator-text] Failed to send SMS:', err.message);
+			twiml.say(
+				{ voice: 'Polly.Joanna' },
+				'Sorry, we were unable to send the text message. Please try calling again. Goodbye.'
+			);
+		}
+	}
+
+	twiml.hangup();
 	res.type('text/xml');
 	res.send(twiml.toString());
 });
