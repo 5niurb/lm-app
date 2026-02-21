@@ -14,10 +14,14 @@
 		ArrowUpRight
 	} from '@lucide/svelte';
 	import { resolve } from '$app/paths';
+	import { get } from 'svelte/store';
+	import { session } from '$lib/stores/auth.js';
+	import { PUBLIC_API_URL } from '$env/static/public';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 	import ComposeBar from './ComposeBar.svelte';
 	import MessageReactions from './MessageReactions.svelte';
+	import ImageLightbox from './ImageLightbox.svelte';
 
 	/**
 	 * @type {{
@@ -54,6 +58,38 @@
 	/** @type {any[]|null} */
 	let logMessages = $state(null);
 	let loadingLog = $state(false);
+
+	// Lightbox
+	/** @type {string|null} */
+	let lightboxSrc = $state(null);
+
+	// Media image cache — avoids re-fetching on re-render
+	const API_BASE = PUBLIC_API_URL || 'http://localhost:3001';
+	/** @type {Map<string, Promise<string>>} */
+	const mediaCache = new Map();
+
+	/**
+	 * Fetch a media image via the proxy endpoint with auth, returning a cached blob URL.
+	 * @param {string} msgId
+	 * @param {number} index
+	 * @returns {Promise<string>}
+	 */
+	function getMediaBlobUrl(msgId, index) {
+		const key = `${msgId}-${index}`;
+		if (!mediaCache.has(key)) {
+			const promise = (async () => {
+				const token = get(session)?.access_token;
+				const res = await fetch(`${API_BASE}/api/messages/${msgId}/media/${index}`, {
+					headers: token ? { Authorization: `Bearer ${token}` } : {}
+				});
+				if (!res.ok) throw new Error('Failed to load media');
+				const blob = await res.blob();
+				return URL.createObjectURL(blob);
+			})();
+			mediaCache.set(key, promise);
+		}
+		return /** @type {Promise<string>} */ (mediaCache.get(key));
+	}
 
 	// Reactions
 	const REACTION_EMOJIS = ['👍', '❤️', '😂', '❗', '❓', '💯', '🙏', '🔥', '😍'];
@@ -767,7 +803,39 @@
 											{senderName}
 										</p>
 									{/if}
-									<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+									{#if msg.body}
+										<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+									{/if}
+									{#if msg.media_urls?.length > 0}
+										<div class="flex flex-wrap gap-1.5 {msg.body ? 'mt-1.5' : ''}">
+											{#each msg.media_urls as _url, idx}
+												{#await getMediaBlobUrl(msg.id, idx)}
+													<div
+														class="w-[240px] h-[160px] rounded-lg bg-surface-subtle animate-pulse"
+													></div>
+												{:then blobUrl}
+													<button
+														class="block"
+														onclick={() => {
+															lightboxSrc = blobUrl;
+														}}
+													>
+														<img
+															src={blobUrl}
+															alt="MMS image"
+															class="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+														/>
+													</button>
+												{:catch}
+													<div
+														class="w-[240px] h-[100px] rounded-lg bg-surface-subtle border border-border flex items-center justify-center"
+													>
+														<span class="text-xs text-text-tertiary">Image unavailable</span>
+													</div>
+												{/await}
+											{/each}
+										</div>
+									{/if}
 									<p
 										class="text-[10px] mt-1 {msg.direction === 'outbound'
 											? 'text-primary-foreground/50'
@@ -906,6 +974,15 @@
 		onReact={handleReaction}
 		onDismiss={() => {
 			reactionTarget = null;
+		}}
+	/>
+{/if}
+
+{#if lightboxSrc}
+	<ImageLightbox
+		src={lightboxSrc}
+		onClose={() => {
+			lightboxSrc = null;
 		}}
 	/>
 {/if}

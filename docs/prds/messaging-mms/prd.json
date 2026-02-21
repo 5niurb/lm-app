@@ -19,7 +19,7 @@
 			],
 			"priority": 1,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "The message bubble rendering is in ChatsTab.svelte. Look for the {#each messages} block and the inbound/outbound bubble divs."
 		},
 		{
