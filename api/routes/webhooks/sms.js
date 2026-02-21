@@ -3,7 +3,7 @@ import express from 'express';
 import twilio from 'twilio';
 import { supabaseAdmin } from '../../services/supabase.js';
 import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
-import { forwardToTextMagic } from './sms-forward.js';
+import { forwardToTextMagic, sendSmsViaTextMagic } from './sms-forward.js';
 import {
 	lookupContactByPhone,
 	findConversation,
@@ -175,18 +175,34 @@ router.post('/studio-send', async (req, res) => {
 	}
 
 	try {
-		// Send SMS via Twilio
-		const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+		// Send SMS via TextMagic (so it appears in TextMagic dashboard).
+		// Falls back to Twilio if TextMagic creds are not configured.
+		let messageSid = null;
+		let sendStatus = 'sent';
+		let sentVia = 'twilio';
 
-		const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
-		const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+		const tmResult = await sendSmsViaTextMagic({ to: toNumber, text: msgBody });
 
-		const twilioMsg = await client.messages.create({
-			to: toNumber,
-			from: fromNumber,
-			body: msgBody,
-			...(statusCallback && { statusCallback })
-		});
+		if (tmResult) {
+			messageSid = `tm_${tmResult.id}`;
+			sentVia = 'textmagic';
+		} else {
+			// TextMagic not configured — fall back to Twilio
+			const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+			const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
+			const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+
+			const twilioMsg = await client.messages.create({
+				to: toNumber,
+				from: fromNumber,
+				body: msgBody,
+				...(statusCallback && { statusCallback })
+			});
+
+			messageSid = twilioMsg.sid;
+			sendStatus = twilioMsg.status || 'sent';
+		}
 
 		// Find or create conversation — one thread per customer phone number
 		const existingConv = await findConversation(toNumber);
@@ -223,9 +239,13 @@ router.post('/studio-send', async (req, res) => {
 				body: msgBody,
 				from_number: fromNumber,
 				to_number: toNumber,
-				twilio_sid: twilioMsg.sid,
-				status: twilioMsg.status || 'sent',
-				metadata: callSid ? { source: 'ivr', call_sid: callSid } : { source: 'ivr' }
+				twilio_sid: messageSid,
+				status: sendStatus,
+				metadata: {
+					source: 'ivr',
+					sent_via: sentVia,
+					...(callSid && { call_sid: callSid })
+				}
 			});
 
 			// Update conversation last_message
@@ -240,9 +260,9 @@ router.post('/studio-send', async (req, res) => {
 		}
 
 		console.log(
-			`Studio-send: SMS sent to ${toNumber}, twilio_sid=${twilioMsg.sid}, conv=${convId}`
+			`Studio-send: SMS sent via ${sentVia} to ${toNumber}, sid=${messageSid}, conv=${convId}`
 		);
-		return res.json({ success: true, twilio_sid: twilioMsg.sid, conversation_id: convId });
+		return res.json({ success: true, message_sid: messageSid, conversation_id: convId });
 	} catch (err) {
 		console.error('Studio-send failed:', err.message);
 		return res.status(500).json({ error: err.message });
