@@ -1,9 +1,20 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import twilio from 'twilio';
+import multer from 'multer';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { findConversation, normalizePhone } from '../services/phone-lookup.js';
+
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+	fileFilter: (_req, file, cb) => {
+		const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+		cb(null, allowed.includes(file.mimetype));
+	}
+});
 
 const router = Router();
 
@@ -158,20 +169,21 @@ router.get('/lookup', logAction('messages.lookup'), async (req, res) => {
 
 /**
  * POST /api/messages/send
- * Send an SMS/RCS message from the app.
+ * Send an SMS/MMS message from the app.
+ * Accepts JSON (text only) or multipart/form-data (text + image).
  *
- * Body: { to, body, conversationId?, from? }
+ * JSON body: { to, body, conversationId?, from? }
+ * Multipart fields: to, body?, conversationId?, from?, image (file)
  */
-router.post('/send', logAction('messages.send'), async (req, res) => {
+router.post('/send', upload.single('image'), logAction('messages.send'), async (req, res) => {
 	const { to, body, conversationId } = req.body;
 
-	if (!to || !body) {
-		return res.status(400).json({ error: 'Both "to" and "body" are required' });
+	if (!to || (!body && !req.file)) {
+		return res.status(400).json({ error: '"to" is required, plus "body" or an image' });
 	}
 
 	const toNumber = normalizePhone(to);
 
-	// Use explicitly provided from number, or fall back to env defaults
 	const fromNumber =
 		req.body.from ||
 		process.env.TWILIO_SMS_FROM_NUMBER ||
@@ -184,21 +196,44 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 	}
 
 	try {
+		let mediaUrl = null;
+
+		// Upload image to Supabase Storage if present
+		if (req.file) {
+			const ext = req.file.originalname.split('.').pop() || 'jpg';
+			const storagePath = `${randomUUID()}.${ext}`;
+
+			const { error: uploadErr } = await supabaseAdmin.storage
+				.from('mms')
+				.upload(storagePath, req.file.buffer, {
+					contentType: req.file.mimetype,
+					upsert: false
+				});
+
+			if (uploadErr) {
+				console.error('Supabase Storage upload failed:', uploadErr.message);
+				return res.status(500).json({ error: 'Failed to upload image' });
+			}
+
+			const { data: publicUrlData } = supabaseAdmin.storage.from('mms').getPublicUrl(storagePath);
+			mediaUrl = publicUrlData.publicUrl;
+		}
+
 		// Send via Twilio
 		const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-		// Build the status callback URL for delivery tracking
 		const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
 		const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
 
 		const twilioMsg = await client.messages.create({
 			to: toNumber,
 			from: fromNumber,
-			body,
+			body: body || '',
+			...(mediaUrl && { mediaUrl: [mediaUrl] }),
 			...(statusCallback && { statusCallback })
 		});
 
-		// Find or create conversation — one thread per customer phone number
+		// Find or create conversation
 		let convId = conversationId;
 		if (!convId) {
 			const existingConv = await findConversation(toNumber);
@@ -221,7 +256,7 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 						twilio_number: fromNumber || null,
 						display_name: contact?.full_name || null,
 						contact_id: contact?.id || null,
-						last_message: body,
+						last_message: body || (mediaUrl ? '[Image]' : ''),
 						last_at: new Date().toISOString()
 					})
 					.select('id')
@@ -237,12 +272,13 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 			.insert({
 				conversation_id: convId,
 				direction: 'outbound',
-				body,
+				body: body || '',
 				from_number: fromNumber,
 				to_number: toNumber,
 				twilio_sid: twilioMsg.sid,
 				status: twilioMsg.status || 'sent',
-				sent_by: req.user?.id || null
+				sent_by: req.user?.id || null,
+				...(mediaUrl && { media_urls: [mediaUrl] })
 			})
 			.select()
 			.single();
@@ -255,7 +291,7 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 		await supabaseAdmin
 			.from('conversations')
 			.update({
-				last_message: body,
+				last_message: body || (mediaUrl ? '[Image]' : ''),
 				last_at: new Date().toISOString(),
 				status: 'active'
 			})

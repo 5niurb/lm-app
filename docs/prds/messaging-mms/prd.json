@@ -55,8 +55,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 3,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "ComposeBar.svelte uses $props() with onSend callback. Add an optional onSendWithMedia or extend onSend to accept a File parameter. Keep the existing text-only send working."
 		},
 		{
@@ -74,7 +74,7 @@
 			],
 			"priority": 4,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "Use multer or express-fileupload for multipart handling. Supabase Storage: supabaseAdmin.storage.from('mms').upload(). Make bucket public or use signed URLs with long expiry (Twilio needs to fetch the image)."
 		},
 		{
