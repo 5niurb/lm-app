@@ -70,7 +70,8 @@ describe('connect-operator-status handler', () => {
 
 		const mod = await import('../routes/twilio.js');
 		router = mod.default;
-	});
+		// Dynamic import of twilio.js can be slow on Windows — extend timeout
+	}, 30_000);
 
 	it('generates Gather with press-1-to-text when DialCallStatus is no-answer', async () => {
 		const handler = findHandler(router, 'post', '/connect-operator-status');
