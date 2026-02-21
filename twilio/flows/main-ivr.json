@@ -68,7 +68,7 @@
 					"x": 180,
 					"y": 120
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/voice/hours-check?force=closed&hour=19"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/hours-check"
 			},
 			"transitions": [
 				{
