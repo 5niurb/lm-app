@@ -7,11 +7,14 @@ import { findConversation, normalizePhone } from './phone-lookup.js';
  * Called every 60s by setInterval in server.js.
  */
 export async function processScheduledMessages() {
+	const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 	const { data: due, error } = await supabaseAdmin
 		.from('scheduled_messages')
 		.select('*')
 		.eq('status', 'pending')
 		.lte('scheduled_at', new Date().toISOString())
+		.lt('retry_count', 3)
+		.lte('updated_at', fiveMinAgo)
 		.order('scheduled_at', { ascending: true })
 		.limit(10);
 
@@ -113,15 +116,24 @@ export async function processScheduledMessages() {
 
 			console.log('Scheduled send: to=' + msg.to_number + ' status=sent');
 		} catch (err) {
+			const newRetryCount = (msg.retry_count || 0) + 1;
+			const permanently = newRetryCount >= 3;
+
 			await supabaseAdmin
 				.from('scheduled_messages')
 				.update({
-					status: 'failed',
-					error_message: err.message
+					retry_count: newRetryCount,
+					error_message: err.message,
+					...(permanently && { status: 'failed' })
 				})
 				.eq('id', msg.id);
 
-			console.log('Scheduled send: to=' + msg.to_number + ' status=failed');
+			console.log(
+				'Scheduled send: to=' +
+					msg.to_number +
+					' status=' +
+					(permanently ? 'failed' : 'retry-' + newRetryCount)
+			);
 		}
 	}
 }
