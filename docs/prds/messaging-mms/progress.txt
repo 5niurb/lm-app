@@ -58,3 +58,39 @@
 - The find-or-create conversation pattern from POST /api/messages/send is the canonical reference — uses phone_normalized + phone variant matching
 - metadata.source='scheduled' + metadata.scheduled_message_id links the message record back to the scheduled_messages row
 - Build guard hook blocks `npx vite build` without PUBLIC_API_URL — use `PUBLIC_API_URL=https://api.lemedspa.app npx vite build`
+
+## MMS-001 Learnings
+- Use blob URL approach for authed image loading: fetch with Authorization header → blob → URL.createObjectURL() — same pattern as voicemail recording proxy
+- Cache promises in a Map keyed by `${msgId}-${index}` to avoid re-fetching on re-render — Svelte 5 `{#await}` resolves immediately with cached promise
+- `{#if msg.body}` guard needed since MMS-only messages may have empty body
+- ImageLightbox: svelte:window onkeydown for Escape, click-outside via checking e.target === e.currentTarget on backdrop div
+- Edit tool needs exact content matching — use unique single-line strings rather than multi-line with ambiguous whitespace
+
+## MMS-002 Learnings
+- Media proxy follows exact same pattern as voicemail recording proxy: fetch with Basic Auth → stream reader → pipe to response
+- Twilio media URLs require HTTP Basic Auth with TWILIO_ACCOUNT_SID:TWILIO_AUTH_TOKEN (same as recordings)
+- Use 502 for Twilio fetch failures (upstream error), 404 for missing message or out-of-bounds index
+- Cache-Control private, max-age=3600 for proxied media — browser caches for 1 hour, no CDN caching
+
+## MMS-003 Learnings
+- ComposeBar onSend signature extended to (body: string, file?: File) — backward-compatible, ChatsTab ignores second arg until MMS-004
+- URL.createObjectURL() for local preview, URL.revokeObjectURL() on remove to prevent memory leaks
+- Reset file input value after selection (`e.target.value = ''`) so same file can be re-selected after removal
+- onError prop added to ComposeBar for 5MB validation — ChatsTab passes its onError through
+- Send button disabled check needs both `!body.trim() && !attachment` — allows image-only messages
+
+## MMS-004 Learnings
+- multer with memoryStorage() gives req.file.buffer directly — no temp files to clean up
+- Supabase Storage upload: supabaseAdmin.storage.from('mms').upload(path, buffer, { contentType })
+- getPublicUrl() returns { data: { publicUrl } } — no error field, always succeeds (just constructs URL)
+- 'mms' bucket must be created as PUBLIC in Supabase dashboard — Twilio fetches the URL to send as MMS
+- API client detects FormData via `options.body instanceof FormData` to skip default Content-Type: application/json
+- multer middleware placed before logAction: upload.single('image') runs first, then req.body is populated
+- When body is empty but image present, use '[Image]' as last_message in conversation for preview
+
+## MMS-005 Learnings
+- Outbound images use Supabase Storage public URLs — no proxy needed, render src directly
+- Inbound images use Twilio API URLs containing 'api.twilio.com' — must go through auth proxy
+- `isPublicMediaUrl()` helper: any https URL NOT containing 'api.twilio.com' is treated as public
+- getMediaBlobUrl() now takes the raw URL as third parameter — returns Promise.resolve(url) for public URLs, skipping fetch+blob overhead
+- The image rendering template already handled both directions (inside direction-styled bubble div), only the URL resolution logic needed changing
