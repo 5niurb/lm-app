@@ -37,8 +37,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 2,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "Follow the same pattern as GET /api/voicemails/:id/recording in api/routes/voicemails.js. Use node-fetch or native fetch to stream from Twilio."
 		},
 		{
@@ -56,7 +56,7 @@
 			],
 			"priority": 3,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "ComposeBar.svelte uses $props() with onSend callback. Add an optional onSendWithMedia or extend onSend to accept a File parameter. Keep the existing text-only send working."
 		},
 		{
