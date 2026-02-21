@@ -1,9 +1,9 @@
-name = "lm-app"
+name = "lm-app-staging"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
 [vars]
-PUBLIC_SUPABASE_URL = "https://skvsjcckissnyxcafwyr.supabase.co"
-PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNrdnNqY2NraXNzbnl4Y2Fmd3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0MDA2NjUsImV4cCI6MjA1NDk3NjY2NX0.RBE1HX6qxBN7cU3DSA-GjLSHKh-MZ3NsNAqkvj4hcnI"
-PUBLIC_API_URL = "https://api.lemedspa.app"
+PUBLIC_SUPABASE_URL = "https://ohdrhqmfzinizrldoaih.supabase.co"
+PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9oZHJocW1memluaXpybGRvYWloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NjkxNzgsImV4cCI6MjA4NzI0NTE3OH0.xUsI_DIG_xE9Mli4GRcRpfrU_qM-xJGwoW7FB3xSZWs"
+PUBLIC_API_URL = "https://staging-api.lemedspa.app"
