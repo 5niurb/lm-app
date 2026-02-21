@@ -877,7 +877,7 @@
 			</div>
 
 			<!-- Compose -->
-			<ComposeBar onSend={sendMessage} placeholder="Type a message..." />
+			<ComposeBar onSend={sendMessage} {onError} placeholder="Type a message..." />
 		{:else if showNewConvo}
 			<!-- New conversation compose view -->
 			<div class="flex-1 flex flex-col">
@@ -926,6 +926,7 @@
 				</div>
 				<ComposeBar
 					onSend={sendMessage}
+					{onError}
 					placeholder="Type a message..."
 					disabled={!newConvoPhone.trim()}
 				/>
