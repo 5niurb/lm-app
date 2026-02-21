@@ -263,6 +263,36 @@ Files: `calls.md`, `messages.md`, `contacts.md`, `dashboard.md`, `softphone.md`,
 - **Destructive actions** — deleting data, changing production config, domain changes
 - **Ambiguous intent** — when two valid approaches exist and the choice affects UX or architecture
 
+## Cloud Sessions (iOS / claude.ai/code)
+
+This repo is configured to work in cloud VM sessions (launched from claude.ai/code or the iOS app). Cloud VMs clone the repo fresh — only committed files in `.claude/` are available.
+
+### What Works in Cloud
+- **Agents:** `code-reviewer`, `qa`, `research` — committed to `.claude/agents/`
+- **Skills:** `/capture-specs`, `/deploy`, `/verify`, `/commit`, `/migrate` — committed to `.claude/skills/`
+- **Hooks:** env blocker, prettier auto-format, cloud-setup bootstrap — in `.claude/settings.json`
+- **MCP servers:** context7, sequential-thinking — in `.mcp.json`
+- **Subagent workflow:** Write code → spawn code-reviewer → spawn qa → fix → ship (works identically)
+
+### What's Local-Only (won't work in cloud)
+- **TextMe SMS notifications** — needs local Twilio creds
+- **Chrome MCP / browser automation** — no browser in VM
+- **MS365 MCP / email tools** — no OAuth session
+- **Installed plugins** (superpowers, firecrawl, figma) — not installed in VM
+- **Auto-memory** (`~/.claude/projects/*/memory/`) — no equivalent in cloud
+
+### Cloud Environment Variables
+Set these in the claude.ai/code environment configuration before launching a cloud session:
+- `SUPABASE_URL` — from Supabase dashboard
+- `SUPABASE_ANON_KEY` — from Supabase dashboard
+- `SUPABASE_SERVICE_ROLE_KEY` — for API server
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — for call/SMS features
+- `RESEND_API_KEY` — for email
+- `PUBLIC_API_URL` — production API URL for builds
+
+### Cloud Git Behavior
+Cloud VMs can only push to the branch you're working on. Force-pushes and pushes to other branches are blocked by the git proxy.
+
 ## Important Notes
 
 - Webhook routes (`/api/webhooks/*`) are mounted BEFORE `express.json()` because Twilio sends URL-encoded data.
