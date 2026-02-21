@@ -71,7 +71,7 @@
 				googleLoading = false;
 			}
 			// If no error, browser will redirect to Google — don't reset googleLoading
-		} catch (err) {
+		} catch (_err) {
 			error = 'Failed to connect to Google. Please try again.';
 			googleLoading = false;
 		}

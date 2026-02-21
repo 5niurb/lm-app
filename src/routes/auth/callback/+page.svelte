@@ -2,6 +2,7 @@
 	import { supabase } from '$lib/utils/supabase.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 
 	let error = $state('');
@@ -87,7 +88,7 @@
 				</h2>
 				<p class="text-sm text-red-400 mb-6">{error}</p>
 				<a
-					href="/login"
+					href="{base}/login"
 					class="inline-flex items-center gap-2 rounded-md bg-gold px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-gold/80 transition-colors"
 				>
 					Back to sign in
