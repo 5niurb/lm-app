@@ -17,6 +17,7 @@
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 	import ComposeBar from './ComposeBar.svelte';
+	import MessageReactions from './MessageReactions.svelte';
 
 	/**
 	 * @type {{
@@ -53,6 +54,13 @@
 	/** @type {any[]|null} */
 	let logMessages = $state(null);
 	let loadingLog = $state(false);
+
+	// Reactions
+	const REACTION_EMOJIS = ['👍', '❤️', '😂', '❗', '❓', '💯', '🙏', '🔥', '😍'];
+	/** @type {{ msgId: string, element: DOMRect, direction: string, body: string, isLast: boolean } | null} */
+	let reactionTarget = $state(null);
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let longPressTimer = null;
 
 	// Check URL params for ?phone=xxx from contacts page
 	onMount(async () => {
@@ -306,6 +314,66 @@
 		if (msg.sent_by) return 'Staff';
 		if (msg.metadata?.source === 'ivr') return 'IVR Auto-reply';
 		return null;
+	}
+
+	/**
+	 * Open the reaction bar on a message bubble.
+	 * @param {MouseEvent | TouchEvent} e
+	 * @param {any} msg
+	 * @param {number} idx
+	 */
+	function openReactionBar(e, msg, idx) {
+		e.preventDefault();
+		const el = /** @type {HTMLElement} */ (e.currentTarget);
+		const rect = el.getBoundingClientRect();
+		reactionTarget = {
+			msgId: msg.id,
+			element: rect,
+			direction: msg.direction,
+			body: msg.body || '',
+			isLast: idx === messages.length - 1
+		};
+	}
+
+	/** @param {TouchEvent} e */
+	function startLongPress(e, msg, idx) {
+		longPressTimer = setTimeout(() => {
+			openReactionBar(e, msg, idx);
+		}, 500);
+	}
+
+	function cancelLongPress() {
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+	}
+
+	/** @param {string} emoji */
+	async function handleReaction(emoji) {
+		if (!reactionTarget) return;
+		const { msgId } = reactionTarget;
+		reactionTarget = null;
+
+		// Optimistic update
+		messages = messages.map((m) => {
+			if (m.id === msgId) {
+				const reactions = Array.isArray(m.reactions) ? [...m.reactions] : [];
+				reactions.push({ emoji, reacted_by: 'self', created_at: new Date().toISOString() });
+				return { ...m, reactions };
+			}
+			return m;
+		});
+
+		try {
+			await api(`/api/messages/${msgId}/react`, {
+				method: 'POST',
+				body: JSON.stringify({ emoji })
+			});
+		} catch (e) {
+			console.error('Failed to save reaction:', e);
+			onError('Failed to send reaction');
+		}
 	}
 </script>
 
@@ -565,10 +633,26 @@
 										{:else}
 											<ArrowUpRight class="h-3 w-3 text-blue-400 shrink-0" />
 										{/if}
-										<span class="text-sm font-medium text-text-primary truncate">
-											{formatPhone(msg.direction === 'inbound' ? msg.from_number : msg.to_number)}
-										</span>
+										{#if msg.conversation?.contact_id && msg.conversation?.display_name}
+											<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
+											<span class="text-sm font-medium text-text-primary truncate"
+												>{msg.conversation.display_name}</span
+											>
+										{:else if msg.conversation?.display_name}
+											<span class="text-sm font-medium text-text-secondary truncate"
+												>{msg.conversation.display_name}</span
+											>
+										{:else}
+											<span class="text-sm font-medium text-text-primary truncate">
+												{formatPhone(msg.direction === 'inbound' ? msg.from_number : msg.to_number)}
+											</span>
+										{/if}
 									</div>
+									{#if msg.conversation?.display_name}
+										<p class="text-[10px] text-text-tertiary font-mono truncate mt-0.5">
+											{formatPhone(msg.direction === 'inbound' ? msg.from_number : msg.to_number)}
+										</p>
+									{/if}
 									<p class="text-xs text-text-tertiary truncate mt-0.5">
 										{msg.body || '(no content)'}
 									</p>
@@ -662,36 +746,62 @@
 							</div>
 						{/if}
 						<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
-							<div
-								class="max-w-[75%] rounded-2xl px-4 py-2.5 {msg.direction === 'outbound'
-									? 'bg-gold text-primary-foreground rounded-br-md'
-									: 'bg-surface-raised border border-border text-text-primary rounded-bl-md'}"
-							>
-								{#if senderName}
-									<p
-										class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound'
-											? 'text-primary-foreground/60'
-											: 'text-gold-dim'}"
-									>
-										{senderName}
-									</p>
-								{/if}
-								<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
-								<p
-									class="text-[10px] mt-1 {msg.direction === 'outbound'
-										? 'text-primary-foreground/50'
-										: 'text-text-ghost'}"
+							<div class="relative group">
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<div
+									class="max-w-full rounded-2xl px-4 py-2.5 select-none {msg.direction ===
+									'outbound'
+										? 'bg-gold text-primary-foreground rounded-br-md'
+										: 'bg-surface-raised border border-border text-text-primary rounded-bl-md'}"
+									oncontextmenu={(e) => openReactionBar(e, msg, i)}
+									ontouchstart={(e) => startLongPress(e, msg, i)}
+									ontouchend={cancelLongPress}
+									ontouchmove={cancelLongPress}
 								>
-									{new Date(msg.created_at).toLocaleTimeString('en-US', {
-										hour: 'numeric',
-										minute: '2-digit'
-									})}
-									{#if msg.status === 'delivered'}
-										&middot; Delivered
-									{:else if msg.status === 'failed'}
-										&middot; <span class="text-red-400">Failed</span>
+									{#if senderName}
+										<p
+											class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound'
+												? 'text-primary-foreground/60'
+												: 'text-gold-dim'}"
+										>
+											{senderName}
+										</p>
 									{/if}
-								</p>
+									<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+									<p
+										class="text-[10px] mt-1 {msg.direction === 'outbound'
+											? 'text-primary-foreground/50'
+											: 'text-text-ghost'}"
+									>
+										{new Date(msg.created_at).toLocaleTimeString('en-US', {
+											hour: 'numeric',
+											minute: '2-digit'
+										})}
+										{#if msg.status === 'delivered'}
+											&middot; Delivered
+										{:else if msg.status === 'failed'}
+											&middot; <span class="text-red-400">Failed</span>
+										{/if}
+									</p>
+								</div>
+								{#if msg.reactions?.length > 0}
+									<div
+										class="flex gap-0.5 mt-[-6px] {msg.direction === 'outbound'
+											? 'justify-end pr-2'
+											: 'justify-start pl-2'}"
+									>
+										{#each [...new Set(msg.reactions.map((r) => r.emoji))] as emoji (emoji)}
+											{@const count = msg.reactions.filter((r) => r.emoji === emoji).length}
+											<span
+												class="inline-flex items-center gap-0.5 rounded-full bg-surface-raised border border-border px-1.5 py-0.5 text-xs shadow-sm"
+											>
+												{emoji}{#if count > 1}<span class="text-[9px] text-text-tertiary"
+														>{count}</span
+													>{/if}
+											</span>
+										{/each}
+									</div>
+								{/if}
 							</div>
 						</div>
 					{/each}
@@ -787,3 +897,15 @@
 		{/if}
 	</div>
 </div>
+
+{#if reactionTarget}
+	<MessageReactions
+		reactions={REACTION_EMOJIS}
+		anchorRect={reactionTarget.element}
+		direction={reactionTarget.direction}
+		onReact={handleReaction}
+		onDismiss={() => {
+			reactionTarget = null;
+		}}
+	/>
+{/if}

@@ -317,4 +317,101 @@ router.get('/log', logAction('messages.log'), async (req, res) => {
 	return res.json({ data: data || [], count: count || 0, page, pageSize });
 });
 
+/**
+ * POST /api/messages/:id/react
+ * Add an emoji reaction to a message.
+ * Saves locally (JSONB) + sends SMS reply with context.
+ *
+ * Body: { emoji }
+ */
+router.post('/:id/react', logAction('messages.react'), async (req, res) => {
+	const { id } = req.params;
+	const { emoji } = req.body;
+
+	if (!emoji) {
+		return res.status(400).json({ error: 'emoji is required' });
+	}
+
+	try {
+		// Fetch the message being reacted to
+		const { data: msg, error: msgErr } = await supabaseAdmin
+			.from('messages')
+			.select(
+				'*, conversation:conversations!messages_conversation_id_fkey(id, phone_number, twilio_number)'
+			)
+			.eq('id', id)
+			.single();
+
+		if (msgErr || !msg) {
+			return res.status(404).json({ error: 'Message not found' });
+		}
+
+		// Append reaction to JSONB array
+		const reactions = Array.isArray(msg.reactions) ? msg.reactions : [];
+		reactions.push({
+			emoji,
+			reacted_by: req.user?.id || null,
+			created_at: new Date().toISOString()
+		});
+
+		const { data: updated, error: updateErr } = await supabaseAdmin
+			.from('messages')
+			.update({ reactions })
+			.eq('id', id)
+			.select()
+			.single();
+
+		if (updateErr) {
+			console.error('Failed to save reaction:', updateErr.message);
+			return res.status(500).json({ error: 'Failed to save reaction' });
+		}
+
+		// Send SMS reply with the reaction
+		const convo = msg.conversation;
+		if (convo?.phone_number && convo?.twilio_number) {
+			try {
+				// Check if this is the last message in the conversation
+				const { data: latest } = await supabaseAdmin
+					.from('messages')
+					.select('id')
+					.eq('conversation_id', convo.id)
+					.order('created_at', { ascending: false })
+					.limit(1)
+					.single();
+
+				const isLastMessage = latest?.id === id;
+
+				let smsBody;
+				if (isLastMessage) {
+					smsBody = emoji;
+				} else {
+					const snippet = (msg.body || '').slice(0, 50);
+					const ellipsis = (msg.body || '').length > 50 ? '\u2026' : '';
+					smsBody = `${emoji} \u201c${snippet}${ellipsis}\u201d`;
+				}
+
+				const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+				const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
+				const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+
+				await client.messages.create({
+					to: convo.phone_number,
+					from: convo.twilio_number,
+					body: smsBody,
+					...(statusCallback && { statusCallback })
+				});
+			} catch (smsErr) {
+				console.error('Failed to send reaction SMS:', smsErr.message);
+				// Don't fail the reaction save if SMS fails
+			}
+		}
+
+		return res.json({ data: updated });
+	} catch (err) {
+		console.error('Failed to react to message:', err.message);
+		return res.status(500).json({ error: 'Failed to react to message' });
+	}
+});
+
 export default router;
