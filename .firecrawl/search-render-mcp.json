@@ -1,0 +1,68 @@
+{
+	"success": true,
+	"data": {
+		"web": [
+			{
+				"url": "https://render.com/docs/mcp-server",
+				"title": "Render MCP Server",
+				"description": "Render's Model Context Protocol (MCP) server enables you to manage your Render infrastructure directly from compatible AI apps, such as Cursor and Claude Code:.",
+				"position": 1
+			},
+			{
+				"url": "https://render.com/articles/essential-mcp-servers-for-developers",
+				"title": "Essential MCP Servers for Developers",
+				"description": "The Model Context Protocol (MCP) connects AI to your development tools. No more switching between apps to check logs, create tickets, ...",
+				"position": 2
+			},
+			{
+				"url": "https://github.com/render-oss/render-mcp-server",
+				"title": "The Official Render MCP Server",
+				"description": "The Render MCP Server is a Model Context Protocol (MCP) server that allows you to interact with your Render resources via LLMs. Getting Started. Get started ...",
+				"position": 3,
+				"category": "github"
+			},
+			{
+				"url": "https://lobehub.com/mcp/render-oss-render-mcp-server",
+				"title": "Render MCP Server",
+				"description": "The Render MCP Server is an early access Model Context Protocol (MCP) server that allows you to interact with your Render resources via LLMs.",
+				"position": 4
+			},
+			{
+				"url": "https://modelcontextprotocol.io/docs/extensions/apps",
+				"title": "MCP Apps",
+				"description": "MCP Apps let servers return interactive HTML interfaces (data visualizations, forms, dashboards) that render directly in the chat. ​. Why not just build a web ...",
+				"position": 5
+			},
+			{
+				"url": "https://mcpmarket.com/server/render",
+				"title": "Deploy & Manage Render Services with AI",
+				"description": "About. Render streamlines Render.com deployments by providing an MCP (Model Context Protocol) server that allows AI assistants like Claude to interact with ...",
+				"position": 6
+			},
+			{
+				"url": "https://playbooks.com/mcp/niyogi-render",
+				"title": "Render MCP Server - niyogi/render-mcp - playbooks",
+				"description": "You can run a dedicated MCP (Model Context Protocol) server that lets AI assistants manage and deploy services on Render.com. This server exposes a set of MCP ...",
+				"position": 7
+			},
+			{
+				"url": "https://cursor.directory/mcp/render",
+				"title": "Render - MCP Server",
+				"description": "Model Context Protocol (MCP) is an open protocol that allows you to provide custom tools to agentic LLMs (Large Language Models) in Cursor's Composer feature.",
+				"position": 8
+			},
+			{
+				"url": "https://developers.openai.com/apps-sdk/concepts/mcp-server/",
+				"title": "MCP",
+				"description": "What is MCP? The Model Context Protocol (MCP) is an open specification for connecting large language model clients to external tools and resources.",
+				"position": 9
+			},
+			{
+				"url": "https://mcpcursor.com/server/render-mcp",
+				"title": "Render MCP - Model Context Protocol Integration for Cursor IDE",
+				"description": "This MCP (Model Context Protocol) server allows AI assistants like Claude to interact with the Render API, enabling deployment and management of services on ...",
+				"position": 10
+			}
+		]
+	}
+}
