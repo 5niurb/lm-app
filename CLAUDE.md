@@ -257,6 +257,22 @@ Files: `calls.md`, `messages.md`, `contacts.md`, `dashboard.md`, `softphone.md`,
 | Build failing | Read the error, check recent changes, fix it | Report the error and wait |
 | Unclear requirement | Check SPECS.md, docs/requirements/, SESSION_NOTES | Ask user to re-explain |
 
+### Proactive Execution Policy
+
+**Do it, don't ask.** When a task has operational steps (migrations, deployments, config changes), execute them immediately as part of the task. The user wants to be *informed* of what was done, not asked to do it themselves.
+
+| Action | Do Proactively | Inform User |
+|--------|---------------|-------------|
+| DB migrations (DDL/DML) | Run via `/migrate` skill or Supabase MCP | State what was applied |
+| Frontend deploys | Run via `/deploy` skill | Share deployed URL |
+| API config changes | Apply directly | Note what changed |
+| Package installs | Run `npm install` | List what was added |
+| Seed data / test data | Insert via SQL | Describe what was seeded |
+| Build verification | Run `npx vite build` | Report pass/fail |
+| Git commits & pushes | Run via `/commit` skill | Share commit hash |
+
+**The user reviews results, not steps.** Present completed work, not TODO lists of manual actions.
+
 ### When to Actually Ask the User
 - **Business decisions** — pricing, feature priority, what to build next
 - **Credentials/secrets** — actual secret keys (service role, API secrets), never public keys
