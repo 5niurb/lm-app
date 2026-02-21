@@ -18,7 +18,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 1,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Use the same Twilio client pattern as POST /api/messages/send. Include statusCallback URL for delivery tracking."
 		},
