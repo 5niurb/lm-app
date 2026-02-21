@@ -273,4 +273,48 @@ router.post('/send', logAction('messages.send'), async (req, res) => {
 	}
 });
 
+/**
+ * GET /api/messages/log
+ * Flat message log (not grouped by conversation).
+ * Used for Inbound/Outbound views.
+ *
+ * Query: direction (inbound|outbound), search, page, pageSize, twilioNumber
+ */
+router.get('/log', logAction('messages.log'), async (req, res) => {
+	const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+	const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
+	const offset = (page - 1) * pageSize;
+
+	let query = supabaseAdmin
+		.from('messages')
+		.select(
+			'*, conversation:conversations!messages_conversation_id_fkey(id, phone_number, display_name, contact_id), sender:profiles!messages_sent_by_fkey(full_name, email)',
+			{ count: 'exact' }
+		);
+
+	if (req.query.direction) {
+		query = query.eq('direction', req.query.direction);
+	}
+
+	if (req.query.twilioNumber) {
+		query = query.eq('from_number', req.query.twilioNumber);
+	}
+
+	if (req.query.search) {
+		const s = req.query.search.replace(/[,.()[\]{}]/g, '');
+		query = query.or(`body.ilike.%${s}%,from_number.ilike.%${s}%,to_number.ilike.%${s}%`);
+	}
+
+	query = query.order('created_at', { ascending: false }).range(offset, offset + pageSize - 1);
+
+	const { data, error, count } = await query;
+
+	if (error) {
+		console.error('Failed to fetch message log:', error.message);
+		return res.status(500).json({ error: 'Failed to fetch message log' });
+	}
+
+	return res.json({ data: data || [], count: count || 0, page, pageSize });
+});
+
 export default router;
