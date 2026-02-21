@@ -1,0 +1,103 @@
+{
+	"project": "lm-app",
+	"branchName": "ralph/auto-replies",
+	"description": "Keyword-based auto-reply rules for inbound SMS with hours restrictions and settings UI",
+	"userStories": [
+		{
+			"id": "AR-001",
+			"title": "Auto-reply rules table and API CRUD",
+			"description": "As a staff member, I want to create and manage auto-reply rules, so that common questions get answered without manual intervention.",
+			"acceptanceCriteria": [
+				"Migration creates auto_reply_rules table with all columns from prd.md schema",
+				"RLS enabled, authenticated users can read/write",
+				"updated_at trigger fires on update",
+				"GET /api/auto-replies returns all rules sorted by priority ascending",
+				"POST /api/auto-replies creates a rule (requires response_body)",
+				"PUT /api/auto-replies/:id updates allowed fields",
+				"DELETE /api/auto-replies/:id sets is_active=false (soft delete)",
+				"All routes require verifyToken middleware",
+				"Route mounted in server.js at /api/auto-replies",
+				"Build passes: npx vite build"
+			],
+			"priority": 1,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Follow the same CRUD pattern as api/routes/templates.js. Use supabaseAdmin for all queries."
+		},
+		{
+			"id": "AR-002",
+			"title": "Auto-reply settings UI",
+			"description": "As a staff member, I want a UI to manage auto-reply rules, so that I can configure responses without editing the database directly.",
+			"acceptanceCriteria": [
+				"New 'Auto-Replies' section accessible from Settings page or Messages page",
+				"Lists all rules with: keywords, response preview (truncated), hours restriction, active toggle",
+				"Create form: trigger type (keyword/any), keywords input (comma-separated), response body textarea, hours restriction dropdown (always/after hours/business hours)",
+				"Edit form: same fields, pre-populated",
+				"Toggle switch to enable/disable each rule inline",
+				"Delete button with confirmation",
+				"Empty state with icon + 'No auto-reply rules' + create button",
+				"Build passes: npx vite build"
+			],
+			"priority": 2,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Match the visual style of TemplatesTab.svelte — same card layout, hover states, category pills. Use Sheet for create/edit forms."
+		},
+		{
+			"id": "AR-003",
+			"title": "Match and send auto-replies on inbound SMS",
+			"description": "As the system, I want to automatically reply to inbound messages that match configured rules, so that patients get instant answers to common questions.",
+			"acceptanceCriteria": [
+				"After saving inbound message in sms.js webhook, query active auto_reply_rules",
+				"For trigger_type='keyword': case-insensitive match — any keyword appears anywhere in message body",
+				"For trigger_type='any': matches all inbound messages (catch-all)",
+				"Check hours_restriction against current business hours status (fetch /api/hours-check or inline logic)",
+				"Only the highest-priority matching rule fires (lowest priority number wins)",
+				"Send response via Twilio using the To number from inbound as the From number",
+				"Insert auto-reply into messages table with metadata: { source: 'auto_reply', rule_id: uuid }",
+				"Update conversation last_message and last_at",
+				"If no rules match, do nothing (existing behavior)",
+				"Auto-reply logic does not block the webhook response (fire-and-forget pattern)",
+				"Build passes: npx vite build"
+			],
+			"priority": 3,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Add the auto-reply check AFTER the existing message save + TextMagic forward. Use try/catch so failures don't affect the webhook response. Keep the empty TwiML response as-is."
+		},
+		{
+			"id": "AR-004",
+			"title": "Auto-reply visual indicator in thread",
+			"description": "As a staff member, I want to distinguish auto-replies from manual messages in the conversation thread, so that I know which responses were automated.",
+			"acceptanceCriteria": [
+				"Messages with metadata.source='auto_reply' show a small 'Auto' badge on the bubble",
+				"Badge is subtle — small rounded pill, muted color (e.g., text-xs bg-surface-subtle)",
+				"Badge appears below the message text, aligned with the timestamp",
+				"Manual outbound messages do NOT show the badge",
+				"Build passes: npx vite build"
+			],
+			"priority": 4,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Check message.metadata?.source === 'auto_reply' in the bubble rendering. Same place where reactions are rendered."
+		},
+		{
+			"id": "AR-005",
+			"title": "Default auto-reply rules (seed data)",
+			"description": "As the system, I want pre-configured auto-reply rules available out of the box, so that staff can enable common responses without writing them from scratch.",
+			"acceptanceCriteria": [
+				"Seed SQL file inserts 4 default rules (all is_active=false by default)",
+				"Rule 1: keywords=['hours','open','close','closed'], response='Le Med Spa is open Mon-Sat 10am-6pm. Sunday by appointment only. Call (818) 463-3772', hours_restriction='always', priority=10",
+				"Rule 2: keywords=['address','location','where','directions'], response='We're at 17414 Ventura Blvd, Encino, CA 91316. Google Maps: https://maps.app.goo.gl/...', hours_restriction='always', priority=10",
+				"Rule 3: keywords=['book','appointment','schedule','reserve'], response='Book online at https://lemedspa.com/booking or call (818) 463-3772', hours_restriction='always', priority=10",
+				"Rule 4: trigger_type='any', response='Thanks for texting Le Med Spa! We're currently closed and will respond when we reopen. For emergencies, call (818) 463-3772.', hours_restriction='after_hours', priority=99",
+				"Seed file is idempotent (ON CONFLICT DO NOTHING or check before insert)",
+				"Build passes: npx vite build"
+			],
+			"priority": 5,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Put seed file in api/db/seed-auto-replies.sql. The after_hours catch-all has priority=99 so specific keyword rules always fire first."
+		}
+	]
+}
