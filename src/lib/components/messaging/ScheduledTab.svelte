@@ -134,6 +134,14 @@
 		return colors[status] || colors.pending;
 	}
 
+	// Auto-refresh every 30 seconds
+	$effect(() => {
+		const interval = setInterval(() => {
+			loadMessages();
+		}, 30_000);
+		return () => clearInterval(interval);
+	});
+
 	const totalPages = $derived(Math.ceil(totalCount / pageSize) || 1);
 </script>
 
@@ -207,6 +215,27 @@
 								</span>
 							</div>
 							<p class="text-xs text-text-tertiary line-clamp-2 mb-1">{msg.body}</p>
+							{#if msg.status === 'sent' && msg.sent_at}
+								<p class="text-[10px] text-emerald-400 mb-1">
+									Sent {new Date(msg.sent_at).toLocaleDateString('en-US', {
+										month: 'short',
+										day: 'numeric'
+									})}, {new Date(msg.sent_at).toLocaleTimeString('en-US', {
+										hour: 'numeric',
+										minute: '2-digit'
+									})}
+								</p>
+							{/if}
+							{#if msg.status === 'failed' && msg.error_message}
+								<p class="text-[10px] text-red-400 mb-1">
+									{msg.error_message}
+								</p>
+							{/if}
+							{#if msg.status === 'failed' && msg.retry_count}
+								<p class="text-[10px] text-red-400/70 mb-1">
+									Failed after {msg.retry_count} attempt{msg.retry_count === 1 ? '' : 's'}
+								</p>
+							{/if}
 							<div class="flex items-center gap-2 text-[10px] text-text-ghost">
 								<span>
 									{new Date(msg.scheduled_at).toLocaleDateString('en-US', {
