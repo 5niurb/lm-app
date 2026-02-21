@@ -327,7 +327,7 @@
 						variant="outline"
 						onclick={syncHistory}
 						disabled={syncing}
-						title="Sync Twilio history"
+						title="Sync message history (Twilio + TextMagic)"
 					>
 						<RefreshCw class="h-3.5 w-3.5 {syncing ? 'animate-spin' : ''}" />
 					</Button>
@@ -380,7 +380,9 @@
 			{#if syncResult}
 				<div class="rounded bg-gold-glow border border-border px-3 py-2">
 					<p class="text-[11px] text-text-secondary">
-						Synced: {syncResult.newMessages} new messages, {syncResult.newCalls} new calls
+						Synced: {syncResult.newMessages} new messages{syncResult.tmNewMessages
+							? ` (${syncResult.tmNewMessages} from TextMagic)`
+							: ''}, {syncResult.newCalls} new calls
 					</p>
 					<button
 						class="text-[10px] text-text-tertiary hover:text-text-secondary mt-0.5"
@@ -435,7 +437,7 @@
 						</p>
 						<p class="text-xs text-text-ghost mt-1">
 							{#if twilioNumbers.length > 0}
-								Click the sync button to import history from Twilio.
+								Click the sync button to import history from Twilio & TextMagic.
 							{:else}
 								Incoming texts and auto-replies will appear here.
 							{/if}
