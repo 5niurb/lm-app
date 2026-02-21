@@ -69,12 +69,28 @@
 	const mediaCache = new Map();
 
 	/**
-	 * Fetch a media image via the proxy endpoint with auth, returning a cached blob URL.
+	 * Check if a media URL is publicly accessible (e.g. Supabase Storage).
+	 * Twilio URLs require auth and must go through the proxy.
+	 * @param {string} url
+	 * @returns {boolean}
+	 */
+	function isPublicMediaUrl(url) {
+		return url.startsWith('https://') && !url.includes('api.twilio.com');
+	}
+
+	/**
+	 * Get a renderable image URL for a message's media attachment.
+	 * Public URLs (Supabase Storage) are returned directly.
+	 * Twilio URLs are fetched via the proxy endpoint with auth, returning a cached blob URL.
 	 * @param {string} msgId
 	 * @param {number} index
+	 * @param {string} url
 	 * @returns {Promise<string>}
 	 */
-	function getMediaBlobUrl(msgId, index) {
+	function getMediaBlobUrl(msgId, index, url) {
+		if (isPublicMediaUrl(url)) {
+			return Promise.resolve(url);
+		}
 		const key = `${msgId}-${index}`;
 		if (!mediaCache.has(key)) {
 			const promise = (async () => {
@@ -823,8 +839,8 @@
 									{/if}
 									{#if msg.media_urls?.length > 0}
 										<div class="flex flex-wrap gap-1.5 {msg.body ? 'mt-1.5' : ''}">
-											{#each msg.media_urls as _url, idx}
-												{#await getMediaBlobUrl(msg.id, idx)}
+											{#each msg.media_urls as mediaUrl, idx}
+												{#await getMediaBlobUrl(msg.id, idx, mediaUrl)}
 													<div
 														class="w-[240px] h-[160px] rounded-lg bg-surface-subtle animate-pulse"
 													></div>

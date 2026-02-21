@@ -73,8 +73,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 4,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "Use multer or express-fileupload for multipart handling. Supabase Storage: supabaseAdmin.storage.from('mms').upload(). Make bucket public or use signed URLs with long expiry (Twilio needs to fetch the image)."
 		},
 		{
@@ -89,7 +89,7 @@
 			],
 			"priority": 5,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "The display logic from MMS-001 should handle both directions. Outbound images may use Supabase Storage URLs (public) instead of Twilio URLs (proxied). Detect by URL prefix."
 		}
 	]
