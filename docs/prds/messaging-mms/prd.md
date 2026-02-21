@@ -1,16 +1,20 @@
 # PRD: MMS / Image Support
 
+## Files
+- **prd.json:** `docs/prds/messaging-mms/prd.json`
+- **progress.txt:** `docs/prds/messaging-mms/progress.txt`
+
 ## Overview
 Inbound MMS media URLs are already stored in the `messages.media_urls` JSONB column but never displayed. There's no way to send images outbound. This PRD adds image display (inbound + outbound), a media proxy API, and image attachment in the compose bar.
 
 ## Context for Agent
 - **Branch name:** ralph/mms-support
 - **Tech stack:** SvelteKit + Svelte 5 runes, Express ES modules, Supabase, Tailwind v4
-- **Key files touched:**
-  - `api/routes/messages.js` — media proxy endpoint, extend send endpoint
-  - `src/lib/components/messaging/ChatsTab.svelte` — message bubble rendering
-  - `src/lib/components/messaging/ComposeBar.svelte` — file picker button
-  - New: image lightbox component
+- **Key files to modify:**
+  - `api/routes/messages.js` — add media proxy endpoint, extend send endpoint
+  - `src/lib/components/messaging/ChatsTab.svelte` — add image thumbnails to message bubbles
+  - `src/lib/components/messaging/ComposeBar.svelte` — add file picker button
+  - Create new: `src/lib/components/messaging/ImageLightbox.svelte`
 - **Design system:** Dark bg #0a0a0c, gold accent #C5A55A, Playfair Display headings
 - **API base:** http://localhost:3001 (dev) / https://api.lemedspa.app (prod)
 
