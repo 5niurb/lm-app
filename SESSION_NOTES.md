@@ -7,7 +7,7 @@
 - Added reaction event handlers to `ChatsTab.svelte` — contextmenu, 500ms long-press with touchmove cancel, optimistic updates
 - Reaction pills rendered below message bubbles with grouped emoji counts (iMessage-style)
 - New `POST /api/messages/:id/react` endpoint — JSONB storage + SMS reply via Twilio
-- SMS context-aware: plain emoji for latest msg, `👍 to 2/21 3:15pm: "quoted snippet…"` for older msgs (LA timezone)
+- SMS context-aware: plain emoji for latest msg, `👍 "quoted snippet…"` for older msgs
 - DB migration applied: `reactions jsonb DEFAULT '[]'` on messages table
 - All 129 vitest + 66 node:test passing, deployed to CF Pages + Render
 
@@ -22,7 +22,7 @@ Message Bubble (ChatsTab.svelte)
 │               ├── JSONB append: [{emoji, reacted_by, created_at}]
 │               └── Twilio SMS reply
 │                   ├── Latest msg → "👍"
-│                   └── Older msg → "👍 to 2/21 3:15pm: "snippet…""
+│                   └── Older msg → "👍 "snippet…""
 
 Direction Filter (log view)
 ├── contact_id + display_name → ◆ Gold diamond + name
