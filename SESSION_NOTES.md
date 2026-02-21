@@ -1,3 +1,43 @@
+## Session — 2026-02-21 (Session 45)
+**Focus:** IVR closed-hours time split — new audio files, auto-text vs voicemail routing
+
+**Accomplished:**
+- Uploaded 2 new audio assets to Twilio: `closed-press-1-auto-text.wav` and `closed-no-auto-text.wav`
+- Added `split_closed_time` widget to IVR flow with cascading hour-based conditions
+- Added `play_closed_no_text` widget for voicemail-only path
+- Added `?force=open|closed&hour=N` query params to hours-check API for testing
+- Fixed pre-existing ChatsTab.svelte parse error (bad JSDoc in `#each` block)
+- Formatted messaging components that were blocking git push
+- Saved formatting/push lessons to auto-memory for future sessions
+- Tested all 3 paths via test flow, deployed to prod (revision 7)
+
+**Diagram:**
+```
+Caller → check_hours → status?
+                         │
+            open ────────┤──────── closed
+              ↓          │            ↓
+        main greeting    │    split_closed_time (hour)
+                         │      │         │         │
+                     >20(9pm+)  >17(6-9pm) <9(0-8am) noMatch(9-5pm)
+                         ↓         ↓         ↓          ↓
+                      vmail    auto-text   vmail    open greeting
+```
+
+**Current State:**
+- Prod flow live (rev 7) with time-based closed routing
+- Test flow clean (rev 70, no overrides)
+- API supports `?force=&hour=` for future testing
+
+**Issues:**
+- SMS from test flow comes from main number (818-463-3772), not test number — cosmetic for testing only
+
+**Next Steps:**
+- Consider adjusting business hours in hours-check API if 9am open time is confirmed (currently 10am Mon-Fri)
+- Test flow during actual business hours transition (6pm closing)
+
+---
+
 ## Session — 2026-02-21 (Session 44)
 **Focus:** Messaging features foundation — backend, components, and scaffolding for full messaging overhaul
 
