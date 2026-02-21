@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import twilio from 'twilio';
 import { supabaseAdmin } from '../../services/supabase.js';
 import {
 	findConversation,
 	lookupContactByPhone,
 	normalizePhone
 } from '../../services/phone-lookup.js';
+import { sendSmsViaTextMagic } from './sms-forward.js';
 
 /** Map form interest values to human-readable labels */
 const INTEREST_LABELS = {
@@ -52,44 +52,21 @@ export function buildContactFormSmsBody({ name, interested_in, message }) {
 }
 
 /**
- * Send auto-acknowledgment SMS and create conversation thread.
+ * Send auto-acknowledgment SMS via TextMagic and create conversation thread in lm-app.
  * Fire-and-forget — errors are logged but do not affect the form response.
  */
 async function sendAutoSms({ phone, name, interested_in, message, contactId }) {
-	const fromNumber =
-		process.env.TWILIO_SMS_FROM_NUMBER ||
-		process.env.TWILIO_TEST1_PHONE_NUMBER ||
-		process.env.TWILIO_PHONE_NUMBER ||
-		process.env.TWILIO_MAIN_PHONE_NUMBER;
-
-	if (!fromNumber) {
-		console.error('[contact-form] Auto-SMS skipped: no Twilio phone number configured');
-		return;
-	}
-
-	const accountSid = process.env.TWILIO_ACCOUNT_SID;
-	const authToken = process.env.TWILIO_AUTH_TOKEN;
-	if (!accountSid || !authToken) {
-		console.error('[contact-form] Auto-SMS skipped: Twilio credentials not configured');
-		return;
-	}
-
 	const toNumber = normalizePhone(phone);
 	const smsBody = buildContactFormSmsBody({ name, interested_in, message });
 
-	// Send via Twilio
-	const client = twilio(accountSid, authToken);
-	const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
-	const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+	// Send via TextMagic so it appears in both TextMagic and lm-app
+	const tmResult = await sendSmsViaTextMagic({ to: toNumber, text: smsBody });
+	if (!tmResult) {
+		console.error('[contact-form] Auto-SMS skipped: TextMagic not configured');
+		return;
+	}
 
-	const twilioMsg = await client.messages.create({
-		to: toNumber,
-		from: fromNumber,
-		body: smsBody,
-		...(statusCallback && { statusCallback })
-	});
-
-	// Find or create conversation thread
+	// Find or create conversation thread in lm-app
 	const existingConv = await findConversation(toNumber);
 	let convId;
 
@@ -108,7 +85,6 @@ async function sendAutoSms({ phone, name, interested_in, message, contactId }) {
 			.from('conversations')
 			.insert({
 				phone_number: toNumber,
-				twilio_number: fromNumber,
 				display_name: convContactName,
 				contact_id: convContactId,
 				last_message: smsBody.substring(0, 200),
@@ -121,17 +97,15 @@ async function sendAutoSms({ phone, name, interested_in, message, contactId }) {
 		convId = newConv?.id;
 	}
 
-	// Log the outbound message
+	// Log the outbound message in lm-app
 	if (convId) {
 		await supabaseAdmin.from('messages').insert({
 			conversation_id: convId,
 			direction: 'outbound',
 			body: smsBody,
-			from_number: fromNumber,
 			to_number: toNumber,
-			twilio_sid: twilioMsg.sid,
-			status: twilioMsg.status || 'sent',
-			metadata: { source: 'website_form_auto' }
+			status: 'sent',
+			metadata: { source: 'website_form_auto', textmagic_id: tmResult.id }
 		});
 
 		await supabaseAdmin
@@ -145,7 +119,7 @@ async function sendAutoSms({ phone, name, interested_in, message, contactId }) {
 	}
 
 	console.log(
-		`[contact-form] Auto-SMS sent to ${toNumber}, twilio_sid=${twilioMsg.sid}, conv=${convId}`
+		`[contact-form] Auto-SMS sent via TextMagic to ${toNumber}, tm_id=${tmResult.id}, conv=${convId}`
 	);
 }
 
