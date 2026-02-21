@@ -8,18 +8,23 @@ import { findConversation, normalizePhone } from './phone-lookup.js';
  */
 export async function processScheduledMessages() {
 	const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+	const now = new Date().toISOString();
+
+	// Claim rows atomically: set status='processing' to prevent double-sends.
+	// First attempts (retry_count=0) skip the backoff. Retries need 5-min cooldown.
 	const { data: due, error } = await supabaseAdmin
 		.from('scheduled_messages')
-		.select('*')
+		.update({ status: 'processing' })
 		.eq('status', 'pending')
-		.lte('scheduled_at', new Date().toISOString())
+		.lte('scheduled_at', now)
 		.lt('retry_count', 3)
-		.lte('updated_at', fiveMinAgo)
+		.or(`retry_count.eq.0,updated_at.lte.${fiveMinAgo}`)
 		.order('scheduled_at', { ascending: true })
-		.limit(10);
+		.limit(10)
+		.select('*');
 
 	if (error) {
-		console.error('[scheduled] Failed to query due messages:', error.message);
+		console.error('[scheduled] Failed to claim due messages:', error.message);
 		return;
 	}
 
@@ -122,9 +127,9 @@ export async function processScheduledMessages() {
 			await supabaseAdmin
 				.from('scheduled_messages')
 				.update({
+					status: permanently ? 'failed' : 'pending',
 					retry_count: newRetryCount,
-					error_message: err.message,
-					...(permanently && { status: 'failed' })
+					error_message: err.message
 				})
 				.eq('id', msg.id);
 

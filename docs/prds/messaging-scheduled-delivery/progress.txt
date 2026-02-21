@@ -40,3 +40,21 @@
 - Format: [area] Brief description
 - Co-author line: Co-Authored-By: Claude <noreply@anthropic.com>
 - Stage specific files, never git add -A
+
+## SD-004 Learnings
+- Svelte 5 $effect() return function is the cleanup — use for clearInterval
+- Auto-refresh $effect needs no dependencies to run once on mount
+- The ScheduledTab API returns `count` but component reads `res.total` — existing mismatch, didn't fix (out of scope)
+- `toLocaleDateString` + `toLocaleTimeString` split gives cleaner formatting than one call with all options
+
+## SD-003 Learnings
+- Prettier has no SQL parser — don't include .sql files in prettier --write calls
+- The `updated_at` backoff works because scheduled_messages rows are created well before scheduled_at arrives, so updated_at is always old enough on first attempt
+- Supabase JS client `.lt('retry_count', 3)` maps to `retry_count < 3` — no raw SQL needed
+- When update has conditional fields, use spread: `...(condition && { field: value })`
+
+## SD-002 Learnings
+- scheduled_messages.conversation_id may be pre-set (from UI) or null — check it before calling findConversation()
+- The find-or-create conversation pattern from POST /api/messages/send is the canonical reference — uses phone_normalized + phone variant matching
+- metadata.source='scheduled' + metadata.scheduled_message_id links the message record back to the scheduled_messages row
+- Build guard hook blocks `npx vite build` without PUBLIC_API_URL — use `PUBLIC_API_URL=https://api.lemedspa.app npx vite build`

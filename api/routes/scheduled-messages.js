@@ -90,12 +90,15 @@ router.post('/', logAction('scheduled.create'), async (req, res) => {
 router.put('/:id', logAction('scheduled.update'), async (req, res) => {
 	const updates = {};
 
-	// Map camelCase to snake_case
-	if (req.body.scheduledAt) updates.scheduled_at = req.body.scheduledAt;
+	// Accept both camelCase and snake_case field names
+	const scheduledAt = req.body.scheduledAt || req.body.scheduled_at;
+	if (scheduledAt) updates.scheduled_at = scheduledAt;
 	if (req.body.body) updates.body = req.body.body;
 	if (req.body.status) updates.status = req.body.status;
-	if (req.body.toNumber) updates.to_number = req.body.toNumber;
-	if (req.body.fromNumber) updates.from_number = req.body.fromNumber;
+	const toNumber = req.body.toNumber || req.body.to_number;
+	if (toNumber) updates.to_number = toNumber;
+	const fromNumber = req.body.fromNumber || req.body.from_number;
+	if (fromNumber) updates.from_number = fromNumber;
 
 	if (Object.keys(updates).length === 0) {
 		return res.status(400).json({ error: 'No valid fields to update' });
