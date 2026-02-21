@@ -1,3 +1,73 @@
+## Session — 2026-02-21 (Session 44)
+**Focus:** Messaging features foundation — backend, components, and scaffolding for full messaging overhaul
+
+**Branch:** `claude/add-messaging-features-gPufz`
+
+**Accomplished:**
+- **Database migration** — Created `api/db/migration-messaging.sql` with:
+  - `sms_templates` table (name, body, category, tags, is_active, created_by, metadata)
+  - `scheduled_messages` table (to_number, from_number, body, template_id, scheduled_at, status, etc.)
+  - Full RLS policies, indexes, triggers for both tables
+  - 6 seed templates (appointment reminder, welcome, follow-up, promotion, reschedule, thank you)
+  - **NOT YET APPLIED** — needs `/migrate` or manual SQL execution on Supabase
+- **API routes** — Three new backend routes, all syntax-verified:
+  - `api/routes/templates.js` — Full CRUD for SMS templates (GET list with filtering, GET by ID, POST create, PUT update, DELETE soft-delete)
+  - `api/routes/scheduled-messages.js` — CRUD for scheduled messages (GET list with status filter, POST schedule, PUT update pending, DELETE cancel, GET stats)
+  - Added `GET /api/messages/log` endpoint to existing `messages.js` — flat message log with direction/search/twilioNumber filtering (for Inbound/Outbound views)
+  - All three registered in `server.js` at `/api/templates`, `/api/scheduled-messages`, existing `/api/messages/log`
+- **UI components created:**
+  - `src/lib/components/ui/tabs/` — Tabs, TabsList, TabsTrigger, TabsContent (bits-ui based, shadcn-svelte style)
+  - `src/lib/components/ui/textarea/` — Textarea component
+  - `src/lib/components/messaging/EmojiPicker.svelte` — 5-category emoji picker with search, click-outside-close
+  - `src/lib/components/messaging/TagInsert.svelte` — 13 dynamic merge tags (first_name, date, service, etc.) with descriptions
+  - `src/lib/components/messaging/TemplateInsert.svelte` — Template quick-insert dropdown that loads from API, with search and category badges
+
+**What's NOT Done Yet (remaining work for next session):**
+1. **Restructure `src/routes/(auth)/messages/+page.svelte`** — The main page needs to be rebuilt with tabbed navigation. Current page is a single-view chat interface. Needs conversion to tabbed layout with sections: Chats, Templates, Outbound, Inbound, Scheduled.
+2. **Enhanced compose bar** — Wire EmojiPicker, TagInsert, TemplateInsert, and attachment button into the message compose area (the `<!-- Compose -->` section in the chat view).
+3. **Templates management tab** — Full CRUD UI: list with search/filter by category, create/edit dialog/sheet, preview, delete. API routes are ready at `/api/templates`.
+4. **Outbound message log tab** — Table view of sent messages. API endpoint ready at `GET /api/messages/log?direction=outbound`.
+5. **Inbound message log tab** — Table view of received messages. API endpoint ready at `GET /api/messages/log?direction=inbound`.
+6. **Scheduled messages tab** — List of pending/sent/cancelled scheduled messages, schedule new message form. API routes ready at `/api/scheduled-messages`.
+7. **Sidebar navigation update** — Messages section should have sub-items or the tab navigation handles it within the page.
+8. **Run the DB migration** — `api/db/migration-messaging.sql` needs to be applied to Supabase before templates/scheduled messages work.
+
+**Diagram:**
+```
+Messaging Architecture:
+
+  src/routes/(auth)/messages/+page.svelte
+    ├── [Tab: Chats]     → existing conversation UI + enhanced compose bar
+    │                       ├── EmojiPicker.svelte
+    │                       ├── TagInsert.svelte (13 merge tags)
+    │                       ├── TemplateInsert.svelte (loads from API)
+    │                       └── Attachment button
+    ├── [Tab: Templates]  → CRUD management → api/routes/templates.js → sms_templates table
+    ├── [Tab: Outbound]   → message log     → GET /api/messages/log?direction=outbound
+    ├── [Tab: Inbound]    → message log     → GET /api/messages/log?direction=inbound
+    └── [Tab: Scheduled]  → schedule mgmt   → api/routes/scheduled-messages.js → scheduled_messages table
+
+  API Endpoints (NEW):
+    /api/templates          GET|POST|PUT|DELETE  — SMS template CRUD
+    /api/scheduled-messages GET|POST|PUT|DELETE  — Scheduled message management
+    /api/messages/log       GET                  — Flat message log with direction filter
+```
+
+**Key Implementation Notes for Next Agent:**
+- The existing `+page.svelte` is 770 lines. The chat UI (conversation list + thread view + compose) should become the **Chats tab content**. Wrap the existing layout in a `TabsContent` for the "chats" tab value.
+- All 3 compose helper components (EmojiPicker, TagInsert, TemplateInsert) use the same pattern: relative-positioned parent, absolute-positioned dropdown, click-outside-close via `$effect`. They all call back via `onSelect`/`onInsert` prop.
+- Template body uses `{{tag_name}}` syntax for merge tags. The TagInsert component already has all 13 tags defined.
+- The `bits-ui` package is already installed (used by existing shadcn components). The new Tabs components use `bits-ui` Tabs primitive.
+- Build check: the Vite build fails due to missing `PUBLIC_SUPABASE_URL` env var in this environment — this is pre-existing and not caused by these changes. All new JS files pass `node -c` syntax checks.
+
+**Current State:**
+- All new files committed and pushed to `claude/add-messaging-features-gPufz`
+- Backend is fully ready (API routes + DB migration SQL)
+- Frontend has all building-block components ready
+- Main page restructure is the key remaining work
+
+---
+
 ## Session — 2026-02-20 (Session 43)
 **Focus:** Voicemail fixes, SMS from-number fix, TextMagic outbound integration
 
