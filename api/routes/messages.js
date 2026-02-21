@@ -385,9 +385,11 @@ router.post('/:id/react', logAction('messages.react'), async (req, res) => {
 				if (isLastMessage) {
 					smsBody = emoji;
 				} else {
+					const msgDate = new Date(msg.created_at);
+					const dateStr = `${msgDate.getMonth() + 1}/${msgDate.getDate()} ${msgDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Los_Angeles' }).toLowerCase().replace(' ', '')}`;
 					const snippet = (msg.body || '').slice(0, 50);
 					const ellipsis = (msg.body || '').length > 50 ? '\u2026' : '';
-					smsBody = `${emoji} \u201c${snippet}${ellipsis}\u201d`;
+					smsBody = `${emoji} to ${dateStr}: \u201c${snippet}${ellipsis}\u201d`;
 				}
 
 				const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
