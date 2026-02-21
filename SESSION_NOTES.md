@@ -1,4 +1,26 @@
-## Session — 2026-02-21 (Session 47)
+## Session — 2026-02-21 (Session 48)
+**Focus:** Update Twilio staging Studio flow + gitignore cleanup
+
+**Accomplished:**
+- Updated Twilio Studio flow `FW9d3adadbd331019576b71c0a586fc491` for staging
+  - Renamed to "LeMed Main IVR — Staging", published as revision 71
+  - Replaced all 16 `api.lemedspa.app` URLs → `staging-api.lemedspa.app`
+  - Updated local `twilio/flows/test-ivr.json` to match
+- Added `.mcp.json` and `.firecrawl/` to `.gitignore` (contain API keys)
+
+**Current State:**
+- Full staging environment operational with staging Studio flow
+- All 11 webhook tests passing against staging
+- On `main` branch
+
+**Next Steps:**
+- Ensure `TWILIO_PROD_FLOW_SID=FW9d3adadbd331019576b71c0a586fc491` in staging Render env vars
+- Set up git workflow: feature branches → PR into `staging` → merge to `main`
+- Continue feature development
+
+---
+
+## Session — 2026-02-21 (Session 47b)
 **Focus:** Fix contact names in direction filter + add iMessage-style message reactions
 
 **Accomplished:**
@@ -11,38 +33,17 @@
 - DB migration applied: `reactions jsonb DEFAULT '[]'` on messages table
 - All 129 vitest + 66 node:test passing, deployed to CF Pages + Render
 
-**Diagram:**
-```
-Message Bubble (ChatsTab.svelte)
-├── oncontextmenu / long-press (500ms)
-│   └── MessageReactions.svelte (floating bar, 9 emojis)
-│       └── onReact(emoji)
-│           ├── Optimistic UI update (pill below bubble)
-│           └── POST /api/messages/:id/react
-│               ├── JSONB append: [{emoji, reacted_by, created_at}]
-│               └── Twilio SMS reply
-│                   ├── Latest msg → "👍"
-│                   └── Older msg → "👍 "snippet…""
+---
 
-Direction Filter (log view)
-├── contact_id + display_name → ◆ Gold diamond + name
-├── display_name only → secondary text
-└── neither → formatPhone()
-```
+## Session — 2026-02-21 (Session 47)
+**Focus:** Full mirror staging environment setup
 
-**Current State:**
-- Messaging reactions fully functional (UI + API + SMS)
-- Direction filter shows proper contact names with gold diamond indicators
-- Build clean, all tests passing, deployed to production
-
-**Issues:**
-- None blocking
-
-**Next Steps:**
-- Test reactions end-to-end on lemedspa.app (right-click bubble, verify SMS sent)
-- Consider adding reaction removal (tap existing reaction to toggle off)
-- Wire SchedulePopover into ChatsTab compose flow
-- Phase 1C: services catalog + automation sequences
+**Accomplished:**
+- **Implemented staging infrastructure code** — committed `7d4e7f2` to main
+- **Created Supabase staging project** (`lemedapp-staging`, ref: `ohdrhqmfzinizrldoaih`)
+- **Deployed Render staging API** + CF Pages staging frontend
+- **Created `staging` git branch** — pushed to `origin/staging`
+- 11/11 webhook tests passing against staging
 
 ---
 

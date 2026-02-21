@@ -45,7 +45,7 @@
 					"x": 180,
 					"y": -10
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/voice/incoming"
+				"url": "https://staging-api.lemedspa.app/api/webhooks/voice/incoming"
 			},
 			"transitions": [
 				{
@@ -68,7 +68,7 @@
 					"x": 180,
 					"y": 120
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/voice/hours-check"
+				"url": "https://staging-api.lemedspa.app/api/webhooks/voice/hours-check"
 			},
 			"transitions": [
 				{
@@ -162,7 +162,7 @@
 					"x": -300,
 					"y": 620
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+				"url": "https://staging-api.lemedspa.app/api/webhooks/sms/studio-send"
 			},
 			"transitions": [
 				{
@@ -185,11 +185,11 @@
 					"y": 620
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=operator",
+				"recording_status_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/recording?mailbox=operator",
 				"timeout": 5,
 				"transcribe": true,
 				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"transcription_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -331,7 +331,7 @@
 					"y": 800
 				},
 				"timeout": "14400",
-				"url": "https://api.lemedspa.app/api/twilio/connect-operator"
+				"url": "https://staging-api.lemedspa.app/api/twilio/connect-operator"
 			},
 			"transitions": [
 				{
@@ -552,7 +552,7 @@
 					"x": 100,
 					"y": 1600
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+				"url": "https://staging-api.lemedspa.app/api/webhooks/sms/studio-send"
 			},
 			"transitions": [
 				{
@@ -575,11 +575,11 @@
 					"y": 1800
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=lea",
+				"recording_status_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/recording?mailbox=lea",
 				"timeout": 5,
 				"transcribe": true,
 				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"transcription_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -634,7 +634,7 @@
 					"x": 590,
 					"y": 1600
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+				"url": "https://staging-api.lemedspa.app/api/webhooks/sms/studio-send"
 			},
 			"transitions": [
 				{
@@ -657,11 +657,11 @@
 					"y": 1600
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=clinical_md",
+				"recording_status_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/recording?mailbox=clinical_md",
 				"timeout": 5,
 				"transcribe": true,
 				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"transcription_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{
@@ -767,7 +767,7 @@
 					"x": 670,
 					"y": 1800
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+				"url": "https://staging-api.lemedspa.app/api/webhooks/sms/studio-send"
 			},
 			"transitions": [
 				{
@@ -821,7 +821,7 @@
 					"x": 820,
 					"y": 2040
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/sms/studio-send"
+				"url": "https://staging-api.lemedspa.app/api/webhooks/sms/studio-send"
 			},
 			"transitions": [
 				{
@@ -844,11 +844,11 @@
 					"y": 2040
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=accounts",
+				"recording_status_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/recording?mailbox=accounts",
 				"timeout": 5,
 				"transcribe": true,
 				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"transcription_callback": "https://staging-api.lemedspa.app/api/webhooks/voice/transcription"
 			},
 			"transitions": [
 				{

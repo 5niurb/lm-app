@@ -40,6 +40,10 @@ npm-debug.log*
 # Claude Code — track shared settings, skills, hooks, rules; ignore local settings
 .claude/settings.local.json
 
+# MCP config (contains API keys)
+.mcp.json
+.firecrawl/
+
 # Subagent temp files
 .tmp/
 supabase/.temp/
