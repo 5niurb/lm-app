@@ -1,3 +1,40 @@
+## Session — 2026-02-21 (Session 49)
+**Focus:** Staging auth setup + production redeploy
+
+**Accomplished:**
+- Created staging login user in Supabase (lemedapp-staging project `ohdrhqmfzinizrldoaih`)
+  - Email: ops@lemedspa.com, password set, email confirmed, identity record created
+- Redeployed production frontend to CF Pages — verified 200, API healthy, CORS ok
+  - Build note: .env file missing from repo root; must pass all PUBLIC_ vars inline
+
+**Diagram:**
+```
+Staging Supabase (ohdrhqmfzinizrldoaih)
+  └── auth.users + auth.identities → ops@lemedspa.com ✓
+
+Production deploy (CF Pages, main branch)
+  ├── Build: PUBLIC_API_URL + PUBLIC_SUPABASE_URL + PUBLIC_SUPABASE_ANON_KEY inline
+  ├── Deploy: 157966ef.lm-app.pages.dev
+  ├── lemedspa.app                → 200 ✓
+  ├── api.lemedspa.app/api/health → ok ✓
+  └── CORS                        → lemedspa.app allowed ✓
+```
+
+**Current State:**
+- Staging login ready at staging.lemedspa.app (ops@lemedspa.com)
+- Production frontend freshly deployed and verified
+- On `main` branch
+
+**Issues:**
+- No .env file in repo root — build requires all PUBLIC_ vars passed inline
+- Dependabot: 2 high, 1 low vulnerabilities on default branch
+
+**Next Steps:**
+- Create .env file with public vars for local dev (or document the inline build pattern)
+- Continue feature development
+
+---
+
 ## Session — 2026-02-21 (Session 48)
 **Focus:** Staging Studio flow + deploy prod & staging frontends
 
