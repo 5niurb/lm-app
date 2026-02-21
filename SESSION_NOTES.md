@@ -1,3 +1,51 @@
+## Session — 2026-02-21 (Session 47)
+**Focus:** Fix contact names in direction filter + add iMessage-style message reactions
+
+**Accomplished:**
+- Fixed direction filter log view to show contact names instead of phone-only (3-tier: gold diamond linked contact → display name → phone)
+- Created `MessageReactions.svelte` — floating emoji bar (9 emojis) triggered by right-click/long-press
+- Added reaction event handlers to `ChatsTab.svelte` — contextmenu, 500ms long-press with touchmove cancel, optimistic updates
+- Reaction pills rendered below message bubbles with grouped emoji counts (iMessage-style)
+- New `POST /api/messages/:id/react` endpoint — JSONB storage + SMS reply via Twilio
+- SMS context-aware: plain emoji for latest msg, `👍 to 2/21 3:15pm: "quoted snippet…"` for older msgs (LA timezone)
+- DB migration applied: `reactions jsonb DEFAULT '[]'` on messages table
+- All 129 vitest + 66 node:test passing, deployed to CF Pages + Render
+
+**Diagram:**
+```
+Message Bubble (ChatsTab.svelte)
+├── oncontextmenu / long-press (500ms)
+│   └── MessageReactions.svelte (floating bar, 9 emojis)
+│       └── onReact(emoji)
+│           ├── Optimistic UI update (pill below bubble)
+│           └── POST /api/messages/:id/react
+│               ├── JSONB append: [{emoji, reacted_by, created_at}]
+│               └── Twilio SMS reply
+│                   ├── Latest msg → "👍"
+│                   └── Older msg → "👍 to 2/21 3:15pm: "snippet…""
+
+Direction Filter (log view)
+├── contact_id + display_name → ◆ Gold diamond + name
+├── display_name only → secondary text
+└── neither → formatPhone()
+```
+
+**Current State:**
+- Messaging reactions fully functional (UI + API + SMS)
+- Direction filter shows proper contact names with gold diamond indicators
+- Build clean, all tests passing, deployed to production
+
+**Issues:**
+- None blocking
+
+**Next Steps:**
+- Test reactions end-to-end on lemedspa.app (right-click bubble, verify SMS sent)
+- Consider adding reaction removal (tap existing reaction to toggle off)
+- Wire SchedulePopover into ChatsTab compose flow
+- Phase 1C: services catalog + automation sequences
+
+---
+
 ## Session — 2026-02-21 (Session 46)
 **Focus:** Messaging UI redesign — decompose 770-line monolith into tabbed component architecture
 
@@ -13,6 +61,7 @@
 - Code review caught 5 bugs (interval leak, null deref, missing error handling, double-load, fragile $effect) — all fixed
 - Cleaned up unused imports (Search, Input, twilioNumbers, selectedNumber) from ScheduledTab
 - All 129 vitest + 66 node:test passing, build clean, pushed to main
+- Deployed to Cloudflare Pages — verified frontend (200), API health (ok), CORS (correct)
 
 **Diagram:**
 ```
