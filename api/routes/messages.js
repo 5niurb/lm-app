@@ -414,4 +414,67 @@ router.post('/:id/react', logAction('messages.react'), async (req, res) => {
 	}
 });
 
+/**
+ * GET /api/messages/:id/media/:index
+ * Proxy Twilio MMS media so the browser doesn't need Twilio credentials.
+ */
+router.get('/:id/media/:index', logAction('messages.media'), async (req, res) => {
+	const { id, index } = req.params;
+	const idx = parseInt(index, 10);
+
+	// Fetch the message to get media_urls
+	const { data: msg, error } = await supabaseAdmin
+		.from('messages')
+		.select('media_urls')
+		.eq('id', id)
+		.single();
+
+	if (error || !msg) {
+		return res.status(404).json({ error: 'Message not found' });
+	}
+
+	const mediaUrls = msg.media_urls;
+	if (!Array.isArray(mediaUrls) || isNaN(idx) || idx < 0 || idx >= mediaUrls.length) {
+		return res.status(404).json({ error: 'Media not found at this index' });
+	}
+
+	const mediaUrl = mediaUrls[idx];
+
+	try {
+		const accountSid = process.env.TWILIO_ACCOUNT_SID;
+		const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+		const twilioRes = await fetch(mediaUrl, {
+			headers: {
+				Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+			}
+		});
+
+		if (!twilioRes.ok) {
+			console.error(`Twilio media fetch failed: ${twilioRes.status} ${twilioRes.statusText}`);
+			return res.status(502).json({ error: 'Failed to fetch media from Twilio' });
+		}
+
+		res.set('Content-Type', twilioRes.headers.get('content-type') || 'application/octet-stream');
+		const contentLength = twilioRes.headers.get('content-length');
+		if (contentLength) res.set('Content-Length', contentLength);
+		res.set('Cache-Control', 'private, max-age=3600');
+
+		const reader = twilioRes.body.getReader();
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				res.end();
+				break;
+			}
+			res.write(value);
+		}
+	} catch (e) {
+		console.error('Media proxy error:', e.message);
+		if (!res.headersSent) {
+			return res.status(502).json({ error: 'Failed to proxy media' });
+		}
+	}
+});
+
 export default router;
