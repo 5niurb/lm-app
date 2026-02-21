@@ -1,6 +1,5 @@
 <script>
-	import { Clock, Search, ChevronLeft, ChevronRight, Pencil, X } from '@lucide/svelte';
-	import { Input } from '$lib/components/ui/input/index.ts';
+	import { Clock, ChevronLeft, ChevronRight, Pencil, X } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button/index.ts';
 	import { Skeleton } from '$lib/components/ui/skeleton/index.ts';
 	import {
@@ -15,13 +14,11 @@
 
 	/**
 	 * @type {{
-	 *   twilioNumbers: Array<{sid: string, phoneNumber: string, friendlyName: string}>,
-	 *   selectedNumber: string,
 	 *   onStatsChange: (pending: number) => void,
 	 *   onError: (msg: string) => void
 	 * }}
 	 */
-	let { twilioNumbers, selectedNumber, onStatsChange, onError } = $props();
+	let { onStatsChange, onError } = $props();
 
 	/** @type {any[]} */
 	let messages = $state([]);

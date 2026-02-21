@@ -101,8 +101,6 @@
 
 		<TabsContent value="scheduled" class="flex-1 overflow-hidden mt-0">
 			<ScheduledTab
-				{twilioNumbers}
-				{selectedNumber}
 				onStatsChange={(pending) => {
 					scheduledPending = pending;
 				}}

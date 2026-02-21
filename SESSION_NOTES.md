@@ -1,3 +1,54 @@
+## Session — 2026-02-21 (Session 46)
+**Focus:** Messaging UI redesign — decompose 770-line monolith into tabbed component architecture
+
+**Accomplished:**
+- Applied DB migration via Supabase MCP: `sms_templates` + `scheduled_messages` tables with RLS, seeded 6 templates
+- Deleted 3 stale remote branches + 1 local branch (cloud agent leftovers)
+- Created `ComposeBar.svelte` — toolbar (emoji/tag/template/schedule) + auto-resize textarea + Enter-to-send
+- Created `SchedulePopover.svelte` — datetime-local dropdown with 15-min interval defaults
+- Extracted `ChatsTab.svelte` (~720 lines) from monolith — all conversation logic + direction filter (All/Inbound/Outbound)
+- Rewrote `+page.svelte` as slim orchestrator (770 → ~120 lines) with 3-tab layout
+- Created `TemplatesTab.svelte` — CRUD with Sheet, category pills, char count, live preview with merge tags
+- Created `ScheduledTab.svelte` — status filter pills, pagination, edit/cancel for pending messages
+- Code review caught 5 bugs (interval leak, null deref, missing error handling, double-load, fragile $effect) — all fixed
+- Cleaned up unused imports (Search, Input, twilioNumbers, selectedNumber) from ScheduledTab
+- All 129 vitest + 66 node:test passing, build clean, pushed to main
+
+**Diagram:**
+```
++page.svelte (orchestrator, ~120 lines)
+├── [Chats] ──→ ChatsTab.svelte (~720 lines)
+│                ├── Direction pills: [All] [↓ Inbound] [↑ Outbound]
+│                ├── Conversation list ←→ Thread view
+│                └── ComposeBar.svelte
+│                     ├── EmojiPicker | TagInsert | TemplateInsert | SchedulePopover
+│                     └── Auto-resize textarea + Send button
+├── [Templates] ──→ TemplatesTab.svelte (~280 lines)
+│                    ├── Category pills + search
+│                    └── Sheet: create/edit with preview
+└── [Scheduled] ──→ ScheduledTab.svelte (~250 lines)
+                     ├── Status pills: Pending|Sent|Failed|Cancelled|All
+                     └── Sheet: edit body + datetime
+```
+
+**Current State:**
+- Messaging page fully restructured into 6 new components
+- All existing chat functionality preserved (conversations, threads, polling, URL deep-links)
+- New tabs (Templates, Scheduled) fully functional with API integration
+- Direction filter (Inbound/Outbound) integrated into Chats tab
+- Build passes, all tests pass, pushed to main
+
+**Issues:**
+- None blocking. ESLint has ~15 warnings across messaging files (non-blocking, mostly unused catch vars)
+
+**Next Steps:**
+- Test the deployed UI end-to-end on lemedspa.app after CF Pages build
+- Consider adding template quick-insert from ComposeBar (TemplateInsert already wired)
+- Wire SchedulePopover into ChatsTab compose flow (schedule from conversation view)
+- Phase 1C: services catalog + automation sequences
+
+---
+
 ## Session — 2026-02-21 (Session 45)
 **Focus:** IVR closed-hours time split — new audio files, auto-text vs voicemail routing
 
