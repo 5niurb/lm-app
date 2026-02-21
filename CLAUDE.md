@@ -179,6 +179,25 @@ npx wrangler pages deploy .svelte-kit/cloudflare --project-name lm-app --branch 
 
 **CRITICAL:** The `.env` file has `PUBLIC_API_URL=http://localhost:3001` for local dev. When building for production, you MUST override it with the Render URL or the deployed site will try to reach localhost and fail silently with "failed to fetch" errors.
 
+**IVR / Twilio Studio Flows (test → prod):**
+
+Two flows, each permanently wired to its own phone number:
+- **Test:** `FW9d3adadbd331019576b71c0a586fc491` — test phone number
+- **Prod:** `FW839cc419ccdd08f5199da5606f463f87` — main number (+18184633772)
+
+Workflow (like a branch → PR → merge):
+1. Edit `twilio/flows/main-ivr.json`
+2. Deploy to **test flow only**: `node twilio/deploy.js FW9d3adadbd331019576b71c0a586fc491 twilio/flows/main-ivr.json --publish`
+3. Tell the user to call the test number and verify
+4. **Wait for explicit user approval** before touching prod
+5. On approval, deploy to **prod flow**: `node twilio/deploy.js FW839cc419ccdd08f5199da5606f463f87 twilio/flows/main-ivr.json --publish`
+
+**Rules:**
+- NEVER deploy directly to the prod flow without user approval
+- NEVER deploy to both flows simultaneously
+- Always deploy to test first, even for "small" changes
+- After prod deploy, confirm the revision number to the user
+
 ## Testing & Verification
 
 **Always verify changes before telling the user they're done.** After making frontend or API changes:
