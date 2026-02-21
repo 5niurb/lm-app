@@ -1,5 +1,5 @@
 {
-	"description": "LeMed Main IVR — Updated 2026-02-20 (SMS sends from called number)",
+	"description": "LeMed Main IVR — Updated 2026-02-21 (closed hours: before 9pm auto-text, after 9pm voicemail only)",
 	"flags": {
 		"allow_concurrent_calls": true
 	},
@@ -68,7 +68,7 @@
 					"x": 180,
 					"y": 120
 				},
-				"url": "https://api.lemedspa.app/api/webhooks/voice/hours-check"
+				"url": "https://api.lemedspa.app/api/webhooks/voice/hours-check?force=closed&hour=19"
 			},
 			"transitions": [
 				{
@@ -118,10 +118,81 @@
 						}
 					],
 					"event": "match",
-					"next": "gather_closed"
+					"next": "split_closed_time"
 				}
 			],
 			"type": "split-based-on"
+		},
+		{
+			"name": "split_closed_time",
+			"properties": {
+				"input": "{{widgets.check_hours.parsed.hour}}",
+				"offset": {
+					"x": -100,
+					"y": 340
+				}
+			},
+			"transitions": [
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.check_hours.parsed.hour}}"],
+							"friendly_name": "after_9pm",
+							"type": "greater_than",
+							"value": "20"
+						}
+					],
+					"event": "match",
+					"next": "play_closed_no_text"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.check_hours.parsed.hour}}"],
+							"friendly_name": "6pm_to_9pm",
+							"type": "greater_than",
+							"value": "17"
+						}
+					],
+					"event": "match",
+					"next": "gather_closed"
+				},
+				{
+					"conditions": [
+						{
+							"arguments": ["{{widgets.check_hours.parsed.hour}}"],
+							"friendly_name": "midnight_to_9am",
+							"type": "less_than",
+							"value": "9"
+						}
+					],
+					"event": "match",
+					"next": "play_closed_no_text"
+				},
+				{
+					"event": "noMatch",
+					"next": "x0a-MainGreetingMenu_Open"
+				}
+			],
+			"type": "split-based-on"
+		},
+		{
+			"name": "play_closed_no_text",
+			"properties": {
+				"loop": 1,
+				"offset": {
+					"x": -350,
+					"y": 480
+				},
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/closed-no-auto-text.wav"
+			},
+			"transitions": [
+				{
+					"event": "audioComplete",
+					"next": "record_closed_vmail"
+				}
+			],
+			"type": "say-play"
 		},
 		{
 			"name": "gather_closed",
@@ -133,7 +204,7 @@
 					"x": -100,
 					"y": 420
 				},
-				"play": "https://lm-ivr-assets-2112.twil.io/assets/Closed-text-us-wav.wav",
+				"play": "https://lm-ivr-assets-2112.twil.io/assets/closed-press-1-auto-text.wav",
 				"stop_gather": true,
 				"timeout": 2
 			},
