@@ -120,7 +120,7 @@ app.listen(PORT, () => {
 const KEEP_ALIVE_URL =
 	process.env.RENDER_EXTERNAL_URL ||
 	(process.env.NODE_ENV === 'production' ? 'https://lm-app-api.onrender.com' : null);
-if (KEEP_ALIVE_URL) {
+if (KEEP_ALIVE_URL && process.env.DISABLE_KEEP_ALIVE !== 'true') {
 	const INTERVAL = 5 * 60 * 1000; // 5 minutes (well within Render's 15-min sleep threshold)
 	const KEEP_ALIVE_START = 9; // 9 AM Pacific
 	const KEEP_ALIVE_END = 21; // 9 PM Pacific

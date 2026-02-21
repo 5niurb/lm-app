@@ -16,7 +16,8 @@
 		"format:check": "prettier --check .",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:api": "node --test api/tests/health.test.js api/tests/security-utils.test.js api/tests/gcal-utils.test.js"
+		"test:api": "node --test api/tests/health.test.js api/tests/security-utils.test.js api/tests/gcal-utils.test.js",
+		"test:webhooks": "node --test api/tests/webhooks.test.js"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.2",

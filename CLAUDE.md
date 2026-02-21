@@ -215,6 +215,54 @@ Workflow (like a branch → PR → merge):
 
 **Prefer testing on the hosted site** (lm-app.pages.dev) over localhost. Localhost is only for active code changes with hot-reload.
 
+## Staging Environment
+
+Fully isolated staging environment for safe pre-deploy verification. CI runs against staging only — never prod.
+
+**Staging URLs:**
+- Frontend: https://staging.lemedspa.app (CF Pages, `staging` branch)
+- API: https://staging-api.lemedspa.app (Render, spins down on idle)
+- Supabase: staging project #2 (seed/test data, separate from production)
+
+**Architecture:**
+```
+PRODUCTION (main)                STAGING (staging)
+lemedspa.app                     staging.lemedspa.app
+  → api.lemedspa.app               → staging-api.lemedspa.app
+  → Supabase #1 (real data)        → Supabase #2 (test data)
+  → Twilio prod creds              → Twilio test creds
+```
+
+**Git Workflow:**
+1. Create feature branch from `staging`
+2. PR into `staging` → CI runs, staging auto-deploys
+3. Verify on staging.lemedspa.app
+4. Merge `staging` → `main` → production auto-deploys
+
+**Key Differences from Production:**
+- `NODE_ENV=staging` (not production)
+- `DISABLE_KEEP_ALIVE=true` — staging API spins down after idle (saves Render hours)
+- Uses Twilio test credentials — no real SMS/calls sent
+- Supabase project #2 — seed data, safe to reset
+
+**Deploying to Staging:**
+```bash
+# Frontend: push to staging branch → CF Pages auto-deploys
+git push origin staging
+
+# API: auto-deploys on push to staging branch (Render)
+# No keep-alive — service spins down after ~15 min idle
+
+# Manual staging frontend build (if needed):
+PUBLIC_API_URL=https://staging-api.lemedspa.app npx vite build
+```
+
+**Verifying Staging:**
+```bash
+curl -s https://staging-api.lemedspa.app/api/health
+curl -s -H "Origin: https://staging.lemedspa.app" https://staging-api.lemedspa.app/api/health
+```
+
 ## Database
 
 - Schema: `api/db/schema.sql` — paste into Supabase SQL Editor

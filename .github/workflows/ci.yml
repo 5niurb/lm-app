@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
   build-and-test:
@@ -43,4 +43,10 @@ jobs:
       - name: API integration tests
         run: npm run test:api
         env:
-          API_URL: https://api.lemedspa.app
+          API_URL: https://staging-api.lemedspa.app
+
+      - name: Webhook tests (staging)
+        run: npm run test:webhooks
+        env:
+          API_URL: https://staging-api.lemedspa.app
+        continue-on-error: true # Staging API may not be deployed yet

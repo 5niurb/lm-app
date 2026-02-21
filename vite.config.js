@@ -9,7 +9,8 @@ export default defineConfig({
 		exclude: [
 			'api/tests/health.test.js',
 			'api/tests/security-utils.test.js',
-			'api/tests/gcal-utils.test.js'
+			'api/tests/gcal-utils.test.js',
+			'api/tests/webhooks.test.js'
 		]
 	}
 });
