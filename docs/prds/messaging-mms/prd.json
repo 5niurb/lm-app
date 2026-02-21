@@ -88,8 +88,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 5,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "The display logic from MMS-001 should handle both directions. Outbound images may use Supabase Storage URLs (public) instead of Twilio URLs (proxied). Detect by URL prefix."
 		}
 	]
