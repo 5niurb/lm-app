@@ -25,7 +25,7 @@ router.get('/hours-check', (req, res) => {
 	if (force === 'open' || force === 'closed') {
 		const now = new Date();
 		const laTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-		const hour = laTime.getHours();
+		const hour = req.query.hour != null ? parseInt(req.query.hour, 10) : laTime.getHours();
 		return res.json({
 			status: force,
 			forced: true,
