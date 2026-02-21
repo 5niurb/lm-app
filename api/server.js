@@ -115,16 +115,26 @@ app.listen(PORT, () => {
 });
 
 // Keep-alive ping in production (prevent Render free tier spin-down)
+// Time-boxed: only pings 9 AM – 9 PM Pacific to stay within 750 free hrs/month
 // RENDER_EXTERNAL_URL is auto-set by Render; fallback to known URL
 const KEEP_ALIVE_URL =
 	process.env.RENDER_EXTERNAL_URL ||
 	(process.env.NODE_ENV === 'production' ? 'https://lm-app-api.onrender.com' : null);
 if (KEEP_ALIVE_URL) {
 	const INTERVAL = 5 * 60 * 1000; // 5 minutes (well within Render's 15-min sleep threshold)
+	const KEEP_ALIVE_START = 9; // 9 AM Pacific
+	const KEEP_ALIVE_END = 21; // 9 PM Pacific
 	setInterval(() => {
+		const laHour = new Date().toLocaleString('en-US', {
+			timeZone: 'America/Los_Angeles',
+			hour: 'numeric',
+			hour12: false
+		});
+		const hour = parseInt(laHour, 10);
+		if (hour < KEEP_ALIVE_START || hour >= KEEP_ALIVE_END) return;
 		fetch(`${KEEP_ALIVE_URL}/api/health`)
 			.then((r) => console.log(`[keep-alive] ${r.status}`))
 			.catch((e) => console.warn(`[keep-alive] failed: ${e.message}`));
 	}, INTERVAL);
-	console.log(`Keep-alive ping enabled: ${KEEP_ALIVE_URL} every 5m`);
+	console.log(`Keep-alive ping enabled: ${KEEP_ALIVE_URL} every 5m (9 AM–9 PM Pacific)`);
 }

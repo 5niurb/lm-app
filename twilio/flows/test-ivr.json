@@ -77,7 +77,7 @@
 				},
 				{
 					"event": "failed",
-					"next": "x0a-MainGreetingMenu_Open"
+					"next": "gather_closed"
 				}
 			],
 			"type": "make-http-request"
