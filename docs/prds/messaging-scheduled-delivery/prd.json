@@ -36,7 +36,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Reuse findConversation() and lookupContactByPhone() from api/services/phone-lookup.js. Don't duplicate the conversation creation logic."
 		},
@@ -54,7 +54,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "The 5-min backoff uses updated_at (auto-set by trigger on update) as a natural cooldown timer. No need for a separate next_retry_at column."
 		},
@@ -71,7 +71,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "ScheduledTab.svelte already has status colors and pagination. Extend the existing row layout, don't rebuild it."
 		}

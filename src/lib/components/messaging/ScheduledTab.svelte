@@ -54,7 +54,7 @@
 			params.set('pageSize', pageSize.toString());
 			const res = await api(`/api/scheduled-messages?${params}`);
 			messages = res.data || [];
-			totalCount = res.total || 0;
+			totalCount = res.count || 0;
 		} catch (e) {
 			onError(e.message);
 		} finally {
