@@ -1,0 +1,126 @@
+{
+	"project": "lm-app",
+	"branchName": "ralph/broadcast",
+	"description": "Bulk SMS messaging with contact filters, merge tags, background sending, and per-contact conversation linking",
+	"userStories": [
+		{
+			"id": "BC-001",
+			"title": "Broadcast table and API CRUD",
+			"description": "As a staff member, I want to create and manage broadcast campaigns, so that I can prepare bulk messages before sending.",
+			"acceptanceCriteria": [
+				"Migration creates broadcasts table with all columns from prd.md schema",
+				"RLS enabled, authenticated users can read/write",
+				"updated_at trigger fires on update",
+				"GET /api/broadcasts returns all broadcasts sorted by created_at descending",
+				"POST /api/broadcasts creates a draft (requires name and body)",
+				"PUT /api/broadcasts/:id updates allowed fields (only if status='draft')",
+				"DELETE /api/broadcasts/:id hard-deletes (only if status='draft')",
+				"All routes require verifyToken middleware",
+				"Route mounted in server.js at /api/broadcasts",
+				"Build passes: npx vite build"
+			],
+			"priority": 1,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Follow the same CRUD pattern as api/routes/templates.js. Use supabaseAdmin for all queries."
+		},
+		{
+			"id": "BC-002",
+			"title": "Broadcast recipient resolution and preview",
+			"description": "As a staff member, I want to preview who will receive my broadcast before sending, so that I don't accidentally message the wrong people.",
+			"acceptanceCriteria": [
+				"POST /api/broadcasts/:id/preview resolves recipient_filter to a contact list",
+				"Filter by tags: if tags_match='any', contact has ANY of the listed tags; if 'all', contact has ALL",
+				"Filter by source: exact match on contacts.source",
+				"Exclude contacts matching exclude_tags",
+				"Exclude contacts with no phone number",
+				"De-duplicate by phone_normalized",
+				"Returns { count: N, sample: [first 5 contacts with name+phone] }",
+				"Updates broadcasts.recipient_count with the resolved count",
+				"Build passes: npx vite build"
+			],
+			"priority": 2,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Build the filter query dynamically using Supabase .contains() for tags and .eq() for source. The sample contacts help staff verify the filter is correct before sending."
+		},
+		{
+			"id": "BC-003",
+			"title": "Broadcast compose UI with Broadcasts tab",
+			"description": "As a staff member, I want a UI to create and manage broadcasts, so that I can send promotional messages to groups of contacts.",
+			"acceptanceCriteria": [
+				"New 'Broadcasts' tab added to Messages page (4th tab after Scheduled)",
+				"Tab lists all broadcasts with: name, status badge, recipient count, date",
+				"'New Broadcast' button opens compose form (Sheet or inline)",
+				"Compose form has: name input, template selector dropdown (from sms_templates), custom body textarea with merge tag insertion",
+				"Recipient filter section: tag checkboxes (from existing contact tags), source dropdown",
+				"Live recipient count shown (calls preview endpoint on filter change)",
+				"Sample contacts shown below count (name + phone, max 5)",
+				"'Send' button (disabled if count=0 or status!='draft')",
+				"Draft broadcasts show edit/delete actions",
+				"Build passes: npx vite build"
+			],
+			"priority": 3,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Add the tab to src/routes/(auth)/messages/+page.svelte alongside Chats, Templates, Scheduled. Import a new BroadcastsTab component. Match TemplatesTab visual style."
+		},
+		{
+			"id": "BC-004",
+			"title": "Send broadcast as background job",
+			"description": "As the system, I want to send broadcast messages with rate limiting and progress tracking, so that Twilio doesn't reject messages and staff can monitor delivery.",
+			"acceptanceCriteria": [
+				"POST /api/broadcasts/:id/send validates broadcast is in 'draft' status",
+				"Sets status to 'sending', sets started_at to now()",
+				"Resolves recipients using same filter logic as preview",
+				"Loops through recipients with 100ms delay between sends (setTimeout)",
+				"For each recipient: resolve merge tags ({{first_name}} → contact.first_name, etc.)",
+				"Send via Twilio client.messages.create()",
+				"On success: increment sent_count",
+				"On failure: increment failed_count, log error with contact phone",
+				"After all sends: set status='sent', set completed_at",
+				"Updates sent_count and failed_count in DB every 10 messages (batch update for efficiency)",
+				"Returns immediately with { status: 'sending' } — does not wait for all sends",
+				"Build passes: npx vite build"
+			],
+			"priority": 4,
+			"passes": false,
+			"inProgress": false,
+			"notes": "The send loop runs in-process (no separate worker). Use async/await with a delay function. The endpoint returns immediately; the loop continues in background. If the server restarts mid-send, messages with status='sending' should be detectable on next startup (future improvement, not in scope)."
+		},
+		{
+			"id": "BC-005",
+			"title": "Broadcast progress and results view",
+			"description": "As a staff member, I want to see broadcast send progress and results, so that I know how many messages were delivered.",
+			"acceptanceCriteria": [
+				"GET /api/broadcasts/:id/status returns current sent_count, failed_count, recipient_count, status",
+				"Broadcast detail view shows progress bar during 'sending' status (sent_count / recipient_count)",
+				"Progress auto-refreshes every 3 seconds while status='sending'",
+				"Completed broadcasts show final stats: sent (green), failed (red), total",
+				"Sent percentage shown (e.g., '94% delivered')",
+				"Build passes: npx vite build"
+			],
+			"priority": 5,
+			"passes": false,
+			"inProgress": false,
+			"notes": "The progress view can be inline in the BroadcastsTab list (expand the row) or a Sheet detail view. Keep it simple."
+		},
+		{
+			"id": "BC-006",
+			"title": "Insert broadcast messages into conversations",
+			"description": "As a staff member, I want broadcast messages to appear in individual conversation threads, so that I see the full communication history when viewing a contact's thread.",
+			"acceptanceCriteria": [
+				"Each broadcast SMS creates or updates a conversation for that contact (using findConversation pattern)",
+				"Insert into messages table with direction='outbound' and metadata: { source: 'broadcast', broadcast_id: uuid }",
+				"Update conversations.last_message and last_at",
+				"Messages appear in Chats tab thread for each recipient",
+				"Broadcast messages show a subtle 'Broadcast' badge on the bubble (same pattern as auto-reply badge)",
+				"Build passes: npx vite build"
+			],
+			"priority": 6,
+			"passes": false,
+			"inProgress": false,
+			"notes": "This integrates into the send loop from BC-004. After each successful Twilio send, also create the conversation + message record. Use the same findConversation + lookupContactByPhone pattern."
+		}
+	]
+}
