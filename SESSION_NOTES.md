@@ -1,3 +1,57 @@
+## Session — 2026-02-21 (Session 44)
+**Focus:** Google Identity Provider (OAuth) authentication
+
+**Accomplished:**
+- **Google OAuth sign-in** — Added "Sign in with Google" button to login page using `supabase.auth.signInWithOAuth({ provider: 'google' })`
+- **OAuth callback route** — Created `/auth/callback` page to handle redirect from Google → Supabase → app. Supports both PKCE (`exchangeCodeForSession`) and implicit flow
+- **Domain restriction** — Two layers: (1) Google `hd=lemedspa.com` query param pre-filters the consent screen, (2) server-side email validation in callback page signs out non-@lemedspa.com accounts
+- **Profile auto-creation** — Updated `handle_new_user()` trigger to capture `avatar_url` from Google user metadata. Migration 007 created
+- **Login page improvements** — Added `onMount` redirect for already-authenticated users, Google button with branded SVG logo, loading spinner during redirect, "or" divider between Google and password login
+
+**Diagram:**
+```
+Google OAuth Flow:
+  Login page → "Sign in with Google" button
+    → supabase.auth.signInWithOAuth({ provider: 'google', hd: 'lemedspa.com' })
+    → Redirect to Google consent screen (filtered to @lemedspa.com)
+    → Google → Supabase callback (skvsjcckissnyxcafwyr.supabase.co/auth/v1/callback)
+    → Supabase → /auth/callback (our app)
+    → exchangeCodeForSession() or implicit token detection
+    → Validate email ends with @lemedspa.com
+    → goto('/dashboard')
+
+Profile creation (existing trigger):
+  auth.users INSERT → handle_new_user() → profiles INSERT (id, email, full_name, avatar_url)
+```
+
+**Current State:**
+- Code committed and pushed to `claude/google-idp-auth-uuurj` branch (2f812d2)
+- 129 tests passing, lint clean, format clean
+- NOT yet deployed — requires Supabase dashboard configuration first
+
+**Supabase Configuration Required (before this will work):**
+1. Go to Supabase Dashboard → Authentication → Providers → Google
+2. Enable Google provider
+3. Add Google OAuth Client ID and Client Secret (from Google Cloud Console)
+4. In Google Cloud Console: add Supabase callback URL as authorized redirect URI: `https://skvsjcckissnyxcafwyr.supabase.co/auth/v1/callback`
+5. In Supabase → Authentication → URL Configuration → Redirect URLs: add `https://lemedspa.app/auth/callback` and `http://localhost:5173/auth/callback`
+6. Run migration 007 in Supabase SQL Editor
+
+**Files Changed:**
+- `src/routes/login/+page.svelte` — Google sign-in button + handler
+- `src/routes/auth/callback/+page.svelte` — NEW: OAuth redirect handler
+- `api/db/schema.sql` — Updated handle_new_user trigger (avatar_url)
+- `api/db/migrations/007-google-oauth-profile-trigger.sql` — NEW: migration
+
+**Next Steps:**
+- Configure Google OAuth in Supabase dashboard
+- Create Google Cloud OAuth 2.0 credentials
+- Run migration 007
+- Deploy frontend to Cloudflare Pages
+- Test end-to-end Google sign-in flow
+
+---
+
 ## Session — 2026-02-20 (Session 43)
 **Focus:** Voicemail fixes, SMS from-number fix, TextMagic outbound integration
 
