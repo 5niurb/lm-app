@@ -1,3 +1,97 @@
+## Session — 2026-02-20 (Session 43)
+**Focus:** Voicemail fixes, SMS from-number fix, TextMagic outbound integration
+
+**Accomplished:**
+- **Voicemail orphan bug** — `mailbox` CHECK constraint missing `'operator'` caused silent INSERT failures for closed-hours voicemails. Fixed constraint + created 4 missing voicemail rows.
+- **Transcription status fix** — all voicemails stuck at "Transcribing..." because Studio drops `transcription_callback`. Changed default to NULL, updated all existing rows.
+- **New greeting audio** — uploaded `new-victoria-main-greeting-wav.wav`, deployed to both flows.
+- **SMS from-number fix** — IVR auto-replies sent from test number regardless of which line was called. Studio now passes `{{trigger.call.To}}` as `twilioNumber`; API uses it as `from`. Removed `TWILIO_TEST1_PHONE_NUMBER` from fallback chain.
+- **TextMagic outbound SMS** — IVR auto-replies now send through TextMagic API (not Twilio) so they appear in TextMagic dashboard. `sendSmsViaTextMagic()` in `sms-forward.js`. Falls back to Twilio if TM creds missing. Still logged in lm-app.
+- **Both Studio flows synced** — test (rev 61) and prod (rev 6) identical.
+- **3 new tests** for TextMagic send (6 total in sms-forward.test.js). 123 tests all passing.
+
+**Diagram:**
+```
+IVR SMS flow:
+  Caller dials +18184633772 (prod)
+    → Studio passes twilioNumber: "+18184633772"
+    → studio-send → TextMagic API → SMS from +18184633772 → customer
+    → logged in lm-app messages table (sent_via: "textmagic")
+
+  Inbound reply from customer:
+    → Twilio webhook → lm-app (logged) + forwarded to TextMagic
+```
+
+**Current State:**
+- All code committed and pushed (536eb7d)
+- Render auto-deployed, both fixes confirmed working by user
+- Test flow rev 61, prod flow rev 6 (identical)
+
+**Issues:**
+- Studio `record-voicemail` widgets still don't support transcription callbacks
+- `FORCE_HOURS_OPEN=true` still active on Render
+- Twilio recording retention still at default
+- `TWILIO_SIPTEST_USERNAME` / `TWILIO_SIPTEST_PASSWORD` added on Render (possible typo TIWLIO) — SIP test vs prod routing not yet wired
+
+**Next Steps:**
+- Wire up SIP test vs prod routing (user will provide new SIP endpoint for prod)
+- Consider TwiML redirect approach for Studio voicemail recording (enables transcription)
+- Remove `FORCE_HOURS_OPEN` from Render when done testing
+- Set Twilio recording retention to 90 days
+
+---
+
+## Session — 2026-02-20 (Session 42)
+**Focus:** IVR audio update, voicemail pause fix, transcription, voicemail orphan fix
+
+**Accomplished:**
+- **Main greeting audio updated** — uploaded new Victoria recording (`main-greeting-victoria-new-wav.wav`) to Twilio Serverless assets, updated Studio flow to reference it, deployed revision 4
+- **Voicemail pause shortened** — reduced gather widget timeouts from 5s → 2s on 4 Studio widgets (`gather_closed`, `gather_lea_vmail`, `gather_clinicalmd_vmail`, `gather_accounts_vmail`) + TwiML `connect-operator-status` endpoint
+- **Transcription enabled** — set `transcribe: true` on all 4 Studio record widgets + both TwiML `<Record>` verbs in `api/routes/twilio.js`. Added `transcribeCallback` URL to TwiML records. Note: Studio's `record-voicemail` widget silently drops `transcription_callback` — only TwiML path (operator) produces transcriptions.
+- **Voicemail orphan fix (critical)** — discovered ALL voicemails had `call_log_id: null` (recording webhook's CallSid lookup failed due to Studio TwiML redirect). Fixed:
+  - DB: linked 13 orphaned voicemails to call_logs by phone+timing match, set `disposition='voicemail'`
+  - Code: added phone number fallback in `api/routes/webhooks/voice.js` when CallSid lookup fails
+  - UI: removed `disposition === 'voicemail'` gate in `getActionSummary()` — voicemail controls now show whenever `vm` record exists
+- **Password updated** — ops@lemedspa.com changed to `!Mike0990` via Supabase Admin API
+- **`trim: 'trim-silence'`** added to all `<Record>` TwiML verbs (removes dead air from recordings)
+- **Frontend deployed** to Cloudflare Pages, API auto-deployed on Render
+
+**Diagram:**
+```
+Voicemail Fix — Before vs After:
+  BEFORE: recording webhook → lookup call_logs by CallSid → MISS → voicemail.call_log_id = null
+          phone log UI → JOIN voicemails ON call_log_id → no match → no Play button
+
+  AFTER:  recording webhook → lookup by CallSid → MISS → fallback: match by phone + 5min window
+          phone log UI → JOIN voicemails → match found → Play/transcription/save/delete visible
+
+Studio Flow (rev 4):
+  Caller → main-greeting-victoria-new-wav.wav → gather(timeout=2) → record(transcribe=true)
+```
+
+**Current State:**
+- All code committed and pushed to main
+- Frontend deployed to Cloudflare Pages, API live on Render
+- Both verified healthy (API: `{"status":"ok"}`, frontend: HTTP 200)
+- 13 orphaned voicemails linked to call_logs in DB
+- User testing pending — greeting, pause, transcription, voicemail controls
+- ~90 unstaged files remain from Prettier formatting drift (not substantive)
+
+**Issues:**
+- Studio `record-voicemail` widget does NOT support `transcription_callback` — transcriptions only work for operator-path voicemails (TwiML-based). Studio mailbox voicemails (lea/clinical/accounts) won't get transcriptions until an alternative approach is implemented.
+- Twilio recording retention still at default
+- `FORCE_HOURS_OPEN=true` still active on Render
+- `claude/start-building-bjJ26` branch still far behind main
+
+**Next Steps:**
+- Verify test call results: new greeting, shorter pause, voicemail Play button, transcription
+- For Studio transcription: consider replacing Studio record widgets with TwiML redirect to a new `/api/twilio/record-voicemail?mailbox=X` endpoint that supports `transcribeCallback`
+- Set Twilio recording retention to 90 days (Console)
+- Remove `FORCE_HOURS_OPEN` on Render when done testing
+- Batch commit Prettier formatting drift
+
+---
+
 ## Session — 2026-02-20 (Session 41)
 **Focus:** Phone log contact names, voicemail redesign, save/delete, font bump
 
