@@ -256,20 +256,35 @@
 		}
 	}
 
-	/** @param {string} body */
-	async function sendMessage(body) {
+	/**
+	 * @param {string} body
+	 * @param {File} [file]
+	 */
+	async function sendMessage(body, file) {
 		try {
-			const payload = {
-				body,
-				to: selectedConvo?.phone_number || newConvoPhone.trim(),
-				conversationId: selectedConvo?.id || undefined,
-				from: selectedNumber || undefined
-			};
+			const to = selectedConvo?.phone_number || newConvoPhone.trim();
+			const conversationId = selectedConvo?.id || undefined;
+			const from = selectedNumber || undefined;
 
-			const res = await api('/api/messages/send', {
-				method: 'POST',
-				body: JSON.stringify(payload)
-			});
+			/** @type {RequestInit} */
+			let fetchOpts;
+
+			if (file) {
+				const formData = new FormData();
+				formData.append('to', to);
+				if (body) formData.append('body', body);
+				if (conversationId) formData.append('conversationId', conversationId);
+				if (from) formData.append('from', from);
+				formData.append('image', file);
+				fetchOpts = { method: 'POST', body: formData };
+			} else {
+				fetchOpts = {
+					method: 'POST',
+					body: JSON.stringify({ to, body, conversationId, from })
+				};
+			}
+
+			const res = await api('/api/messages/send', fetchOpts);
 
 			if (selectedConvo) {
 				await loadMessages(selectedConvo.id);

@@ -14,8 +14,9 @@ export async function api(path, options = {}) {
 	const currentSession = get(session);
 	const token = currentSession?.access_token;
 
-	// Only set Content-Type if caller hasn't provided one (e.g. FormData needs auto boundary)
-	const callerSetContentType = options.headers && 'Content-Type' in options.headers;
+	// Skip Content-Type for FormData (browser sets multipart boundary automatically)
+	const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+	const callerSetContentType = isFormData || (options.headers && 'Content-Type' in options.headers);
 	const res = await fetch(`${API_URL}${path}`, {
 		...options,
 		credentials: 'include',
