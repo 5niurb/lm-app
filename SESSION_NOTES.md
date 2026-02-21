@@ -1,5 +1,5 @@
 ## Session — 2026-02-21 (Session 48)
-**Focus:** Update Twilio staging Studio flow + gitignore cleanup
+**Focus:** Staging Studio flow + deploy prod & staging frontends
 
 **Accomplished:**
 - Updated Twilio Studio flow `FW9d3adadbd331019576b71c0a586fc491` for staging
@@ -7,11 +7,30 @@
   - Replaced all 16 `api.lemedspa.app` URLs → `staging-api.lemedspa.app`
   - Updated local `twilio/flows/test-ivr.json` to match
 - Added `.mcp.json` and `.firecrawl/` to `.gitignore` (contain API keys)
+- Committed `f6c785f` and pushed to `origin/main`
+- Deployed **production** frontend to CF Pages (`main` branch) — verified 200
+- Deployed **staging** frontend to CF Pages (`staging` branch) — verified 200
+
+**Diagram:**
+```
+Commit f6c785f pushed to origin/main
+        │
+        ├── CF Pages deploy (main)     → lemedspa.app          ✓ 200
+        ├── CF Pages deploy (staging)  → staging.lemedspa.app   ✓ 200
+        ├── API health (prod)          → api.lemedspa.app       ✓ ok
+        ├── API health (staging)       → staging-api.lemedspa.app ✓ ok
+        ├── CORS (prod)                → ✓ lemedspa.app allowed
+        └── CORS (staging)             → ✓ staging.lemedspa.app allowed
+```
 
 **Current State:**
-- Full staging environment operational with staging Studio flow
-- All 11 webhook tests passing against staging
+- Full staging environment operational — frontend, API, DB, Studio flow all pointing to staging
+- Both prod and staging frontends freshly deployed and verified
+- 129 vitest + 66 node:test all passing
 - On `main` branch
+
+**Issues:**
+- Dependabot: 2 high, 1 low vulnerabilities on default branch
 
 **Next Steps:**
 - Ensure `TWILIO_PROD_FLOW_SID=FW9d3adadbd331019576b71c0a586fc491` in staging Render env vars
