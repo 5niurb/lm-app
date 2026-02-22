@@ -200,6 +200,75 @@ Inbound SMS flow:
 
 ---
 
+## Session — 2026-02-22 (Session 50)
+**Focus:** iOS mobile app research, architecture design, and planning
+
+**Accomplished:**
+- Researched PRD examples from public GitHub repos for iMessage/Phone clones (Tinode, Wire, Mesibo, OpenVoice, etc.)
+- Validated open-source status of OpenVoice (dead project), Wire (GPL-3.0, can't use commercially), Mesibo (proprietary SDK wrapper)
+- Explored and compared three mobile approaches: Capacitor, React Native, Native Swift
+- Deep-dived VoIP behavior differences between approaches — Capacitor can't support background CallKit/PushKit, making React Native the clear winner for a comms app
+- Compared hard costs (identical: $99/yr Apple Developer for all approaches)
+- Ran architecture review via code-architect and Plan agents — validated the design, identified 3 required backend changes
+- Wrote comprehensive design doc: `docs/plans/2026-02-22-ios-mobile-app-design.md`
+- Created and got approval on implementation plan
+
+**Diagram:**
+```
+┌─────────────────┐     ┌──────────────────┐     ┌──────────────┐
+│  lm-mobile      │     │  lm-app API      │     │  Twilio      │
+│  (React Native  │────►│  (Express/Render) │────►│  Voice API   │
+│   Expo)         │     │  Same endpoints   │     │  PushKit     │
+│                 │     │  + token mod      │     │  CallKit     │
+│  Calls tab      │     │  + push register  │     └──────────────┘
+│  Messages tab   │     │  + push trigger   │
+│  Phone tab      │     └──────────────────┘
+└─────────────────┘              │
+        │                        ▼
+        │              ┌──────────────────┐
+        └─────────────►│  Supabase        │
+                       │  (Same DB/Auth)  │
+                       └──────────────────┘
+```
+
+**Current State:**
+- Design doc finalized and approved at `docs/plans/2026-02-22-ios-mobile-app-design.md`
+- Implementation plan approved — 7 phases, starting with Expo project scaffolding
+- No code written yet — ready to begin Phase 1
+
+**Key Decisions:**
+- React Native (Expo) over Capacitor — VoIP needs native CallKit/PushKit
+- Separate repo (`lm-mobile/`) — different build system and pipeline
+- Same Express API backend — only 3 small changes needed (token endpoint, push table, push trigger)
+- Staff-only MVP (patients later)
+- 3-tab layout: Calls, Messages, Phone
+
+**Backend Changes Needed (in lm-app):**
+1. `api/routes/twilio.js` — Add `platform` param to token endpoint, include `pushCredentialSid` for mobile
+2. New `api/routes/push.js` — Push device token registration endpoint
+3. New Supabase table `push_subscriptions` — stores APNs device tokens
+4. `api/routes/webhooks/sms.js` — Trigger push notification on inbound SMS
+
+**Apple Developer Setup Needed:**
+- Create App ID with VoIP Services entitlement
+- Generate VoIP Services certificate
+- Register as PushKit credential in Twilio Console
+- Store credential SID as `TWILIO_PUSH_CREDENTIAL_SID` env var
+
+**Research Output:**
+- `.tmp/prd-research.md` — PRD examples from public repos
+- `.tmp/oss-license-research.md` — License analysis of OpenVoice/Wire/Mesibo
+- `.firecrawl/twilio-voice-rn-sdk.md` — Twilio Voice RN SDK docs
+
+**Next Steps:**
+1. Start fresh session for implementation
+2. Phase 1: `npx create-expo-app lm-mobile` at `c:/Users/LMOperations/lm-mobile`
+3. Install dependencies, configure `app.json` with VoIP entitlements
+4. Phase 2: Auth + API client (Supabase + SecureStore)
+5. Continue through phases 3-7 per the approved plan
+
+---
+
 ## Session — 2026-02-21 (Session 49, continued)
 **Focus:** Staging environment full setup — auth, Twilio number filtering, CF Pages isolation
 
@@ -240,16 +309,19 @@ lm-app (CF Pages)                     lm-app-staging (CF Pages)
 ```
 
 **Current State:**
-- Staging fully isolated and verified — separate CF Pages, Supabase, API
-- Production deployed and verified
+- Both environments fully deployed and verified
+- `main` pushed (`f57b2c1`), `staging` merged from main and pushed (`b935c98`)
+- Staging CF Pages auto-builds from `staging` branch (lm-app-staging project)
+- Production CF Pages deployed manually via wrangler CLI (lm-app project)
 - On `main` branch, `.mcp.json` unstaged (gitignored)
 
 **Issues:**
 - Dependabot: 2 high, 1 low vulnerabilities on default branch
-- staging branch is behind main (missing Twilio number filter commit)
+- Pre-push prettier failures on CRLF/LF line endings — requires `npm run format` before first push after merge
 
 **Next Steps:**
-- Merge main → staging to sync Twilio number filtering
+- Test staging login flow end-to-end (ops@lemedspa.com / !Mike0990)
+- Continue feature development (MMS, scheduled messages, auto-replies)
 - Test staging login flow end-to-end
 - Continue feature development
 
