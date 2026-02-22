@@ -1,3 +1,51 @@
+## Session — 2026-02-22 (Session 52)
+**Focus:** ECC-inspired Claude Code automation upgrade — new agents, skills, enhanced verify
+
+**Accomplished:**
+- Created 4 new agents in `~/.claude/agents/`:
+  - `database-reviewer` (Sonnet) — PostgreSQL: SELECT *, unindexed FKs, missing RLS, OFFSET, ON DELETE
+  - `security-reviewer` (Sonnet) — OWASP Top 10, secrets, XSS, SQL injection, priority zones
+  - `architect` (Opus) — Read-only system design, scalability, trade-offs
+  - `build-error-resolver` (Sonnet) — Minimal-diff build fixes, max 5 iterations
+- Created 2 new skills in `lm-app/.claude/skills/`:
+  - `/checkpoint` — Git-backed save points (create/list/restore with auto-checkpoint safety)
+  - `/orchestrate` — Sequential pipeline: architect → implement → code-reviewer → qa → verify
+- Enhanced `/verify` — Added 6 local phases (build, lint, tests, console.log audit, git status, API syntax) before existing production health checks. Supports `local`, `prod`, `full` modes.
+- Updated both CLAUDE.md files and MEMORY.md with new agents/skills
+- Deployed frontend to CF Pages (abc00a65.lm-app.pages.dev)
+
+**Diagram:**
+```
+Orchestrate Pipeline (/orchestrate feature|bugfix|refactor):
+┌───────────┐   plan    ┌───────────┐  implement  ┌─────────────┐
+│ architect │ ────────► │ parent    │ ──────────► │ code-review │
+│ (Opus)    │  01-plan  │ agent     │  02-changes │ (Sonnet)    │
+└───────────┘           └───────────┘             └──────┬──────┘
+                                                         │ 03-review
+                                                  ┌──────▼──────┐
+                                                  │ qa          │  04-qa
+                                                  │ (Sonnet)    │────────► VERDICT
+                                                  └─────────────┘  05-verify
+```
+
+**Current State:**
+- All 8 agents available globally (~/.claude/agents/)
+- All 7 skills available in lm-app (.claude/skills/)
+- 129 tests passing, build clean
+- On `main` branch, deployed to production
+
+**Issues:**
+- Dependabot: 2 high, 1 low vulnerabilities (pre-existing)
+- 12 ESLint warnings (pre-existing, non-blocking)
+
+**Next Steps:**
+- Try `/orchestrate feature` on next feature to validate the pipeline end-to-end
+- Try `/checkpoint create` before risky changes
+- Run Ralph Loop for broadcast PRD (last messaging feature)
+- Consider enabling remaining auto-reply rules (hours, booking)
+
+---
+
 ## Session — 2026-02-22 (Session 51)
 **Focus:** End-to-end testing of auto-replies and MMS, fix keyword quote bug
 
