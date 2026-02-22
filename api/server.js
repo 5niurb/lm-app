@@ -114,6 +114,13 @@ app.listen(PORT, () => {
 	console.log(`LM App API running on port ${PORT}`);
 });
 
+// Background job: send scheduled messages every 60 seconds
+import { processScheduledMessages } from './services/scheduled-sender.js';
+setInterval(() => {
+	processScheduledMessages().catch((err) => console.error('[scheduled] Job error:', err.message));
+}, 60_000);
+console.log('Scheduled message sender running (every 60s)');
+
 // Keep-alive ping in production (prevent Render free tier spin-down)
 // Time-boxed: only pings 9 AM – 9 PM Pacific to stay within 750 free hrs/month
 // RENDER_EXTERNAL_URL is auto-set by Render; fallback to known URL

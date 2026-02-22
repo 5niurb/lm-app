@@ -1,9 +1,30 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import twilio from 'twilio';
+import multer from 'multer';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { findConversation, normalizePhone } from '../services/phone-lookup.js';
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MIME_TO_EXT = {
+	'image/jpeg': 'jpg',
+	'image/png': 'png',
+	'image/gif': 'gif',
+	'image/webp': 'webp'
+};
+
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+	fileFilter: (_req, file, cb) => {
+		if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+			return cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed'));
+		}
+		cb(null, true);
+	}
+});
 
 const router = Router();
 
@@ -158,120 +179,172 @@ router.get('/lookup', logAction('messages.lookup'), async (req, res) => {
 
 /**
  * POST /api/messages/send
- * Send an SMS/RCS message from the app.
+ * Send an SMS/MMS message from the app.
+ * Accepts JSON (text only) or multipart/form-data (text + image).
  *
- * Body: { to, body, conversationId?, from? }
+ * JSON body: { to, body, conversationId?, from? }
+ * Multipart fields: to, body?, conversationId?, from?, image (file)
  */
-router.post('/send', logAction('messages.send'), async (req, res) => {
-	const { to, body, conversationId } = req.body;
-
-	if (!to || !body) {
-		return res.status(400).json({ error: 'Both "to" and "body" are required' });
-	}
-
-	const toNumber = normalizePhone(to);
-
-	// Use explicitly provided from number, or fall back to env defaults
-	const fromNumber =
-		req.body.from ||
-		process.env.TWILIO_SMS_FROM_NUMBER ||
-		process.env.TWILIO_TEST1_PHONE_NUMBER ||
-		process.env.TWILIO_PHONE_NUMBER ||
-		process.env.TWILIO_MAIN_PHONE_NUMBER;
-
-	if (!fromNumber) {
-		return res.status(500).json({ error: 'No Twilio phone number configured' });
-	}
-
-	try {
-		// Send via Twilio
-		const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
-		// Build the status callback URL for delivery tracking
-		const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
-		const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
-
-		const twilioMsg = await client.messages.create({
-			to: toNumber,
-			from: fromNumber,
-			body,
-			...(statusCallback && { statusCallback })
-		});
-
-		// Find or create conversation — one thread per customer phone number
-		let convId = conversationId;
-		if (!convId) {
-			const existingConv = await findConversation(toNumber);
-
-			if (existingConv) {
-				convId = existingConv.id;
-			} else {
-				const phoneDigits = toNumber.replace(/\D/g, '');
-				const { data: contact } = await supabaseAdmin
-					.from('contacts')
-					.select('id, full_name')
-					.or(`phone_normalized.eq.${phoneDigits},phone.eq.${toNumber}`)
-					.limit(1)
-					.maybeSingle();
-
-				const { data: newConv } = await supabaseAdmin
-					.from('conversations')
-					.insert({
-						phone_number: toNumber,
-						twilio_number: fromNumber || null,
-						display_name: contact?.full_name || null,
-						contact_id: contact?.id || null,
-						last_message: body,
-						last_at: new Date().toISOString()
-					})
-					.select('id')
-					.single();
-
-				convId = newConv?.id;
+router.post(
+	'/send',
+	(req, res, next) => {
+		upload.single('image')(req, res, (err) => {
+			if (err) {
+				return res.status(400).json({ error: err.message || 'Invalid file upload' });
 			}
-		}
-
-		// Insert message record
-		const { data: msg, error: msgErr } = await supabaseAdmin
-			.from('messages')
-			.insert({
-				conversation_id: convId,
-				direction: 'outbound',
-				body,
-				from_number: fromNumber,
-				to_number: toNumber,
-				twilio_sid: twilioMsg.sid,
-				status: twilioMsg.status || 'sent',
-				sent_by: req.user?.id || null
-			})
-			.select()
-			.single();
-
-		if (msgErr) {
-			console.error('Failed to save outbound message:', msgErr.message);
-		}
-
-		// Update conversation last_message
-		await supabaseAdmin
-			.from('conversations')
-			.update({
-				last_message: body,
-				last_at: new Date().toISOString(),
-				status: 'active'
-			})
-			.eq('id', convId);
-
-		return res.json({
-			data: msg,
-			conversation_id: convId,
-			twilio_sid: twilioMsg.sid,
-			status: twilioMsg.status
+			next();
 		});
-	} catch (err) {
-		console.error('Failed to send message:', err.message);
-		return res.status(500).json({ error: 'Failed to send message' });
+	},
+	logAction('messages.send'),
+	async (req, res) => {
+		const { to, body, conversationId } = req.body;
+
+		if (!to || (!body && !req.file)) {
+			return res.status(400).json({ error: '"to" is required, plus "body" or an image' });
+		}
+
+		const toNumber = normalizePhone(to);
+
+		const fromNumber =
+			req.body.from ||
+			process.env.TWILIO_SMS_FROM_NUMBER ||
+			process.env.TWILIO_TEST1_PHONE_NUMBER ||
+			process.env.TWILIO_PHONE_NUMBER ||
+			process.env.TWILIO_MAIN_PHONE_NUMBER;
+
+		if (!fromNumber) {
+			return res.status(500).json({ error: 'No Twilio phone number configured' });
+		}
+
+		let storagePath = null;
+		try {
+			let mediaUrl = null;
+
+			// Upload image to Supabase Storage if present
+			if (req.file) {
+				const ext = MIME_TO_EXT[req.file.mimetype] || 'jpg';
+				storagePath = `${randomUUID()}.${ext}`;
+
+				const { error: uploadErr } = await supabaseAdmin.storage
+					.from('mms')
+					.upload(storagePath, req.file.buffer, {
+						contentType: req.file.mimetype,
+						upsert: false
+					});
+
+				if (uploadErr) {
+					console.error('Supabase Storage upload failed:', uploadErr.message);
+					return res.status(500).json({ error: 'Failed to upload image' });
+				}
+
+				// Signed URL — Twilio fetches once at send time; 1-hour expiry is plenty
+				const { data: signedData, error: signErr } = await supabaseAdmin.storage
+					.from('mms')
+					.createSignedUrl(storagePath, 3600);
+				if (signErr || !signedData?.signedUrl) {
+					console.error('Failed to create signed URL:', signErr?.message);
+					return res.status(500).json({ error: 'Failed to generate image URL' });
+				}
+				mediaUrl = signedData.signedUrl;
+			}
+
+			// Send via Twilio
+			const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+			const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
+			const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+
+			const twilioMsg = await client.messages.create({
+				to: toNumber,
+				from: fromNumber,
+				body: body || '',
+				...(mediaUrl && { mediaUrl: [mediaUrl] }),
+				...(statusCallback && { statusCallback })
+			});
+
+			// Find or create conversation
+			let convId = conversationId;
+			if (!convId) {
+				const existingConv = await findConversation(toNumber);
+
+				if (existingConv) {
+					convId = existingConv.id;
+				} else {
+					const phoneDigits = toNumber.replace(/\D/g, '');
+					const { data: contact } = await supabaseAdmin
+						.from('contacts')
+						.select('id, full_name')
+						.or(`phone_normalized.eq.${phoneDigits},phone.eq.${toNumber}`)
+						.limit(1)
+						.maybeSingle();
+
+					const { data: newConv } = await supabaseAdmin
+						.from('conversations')
+						.insert({
+							phone_number: toNumber,
+							twilio_number: fromNumber || null,
+							display_name: contact?.full_name || null,
+							contact_id: contact?.id || null,
+							last_message: body || (mediaUrl ? '[Image]' : ''),
+							last_at: new Date().toISOString()
+						})
+						.select('id')
+						.single();
+
+					convId = newConv?.id;
+				}
+			}
+
+			// Insert message record
+			const { data: msg, error: msgErr } = await supabaseAdmin
+				.from('messages')
+				.insert({
+					conversation_id: convId,
+					direction: 'outbound',
+					body: body || '',
+					from_number: fromNumber,
+					to_number: toNumber,
+					twilio_sid: twilioMsg.sid,
+					status: twilioMsg.status || 'sent',
+					sent_by: req.user?.id || null,
+					...(mediaUrl && { media_urls: [mediaUrl] })
+				})
+				.select()
+				.single();
+
+			if (msgErr) {
+				console.error('Failed to save outbound message:', msgErr.message);
+			}
+
+			// Update conversation last_message
+			await supabaseAdmin
+				.from('conversations')
+				.update({
+					last_message: body || (mediaUrl ? '[Image]' : ''),
+					last_at: new Date().toISOString(),
+					status: 'active'
+				})
+				.eq('id', convId);
+
+			return res.json({
+				data: msg,
+				conversation_id: convId,
+				twilio_sid: twilioMsg.sid,
+				status: twilioMsg.status
+			});
+		} catch (err) {
+			// Clean up orphaned storage file if upload succeeded but send failed
+			if (storagePath) {
+				supabaseAdmin.storage
+					.from('mms')
+					.remove([storagePath])
+					.catch(() => {});
+			}
+			console.error('Failed to send message:', err.message);
+			return res.status(500).json({ error: 'Failed to send message' });
+		}
 	}
-});
+);
 
 /**
  * GET /api/messages/log
@@ -411,6 +484,80 @@ router.post('/:id/react', logAction('messages.react'), async (req, res) => {
 	} catch (err) {
 		console.error('Failed to react to message:', err.message);
 		return res.status(500).json({ error: 'Failed to react to message' });
+	}
+});
+
+/**
+ * GET /api/messages/:id/media/:index
+ * Proxy Twilio MMS media so the browser doesn't need Twilio credentials.
+ */
+router.get('/:id/media/:index', logAction('messages.media'), async (req, res) => {
+	const { id, index } = req.params;
+	const idx = parseInt(index, 10);
+
+	// Fetch the message to get media_urls
+	const { data: msg, error } = await supabaseAdmin
+		.from('messages')
+		.select('media_urls')
+		.eq('id', id)
+		.single();
+
+	if (error || !msg) {
+		return res.status(404).json({ error: 'Message not found' });
+	}
+
+	const mediaUrls = msg.media_urls;
+	if (!Array.isArray(mediaUrls) || isNaN(idx) || idx < 0 || idx >= mediaUrls.length) {
+		return res.status(404).json({ error: 'Media not found at this index' });
+	}
+
+	const mediaUrl = mediaUrls[idx];
+
+	// Only proxy Twilio media URLs — never send credentials to arbitrary hosts
+	try {
+		const parsed = new URL(mediaUrl);
+		if (!/^(api|media)\.twilio(cdn)?\.com$/.test(parsed.hostname)) {
+			return res.status(403).json({ error: 'Only Twilio media URLs can be proxied' });
+		}
+	} catch {
+		return res.status(400).json({ error: 'Invalid media URL' });
+	}
+
+	try {
+		const accountSid = process.env.TWILIO_ACCOUNT_SID;
+		const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+		const twilioRes = await fetch(mediaUrl, {
+			headers: {
+				Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+			}
+		});
+
+		if (!twilioRes.ok) {
+			console.error(`Twilio media fetch failed: ${twilioRes.status} ${twilioRes.statusText}`);
+			return res.status(502).json({ error: 'Failed to fetch media from Twilio' });
+		}
+
+		res.set('Content-Type', twilioRes.headers.get('content-type') || 'application/octet-stream');
+		const contentLength = twilioRes.headers.get('content-length');
+		if (contentLength) res.set('Content-Length', contentLength);
+		res.set('Cache-Control', 'private, max-age=3600');
+
+		const reader = twilioRes.body.getReader();
+		req.on('close', () => reader.cancel());
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				res.end();
+				break;
+			}
+			res.write(value);
+		}
+	} catch (e) {
+		console.error('Media proxy error:', e.message);
+		if (!res.headersSent) {
+			return res.status(502).json({ error: 'Failed to proxy media' });
+		}
 	}
 });
 

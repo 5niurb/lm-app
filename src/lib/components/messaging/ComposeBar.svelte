@@ -1,25 +1,67 @@
 <script>
-	import { Send } from '@lucide/svelte';
+	import { Send, Paperclip, X } from '@lucide/svelte';
 	import EmojiPicker from './EmojiPicker.svelte';
 	import TagInsert from './TagInsert.svelte';
 	import TemplateInsert from './TemplateInsert.svelte';
 	import SchedulePopover from './SchedulePopover.svelte';
 
+	const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+	const ACCEPTED_TYPES = 'image/jpeg,image/png,image/gif,image/webp';
+
 	/**
 	 * @type {{
-	 *   onSend: (body: string) => Promise<void>,
+	 *   onSend: (body: string, file?: File) => Promise<void>,
 	 *   onSchedule?: (body: string, scheduledAt: string) => Promise<void>,
+	 *   onError?: (msg: string) => void,
 	 *   disabled?: boolean,
 	 *   placeholder?: string
 	 * }}
 	 */
-	let { onSend, onSchedule, disabled = false, placeholder = 'Type a message...' } = $props();
+	let {
+		onSend,
+		onSchedule,
+		onError,
+		disabled = false,
+		placeholder = 'Type a message...'
+	} = $props();
 
 	let body = $state('');
 	let sending = $state(false);
 
 	/** @type {HTMLTextAreaElement|null} */
 	let textareaRef = $state(null);
+
+	/** @type {File|null} */
+	let attachment = $state(null);
+
+	/** @type {string|null} */
+	let attachmentPreview = $state(null);
+
+	/** @type {HTMLInputElement|null} */
+	let fileInputRef = $state(null);
+
+	/** Handle file selection from the native picker */
+	function handleFileSelect(e) {
+		const file = e.target?.files?.[0];
+		if (!file) return;
+
+		if (file.size > MAX_FILE_SIZE) {
+			onError?.('Image must be under 5MB');
+			e.target.value = '';
+			return;
+		}
+
+		attachment = file;
+		attachmentPreview = URL.createObjectURL(file);
+		e.target.value = ''; // reset so same file can be re-selected
+	}
+
+	/** Remove the current attachment */
+	function removeAttachment() {
+		if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+		attachment = null;
+		attachmentPreview = null;
+	}
 
 	/**
 	 * Insert text at the current cursor position, keeping focus.
@@ -43,12 +85,12 @@
 
 	async function handleSend() {
 		const trimmed = body.trim();
-		if (!trimmed || sending || disabled) return;
+		if ((!trimmed && !attachment) || sending || disabled) return;
 		sending = true;
 		try {
-			await onSend(trimmed);
+			await onSend(trimmed, attachment ?? undefined);
 			body = '';
-			// Reset textarea height
+			removeAttachment();
 			if (textareaRef) textareaRef.style.height = 'auto';
 		} finally {
 			sending = false;
@@ -97,10 +139,46 @@
 				body = tmplBody;
 			}}
 		/>
+		<button
+			type="button"
+			class="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
+			title="Attach image"
+			onclick={() => fileInputRef?.click()}
+		>
+			<Paperclip class="h-4 w-4" />
+		</button>
+		<input
+			bind:this={fileInputRef}
+			type="file"
+			accept={ACCEPTED_TYPES}
+			class="hidden"
+			onchange={handleFileSelect}
+		/>
 		{#if onSchedule}
 			<SchedulePopover onSchedule={(at) => handleSchedule(at)} />
 		{/if}
 	</div>
+
+	<!-- Attachment preview -->
+	{#if attachmentPreview}
+		<div class="px-3 pb-1">
+			<div class="relative inline-block">
+				<img
+					src={attachmentPreview}
+					alt="Attachment preview"
+					class="h-16 w-auto max-w-[120px] rounded-md object-cover border border-border-subtle"
+				/>
+				<button
+					type="button"
+					class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-500 transition-colors"
+					title="Remove attachment"
+					onclick={removeAttachment}
+				>
+					<X class="h-3 w-3" />
+				</button>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Compose area -->
 	<div class="flex items-end gap-2 px-3 pb-3">
@@ -118,7 +196,7 @@
 		<button
 			type="button"
 			class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold text-primary-foreground hover:bg-gold/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-			disabled={!body.trim() || sending || disabled}
+			disabled={(!body.trim() && !attachment) || sending || disabled}
 			onclick={handleSend}
 			title="Send message"
 		>

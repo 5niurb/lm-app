@@ -14,10 +14,14 @@
 		ArrowUpRight
 	} from '@lucide/svelte';
 	import { resolve } from '$app/paths';
+	import { get } from 'svelte/store';
+	import { session } from '$lib/stores/auth.js';
+	import { PUBLIC_API_URL } from '$env/static/public';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 	import ComposeBar from './ComposeBar.svelte';
 	import MessageReactions from './MessageReactions.svelte';
+	import ImageLightbox from './ImageLightbox.svelte';
 
 	/**
 	 * @type {{
@@ -54,6 +58,54 @@
 	/** @type {any[]|null} */
 	let logMessages = $state(null);
 	let loadingLog = $state(false);
+
+	// Lightbox
+	/** @type {string|null} */
+	let lightboxSrc = $state(null);
+
+	// Media image cache — avoids re-fetching on re-render
+	const API_BASE = PUBLIC_API_URL || 'http://localhost:3001';
+	/** @type {Map<string, Promise<string>>} */
+	const mediaCache = new Map();
+
+	/**
+	 * Check if a media URL is publicly accessible (Supabase Storage signed URL).
+	 * Twilio URLs require auth and must go through the proxy.
+	 * @param {string} url
+	 * @returns {boolean}
+	 */
+	function isPublicMediaUrl(url) {
+		return url.startsWith('https://') && url.includes('supabase.co/storage');
+	}
+
+	/**
+	 * Get a renderable image URL for a message's media attachment.
+	 * Public URLs (Supabase Storage) are returned directly.
+	 * Twilio URLs are fetched via the proxy endpoint with auth, returning a cached blob URL.
+	 * @param {string} msgId
+	 * @param {number} index
+	 * @param {string} url
+	 * @returns {Promise<string>}
+	 */
+	function getMediaBlobUrl(msgId, index, url) {
+		if (isPublicMediaUrl(url)) {
+			return Promise.resolve(url);
+		}
+		const key = `${msgId}-${index}`;
+		if (!mediaCache.has(key)) {
+			const promise = (async () => {
+				const token = get(session)?.access_token;
+				const res = await fetch(`${API_BASE}/api/messages/${msgId}/media/${index}`, {
+					headers: token ? { Authorization: `Bearer ${token}` } : {}
+				});
+				if (!res.ok) throw new Error('Failed to load media');
+				const blob = await res.blob();
+				return URL.createObjectURL(blob);
+			})();
+			mediaCache.set(key, promise);
+		}
+		return /** @type {Promise<string>} */ (mediaCache.get(key));
+	}
 
 	// Reactions
 	const REACTION_EMOJIS = ['👍', '❤️', '😂', '❗', '❓', '💯', '🙏', '🔥', '😍'];
@@ -178,7 +230,20 @@
 		}
 	}
 
+	/** Revoke cached blob URLs to free memory */
+	function clearMediaCache() {
+		for (const promise of mediaCache.values()) {
+			promise
+				.then((url) => {
+					if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+				})
+				.catch(() => {});
+		}
+		mediaCache.clear();
+	}
+
 	async function selectConversation(convo) {
+		clearMediaCache();
 		selectedConvo = convo;
 		loadingMessages = true;
 		try {
@@ -220,20 +285,35 @@
 		}
 	}
 
-	/** @param {string} body */
-	async function sendMessage(body) {
+	/**
+	 * @param {string} body
+	 * @param {File} [file]
+	 */
+	async function sendMessage(body, file) {
 		try {
-			const payload = {
-				body,
-				to: selectedConvo?.phone_number || newConvoPhone.trim(),
-				conversationId: selectedConvo?.id || undefined,
-				from: selectedNumber || undefined
-			};
+			const to = selectedConvo?.phone_number || newConvoPhone.trim();
+			const conversationId = selectedConvo?.id || undefined;
+			const from = selectedNumber || undefined;
 
-			const res = await api('/api/messages/send', {
-				method: 'POST',
-				body: JSON.stringify(payload)
-			});
+			/** @type {RequestInit} */
+			let fetchOpts;
+
+			if (file) {
+				const formData = new FormData();
+				formData.append('to', to);
+				if (body) formData.append('body', body);
+				if (conversationId) formData.append('conversationId', conversationId);
+				if (from) formData.append('from', from);
+				formData.append('image', file);
+				fetchOpts = { method: 'POST', body: formData };
+			} else {
+				fetchOpts = {
+					method: 'POST',
+					body: JSON.stringify({ to, body, conversationId, from })
+				};
+			}
+
+			const res = await api('/api/messages/send', fetchOpts);
 
 			if (selectedConvo) {
 				await loadMessages(selectedConvo.id);
@@ -767,7 +847,39 @@
 											{senderName}
 										</p>
 									{/if}
-									<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+									{#if msg.body}
+										<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+									{/if}
+									{#if msg.media_urls?.length > 0}
+										<div class="flex flex-wrap gap-1.5 {msg.body ? 'mt-1.5' : ''}">
+											{#each msg.media_urls as mediaUrl, idx}
+												{#await getMediaBlobUrl(msg.id, idx, mediaUrl)}
+													<div
+														class="w-[240px] h-[160px] rounded-lg bg-surface-subtle animate-pulse"
+													></div>
+												{:then blobUrl}
+													<button
+														class="block"
+														onclick={() => {
+															lightboxSrc = blobUrl;
+														}}
+													>
+														<img
+															src={blobUrl}
+															alt="Attached photo"
+															class="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+														/>
+													</button>
+												{:catch}
+													<div
+														class="w-[240px] h-[100px] rounded-lg bg-surface-subtle border border-border flex items-center justify-center"
+													>
+														<span class="text-xs text-text-tertiary">Image unavailable</span>
+													</div>
+												{/await}
+											{/each}
+										</div>
+									{/if}
 									<p
 										class="text-[10px] mt-1 {msg.direction === 'outbound'
 											? 'text-primary-foreground/50'
@@ -809,7 +921,7 @@
 			</div>
 
 			<!-- Compose -->
-			<ComposeBar onSend={sendMessage} placeholder="Type a message..." />
+			<ComposeBar onSend={sendMessage} {onError} placeholder="Type a message..." />
 		{:else if showNewConvo}
 			<!-- New conversation compose view -->
 			<div class="flex-1 flex flex-col">
@@ -858,6 +970,7 @@
 				</div>
 				<ComposeBar
 					onSend={sendMessage}
+					{onError}
 					placeholder="Type a message..."
 					disabled={!newConvoPhone.trim()}
 				/>
@@ -906,6 +1019,15 @@
 		onReact={handleReaction}
 		onDismiss={() => {
 			reactionTarget = null;
+		}}
+	/>
+{/if}
+
+{#if lightboxSrc}
+	<ImageLightbox
+		src={lightboxSrc}
+		onClose={() => {
+			lightboxSrc = null;
 		}}
 	/>
 {/if}

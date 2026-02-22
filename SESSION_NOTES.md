@@ -1,3 +1,121 @@
+## Session — 2026-02-21 (Session 49, continued)
+**Focus:** Staging environment full setup — auth, Twilio number filtering, CF Pages isolation
+
+**Accomplished:**
+- Created staging login user in Supabase (ops@lemedspa.com / !Mike0990)
+- Redeployed production frontend to CF Pages — verified
+- Filtered messaging UI to show only configured Twilio number per environment
+  - `api/routes/twilio-history.js` — uses `TWILIO_PHONE_NUMBER` env var + Twilio API `phoneNumber` filter
+  - Committed `b2e2c6d`, pushed, deployed to production
+- Fixed staging showing production data — three separate issues:
+  1. **Staging API** had production Supabase credentials → updated Render env vars
+  2. **CF Pages custom domain** — `staging.lemedspa.app` on `lm-app` project served production branch
+  3. **Solution:** Created separate `lm-app-staging` CF Pages project (Pages, not Workers!)
+- Set up `lm-app-staging` CF Pages project:
+  - Build command writes `.env` inline (SvelteKit needs vars at build time)
+  - Build output: `.svelte-kit/cloudflare`
+  - Framework preset: SvelteKit
+  - Env vars: staging Supabase + staging API URLs
+- Updated `wrangler.toml` on staging branch → `name = "lm-app-staging"`, staging URLs
+  - Commits: `e560b5d`, `eba87b2` on staging branch
+- Moved `staging.lemedspa.app` custom domain from `lm-app` → `lm-app-staging`
+- Verified staging: frontend 200, API healthy, CORS correct
+
+**Diagram:**
+```
+PRODUCTION (main branch)              STAGING (staging branch)
+lm-app (CF Pages)                     lm-app-staging (CF Pages)
+  → lemedspa.app ✓                      → staging.lemedspa.app ✓
+  → api.lemedspa.app ✓                  → staging-api.lemedspa.app ✓
+  → Supabase #1 (skvsjcck...)          → Supabase #2 (ohdrhqmf...)
+  → wrangler.toml: name=lm-app         → wrangler.toml: name=lm-app-staging
+  → Twilio: 818 number                 → Twilio: 213 number
+```
+
+**Current State:**
+- Staging fully isolated and verified — separate CF Pages, Supabase, API
+- Production deployed and verified
+- On `main` branch, `.mcp.json` unstaged (gitignored)
+
+**Issues:**
+- Dependabot: 2 high, 1 low vulnerabilities on default branch
+- staging branch is behind main (missing Twilio number filter commit)
+
+**Next Steps:**
+- Merge main → staging to sync Twilio number filtering
+- Test staging login flow end-to-end
+- Continue feature development
+
+---
+
+## Session — 2026-02-21 (Session 48)
+**Focus:** Staging Studio flow + deploy prod & staging frontends
+
+**Accomplished:**
+- Updated Twilio Studio flow `FW9d3adadbd331019576b71c0a586fc491` for staging
+  - Renamed to "LeMed Main IVR — Staging", published as revision 71
+  - Replaced all 16 `api.lemedspa.app` URLs → `staging-api.lemedspa.app`
+  - Updated local `twilio/flows/test-ivr.json` to match
+- Added `.mcp.json` and `.firecrawl/` to `.gitignore` (contain API keys)
+- Committed `f6c785f` and pushed to `origin/main`
+- Deployed **production** frontend to CF Pages (`main` branch) — verified 200
+- Deployed **staging** frontend to CF Pages (`staging` branch) — verified 200
+
+**Diagram:**
+```
+Commit f6c785f pushed to origin/main
+        │
+        ├── CF Pages deploy (main)     → lemedspa.app          ✓ 200
+        ├── CF Pages deploy (staging)  → staging.lemedspa.app   ✓ 200
+        ├── API health (prod)          → api.lemedspa.app       ✓ ok
+        ├── API health (staging)       → staging-api.lemedspa.app ✓ ok
+        ├── CORS (prod)                → ✓ lemedspa.app allowed
+        └── CORS (staging)             → ✓ staging.lemedspa.app allowed
+```
+
+**Current State:**
+- Full staging environment operational — frontend, API, DB, Studio flow all pointing to staging
+- Both prod and staging frontends freshly deployed and verified
+- 129 vitest + 66 node:test all passing
+- On `main` branch
+
+**Issues:**
+- Dependabot: 2 high, 1 low vulnerabilities on default branch
+
+**Next Steps:**
+- Ensure `TWILIO_PROD_FLOW_SID=FW9d3adadbd331019576b71c0a586fc491` in staging Render env vars
+- Set up git workflow: feature branches → PR into `staging` → merge to `main`
+- Continue feature development
+
+---
+
+## Session — 2026-02-21 (Session 47b)
+**Focus:** Fix contact names in direction filter + add iMessage-style message reactions
+
+**Accomplished:**
+- Fixed direction filter log view to show contact names instead of phone-only (3-tier: gold diamond linked contact → display name → phone)
+- Created `MessageReactions.svelte` — floating emoji bar (9 emojis) triggered by right-click/long-press
+- Added reaction event handlers to `ChatsTab.svelte` — contextmenu, 500ms long-press with touchmove cancel, optimistic updates
+- Reaction pills rendered below message bubbles with grouped emoji counts (iMessage-style)
+- New `POST /api/messages/:id/react` endpoint — JSONB storage + SMS reply via Twilio
+- SMS context-aware: plain emoji for latest msg, `👍 "quoted snippet…"` for older msgs
+- DB migration applied: `reactions jsonb DEFAULT '[]'` on messages table
+- All 129 vitest + 66 node:test passing, deployed to CF Pages + Render
+
+---
+
+## Session — 2026-02-21 (Session 47)
+**Focus:** Full mirror staging environment setup
+
+**Accomplished:**
+- **Implemented staging infrastructure code** — committed `7d4e7f2` to main
+- **Created Supabase staging project** (`lemedapp-staging`, ref: `ohdrhqmfzinizrldoaih`)
+- **Deployed Render staging API** + CF Pages staging frontend
+- **Created `staging` git branch** — pushed to `origin/staging`
+- 11/11 webhook tests passing against staging
+
+---
+
 ## Session — 2026-02-21 (Session 46)
 **Focus:** Messaging UI redesign — decompose 770-line monolith into tabbed component architecture
 
@@ -13,6 +131,7 @@
 - Code review caught 5 bugs (interval leak, null deref, missing error handling, double-load, fragile $effect) — all fixed
 - Cleaned up unused imports (Search, Input, twilioNumbers, selectedNumber) from ScheduledTab
 - All 129 vitest + 66 node:test passing, build clean, pushed to main
+- Deployed to Cloudflare Pages — verified frontend (200), API health (ok), CORS (correct)
 
 **Diagram:**
 ```

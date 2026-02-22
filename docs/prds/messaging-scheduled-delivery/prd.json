@@ -1,0 +1,79 @@
+{
+	"project": "lm-app",
+	"branchName": "ralph/scheduled-delivery",
+	"description": "Add background job that sends scheduled messages when due, with retry logic and conversation linking",
+	"userStories": [
+		{
+			"id": "SD-001",
+			"title": "Background job: poll and send due messages",
+			"description": "As the system, I want scheduled messages to be sent automatically when their scheduled time arrives, so that staff don't have to manually trigger sends.",
+			"acceptanceCriteria": [
+				"setInterval in server.js runs every 60 seconds",
+				"Queries scheduled_messages WHERE status='pending' AND scheduled_at <= now() LIMIT 10",
+				"Sends each message via Twilio client.messages.create()",
+				"On success: updates status to 'sent', sets sent_at to now()",
+				"On failure: updates status to 'failed', stores error in error_message",
+				"Logs each send attempt to console: 'Scheduled send: to=X status=sent/failed'",
+				"Job does not block server startup or API routes",
+				"Build passes: npx vite build"
+			],
+			"priority": 1,
+			"passes": true,
+			"inProgress": false,
+			"notes": "Use the same Twilio client pattern as POST /api/messages/send. Include statusCallback URL for delivery tracking."
+		},
+		{
+			"id": "SD-002",
+			"title": "Link sent scheduled message to conversation",
+			"description": "As a staff member, I want sent scheduled messages to appear in the conversation thread, so that I can see the full communication history.",
+			"acceptanceCriteria": [
+				"After successful Twilio send, insert into messages table with direction='outbound'",
+				"Use findConversation() to find existing conversation for to_number",
+				"If no conversation exists, create one (same pattern as POST /api/messages/send)",
+				"Update conversations.last_message and last_at",
+				"Message metadata includes { source: 'scheduled', scheduled_message_id: uuid }",
+				"Sent message appears in Chats tab thread for that contact",
+				"Build passes: npx vite build"
+			],
+			"priority": 2,
+			"passes": true,
+			"inProgress": false,
+			"notes": "Reuse findConversation() and lookupContactByPhone() from api/services/phone-lookup.js. Don't duplicate the conversation creation logic."
+		},
+		{
+			"id": "SD-003",
+			"title": "Retry failed messages with backoff",
+			"description": "As the system, I want failed scheduled messages to retry automatically, so that transient Twilio errors don't permanently lose messages.",
+			"acceptanceCriteria": [
+				"New migration adds retry_count INTEGER DEFAULT 0 to scheduled_messages",
+				"On failure: increment retry_count instead of setting status='failed'",
+				"Messages with retry_count >= 3 are set to status='failed' permanently",
+				"Retry query adds: AND (retry_count < 3) AND (updated_at < now() - interval '5 minutes')",
+				"This creates natural 5-minute backoff between retries",
+				"Migration runs without error on existing data",
+				"Build passes: npx vite build"
+			],
+			"priority": 3,
+			"passes": true,
+			"inProgress": false,
+			"notes": "The 5-min backoff uses updated_at (auto-set by trigger on update) as a natural cooldown timer. No need for a separate next_retry_at column."
+		},
+		{
+			"id": "SD-004",
+			"title": "Scheduled tab shows sent timestamp and error details",
+			"description": "As a staff member, I want to see when scheduled messages were actually sent and why they failed, so that I can troubleshoot delivery issues.",
+			"acceptanceCriteria": [
+				"Sent messages show sent_at timestamp (e.g., 'Sent Feb 21, 2:30 PM')",
+				"Failed messages show error_message in red text below the message body",
+				"Failed messages show retry count (e.g., 'Failed after 3 attempts')",
+				"ScheduledTab auto-refreshes every 30 seconds to reflect status changes",
+				"Status filter counts update after refresh",
+				"Build passes: npx vite build"
+			],
+			"priority": 4,
+			"passes": true,
+			"inProgress": false,
+			"notes": "ScheduledTab.svelte already has status colors and pagination. Extend the existing row layout, don't rebuild it."
+		}
+	]
+}

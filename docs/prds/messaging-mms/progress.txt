@@ -1,0 +1,96 @@
+# Codebase Patterns — lm-app
+
+## Tech Stack
+- Frontend: SvelteKit 2.50 + Svelte 5 runes + Tailwind v4 + shadcn-svelte
+- API: Express ES modules (import/export), Node 20+, port 3001
+- DB: Supabase PostgreSQL — use supabaseAdmin (service role) for API queries
+- Auth: supabase.auth session in frontend, verifyToken middleware in API
+- File pattern: src/routes/(auth)/[page]/+page.svelte for frontend pages
+- API pattern: api/routes/[feature].js, mounted in api/server.js
+
+## Design Tokens
+- Dark bg: #0a0a0c
+- Gold accent: #C5A55A
+- Card border: rgba(197,165,90,0.12)
+- Hover bg: rgba(197,165,90,0.04)
+- Headings: Playfair Display (serif)
+- Body: Inter (sans-serif)
+
+## Critical Gotchas
+- JS not TS — use JSDoc annotations with @type comments, NO .ts files
+- Svelte 5 runes: $state(), $derived(), $props(), $effect() — NO legacy let reactivity
+- shadcn-svelte components in src/lib/components/ui/ — NEVER edit directly, add via npx shadcn-svelte add
+- Webhook routes mount BEFORE express.json() — Twilio sends URL-encoded
+- Pre-push hook runs prettier --check on ENTIRE repo, not just changed files
+- PUBLIC_API_URL is baked at BUILD TIME — must override for production builds
+- Two Supabase clients: supabase (anon/RLS) and supabaseAdmin (service role)
+- From number fallback: from_number || TWILIO_SMS_FROM_NUMBER || TWILIO_TEST1_PHONE_NUMBER || TWILIO_PHONE_NUMBER || TWILIO_MAIN_PHONE_NUMBER
+- Use findConversation() and lookupContactByPhone() from api/services/phone-lookup.js — don't duplicate
+
+## Existing Messaging Infrastructure
+- Conversations table: phone_number, twilio_number, display_name, contact_id, last_message, last_at, unread_count, status
+- Messages table: conversation_id, direction, body, from_number, to_number, twilio_sid, status, media_urls (JSONB), reactions (JSONB), metadata (JSONB), sent_by, created_at
+- SMS templates table: name, body, category, tags, is_active, created_by
+- Scheduled messages table: to_number, from_number, body, template_id, conversation_id, scheduled_at, status, sent_at, error_message, created_by
+- API routes: /api/messages/*, /api/templates/*, /api/scheduled-messages/*
+- Webhook: /api/webhooks/sms/incoming, /api/webhooks/sms/status, /api/webhooks/sms/studio-send
+- Frontend components: ChatsTab, TemplatesTab, ScheduledTab, ComposeBar, EmojiPicker, TagInsert, TemplateInsert, SchedulePopover, MessageReactions
+
+## Commit Convention
+- Format: [area] Brief description
+- Co-author line: Co-Authored-By: Claude <noreply@anthropic.com>
+- Stage specific files, never git add -A
+
+## SD-004 Learnings
+- Svelte 5 $effect() return function is the cleanup — use for clearInterval
+- Auto-refresh $effect needs no dependencies to run once on mount
+- The ScheduledTab API returns `count` but component reads `res.total` — existing mismatch, didn't fix (out of scope)
+- `toLocaleDateString` + `toLocaleTimeString` split gives cleaner formatting than one call with all options
+
+## SD-003 Learnings
+- Prettier has no SQL parser — don't include .sql files in prettier --write calls
+- The `updated_at` backoff works because scheduled_messages rows are created well before scheduled_at arrives, so updated_at is always old enough on first attempt
+- Supabase JS client `.lt('retry_count', 3)` maps to `retry_count < 3` — no raw SQL needed
+- When update has conditional fields, use spread: `...(condition && { field: value })`
+
+## SD-002 Learnings
+- scheduled_messages.conversation_id may be pre-set (from UI) or null — check it before calling findConversation()
+- The find-or-create conversation pattern from POST /api/messages/send is the canonical reference — uses phone_normalized + phone variant matching
+- metadata.source='scheduled' + metadata.scheduled_message_id links the message record back to the scheduled_messages row
+- Build guard hook blocks `npx vite build` without PUBLIC_API_URL — use `PUBLIC_API_URL=https://api.lemedspa.app npx vite build`
+
+## MMS-001 Learnings
+- Use blob URL approach for authed image loading: fetch with Authorization header → blob → URL.createObjectURL() — same pattern as voicemail recording proxy
+- Cache promises in a Map keyed by `${msgId}-${index}` to avoid re-fetching on re-render — Svelte 5 `{#await}` resolves immediately with cached promise
+- `{#if msg.body}` guard needed since MMS-only messages may have empty body
+- ImageLightbox: svelte:window onkeydown for Escape, click-outside via checking e.target === e.currentTarget on backdrop div
+- Edit tool needs exact content matching — use unique single-line strings rather than multi-line with ambiguous whitespace
+
+## MMS-002 Learnings
+- Media proxy follows exact same pattern as voicemail recording proxy: fetch with Basic Auth → stream reader → pipe to response
+- Twilio media URLs require HTTP Basic Auth with TWILIO_ACCOUNT_SID:TWILIO_AUTH_TOKEN (same as recordings)
+- Use 502 for Twilio fetch failures (upstream error), 404 for missing message or out-of-bounds index
+- Cache-Control private, max-age=3600 for proxied media — browser caches for 1 hour, no CDN caching
+
+## MMS-003 Learnings
+- ComposeBar onSend signature extended to (body: string, file?: File) — backward-compatible, ChatsTab ignores second arg until MMS-004
+- URL.createObjectURL() for local preview, URL.revokeObjectURL() on remove to prevent memory leaks
+- Reset file input value after selection (`e.target.value = ''`) so same file can be re-selected after removal
+- onError prop added to ComposeBar for 5MB validation — ChatsTab passes its onError through
+- Send button disabled check needs both `!body.trim() && !attachment` — allows image-only messages
+
+## MMS-004 Learnings
+- multer with memoryStorage() gives req.file.buffer directly — no temp files to clean up
+- Supabase Storage upload: supabaseAdmin.storage.from('mms').upload(path, buffer, { contentType })
+- getPublicUrl() returns { data: { publicUrl } } — no error field, always succeeds (just constructs URL)
+- 'mms' bucket must be created as PUBLIC in Supabase dashboard — Twilio fetches the URL to send as MMS
+- API client detects FormData via `options.body instanceof FormData` to skip default Content-Type: application/json
+- multer middleware placed before logAction: upload.single('image') runs first, then req.body is populated
+- When body is empty but image present, use '[Image]' as last_message in conversation for preview
+
+## MMS-005 Learnings
+- Outbound images use Supabase Storage public URLs — no proxy needed, render src directly
+- Inbound images use Twilio API URLs containing 'api.twilio.com' — must go through auth proxy
+- `isPublicMediaUrl()` helper: any https URL NOT containing 'api.twilio.com' is treated as public
+- getMediaBlobUrl() now takes the raw URL as third parameter — returns Promise.resolve(url) for public URLs, skipping fetch+blob overhead
+- The image rendering template already handled both directions (inside direction-styled bubble div), only the URL resolution logic needed changing

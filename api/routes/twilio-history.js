@@ -12,12 +12,24 @@ const TM_BASE = 'https://rest.textmagic.com/api/v2';
 
 /**
  * GET /api/twilio-history/numbers
- * List all phone numbers on the Twilio account.
+ * Returns the phone number configured for this environment.
+ * Staging shows only the 213 number; production shows only the 818 number.
  */
 router.get('/numbers', logAction('twilio.numbers'), async (req, res) => {
 	try {
+		const configuredNumber = normalizePhone(
+			process.env.TWILIO_SMS_FROM_NUMBER ||
+				process.env.TWILIO_PHONE_NUMBER ||
+				process.env.TWILIO_MAIN_PHONE_NUMBER ||
+				''
+		);
+
+		if (!configuredNumber) {
+			return res.json({ data: [] });
+		}
+
 		const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-		const numbers = await client.incomingPhoneNumbers.list();
+		const numbers = await client.incomingPhoneNumbers.list({ phoneNumber: configuredNumber });
 
 		const data = numbers.map((n) => ({
 			sid: n.sid,

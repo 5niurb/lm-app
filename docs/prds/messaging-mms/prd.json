@@ -1,0 +1,96 @@
+{
+	"project": "lm-app",
+	"branchName": "ralph/mms-support",
+	"description": "Display inbound MMS images, proxy Twilio media, add image send capability to compose bar",
+	"userStories": [
+		{
+			"id": "MMS-001",
+			"title": "Display inbound MMS images in thread",
+			"description": "As a staff member, I want to see images that patients send via MMS, so that I can view treatment photos, before/after images, and other visual content.",
+			"acceptanceCriteria": [
+				"Messages with non-empty media_urls array show image thumbnail(s) below the text bubble",
+				"Thumbnails are max 240px wide with rounded corners (rounded-lg)",
+				"Multiple images per message display in a row/grid",
+				"Images use the proxy URL /api/messages/:id/media/:index (not raw Twilio URL)",
+				"Broken/expired images show a placeholder with 'Image unavailable' text",
+				"Images are clickable — opens full-size in a lightbox overlay",
+				"Lightbox has dark backdrop, close on click outside or X button",
+				"Build passes: npx vite build"
+			],
+			"priority": 1,
+			"passes": true,
+			"inProgress": false,
+			"notes": "The message bubble rendering is in ChatsTab.svelte. Look for the {#each messages} block and the inbound/outbound bubble divs."
+		},
+		{
+			"id": "MMS-002",
+			"title": "Proxy MMS media through API",
+			"description": "As the system, I want to proxy Twilio media URLs through our API, so that we don't expose Twilio credentials to the browser.",
+			"acceptanceCriteria": [
+				"New endpoint: GET /api/messages/:id/media/:index",
+				"Requires auth (verifyToken middleware)",
+				"Fetches the message record, validates index is within media_urls array bounds",
+				"Streams the Twilio media content using HTTP Basic auth (TWILIO_ACCOUNT_SID:TWILIO_AUTH_TOKEN)",
+				"Sets correct Content-Type header from Twilio response",
+				"Returns 404 if message not found or index out of bounds",
+				"Returns 502 if Twilio fetch fails",
+				"Build passes: npx vite build"
+			],
+			"priority": 2,
+			"passes": true,
+			"inProgress": false,
+			"notes": "Follow the same pattern as GET /api/voicemails/:id/recording in api/routes/voicemails.js. Use node-fetch or native fetch to stream from Twilio."
+		},
+		{
+			"id": "MMS-003",
+			"title": "Add image attachment to compose bar",
+			"description": "As a staff member, I want to attach an image when sending a message, so that I can share treatment photos and promotional images with patients.",
+			"acceptanceCriteria": [
+				"New image/paperclip button in ComposeBar toolbar (next to emoji, template, schedule buttons)",
+				"Clicking opens native file picker filtered to image types (jpg, png, gif, webp)",
+				"Max file size 5MB — show error toast if exceeded",
+				"Selected image shows as thumbnail preview above the textarea",
+				"Preview has an X button to remove the attachment",
+				"Attachment state is passed to the onSend callback",
+				"Build passes: npx vite build"
+			],
+			"priority": 3,
+			"passes": true,
+			"inProgress": false,
+			"notes": "ComposeBar.svelte uses $props() with onSend callback. Add an optional onSendWithMedia or extend onSend to accept a File parameter. Keep the existing text-only send working."
+		},
+		{
+			"id": "MMS-004",
+			"title": "Send outbound MMS via Twilio",
+			"description": "As the system, I want to upload images and send them as MMS, so that staff can share visual content with patients.",
+			"acceptanceCriteria": [
+				"Extend POST /api/messages/send to accept multipart/form-data with an image file",
+				"Upload image to Supabase Storage bucket 'mms' (create bucket if not exists)",
+				"Generate public URL for uploaded image",
+				"Pass public URL as mediaUrl in Twilio client.messages.create()",
+				"Store media URL in messages.media_urls on the outbound message record",
+				"Returns the created message with media_urls populated",
+				"Build passes: npx vite build"
+			],
+			"priority": 4,
+			"passes": true,
+			"inProgress": false,
+			"notes": "Use multer or express-fileupload for multipart handling. Supabase Storage: supabaseAdmin.storage.from('mms').upload(). Make bucket public or use signed URLs with long expiry (Twilio needs to fetch the image)."
+		},
+		{
+			"id": "MMS-005",
+			"title": "Display outbound MMS images in thread",
+			"description": "As a staff member, I want to see images I sent in the conversation thread, so that I have a complete visual record of the conversation.",
+			"acceptanceCriteria": [
+				"Outbound messages with media_urls show thumbnail in gold bubble",
+				"Same max 240px width, rounded corners, clickable lightbox as inbound",
+				"Images from Supabase Storage load without proxy (already public URLs)",
+				"Build passes: npx vite build"
+			],
+			"priority": 5,
+			"passes": true,
+			"inProgress": false,
+			"notes": "The display logic from MMS-001 should handle both directions. Outbound images may use Supabase Storage URLs (public) instead of Twilio URLs (proxied). Detect by URL prefix."
+		}
+	]
+}
