@@ -1,5 +1,118 @@
+## Session — 2026-02-22 (Session 50)
+**Focus:** Ship scheduled delivery, MMS, and auto-replies to production
+
+**Accomplished:**
+- Shipped MMS support (from previous session's Ralph Loop): merged to main, deployed, migration applied
+- Code review found 9 MMS issues (2 HIGH, 4 MEDIUM, 3 LOW) — fixed all HIGH and MEDIUM:
+  - Open proxy vulnerability → Twilio hostname validation
+  - Silent multer rejection → error handler middleware returning 400
+  - Blob URL memory leak → clearMediaCache() on conversation switch
+  - Public storage bucket → private bucket with signed URLs (1hr expiry)
+  - Orphaned files on send failure → cleanup in catch block
+  - Extension from browser filename → MIME_TO_EXT mapping
+- QA: 195/195 tests pass, build succeeds
+- Merged `ralph/scheduled-delivery` and `ralph/mms-support` to main (fast-forward)
+- Pushed 15 commits to main (CI all green)
+- Deployed frontend to Cloudflare Pages (804885a7.lm-app.pages.dev)
+- Applied DB migration: retry_count column, 'processing' status, polling index
+- Created private 'mms' Supabase Storage bucket (5MB limit, image types only)
+- Fixed Ralph Loop PROMPT.md for reliable subagent execution (explicit paths, max-turns 50)
+
+**Diagram:**
+```
+┌─────────────┐  webhook   ┌──────────────┐  store   ┌──────────┐
+│ Twilio SMS  │ ─────────► │ messages.js  │ ───────► │ Supabase │
+│ (inbound)   │            │  + MMS proxy │          │  messages │
+└─────────────┘            └──────┬───────┘          └──────────┘
+                                  │ proxy
+                           ┌──────▼───────┐
+                           │ Twilio CDN   │ (hostname-validated)
+                           └──────────────┘
+
+┌─────────────┐  upload    ┌──────────────┐  send    ┌──────────┐
+│ ComposeBar  │ ─────────► │ messages.js  │ ───────► │  Twilio  │
+│ (+ attach)  │  FormData  │  POST /send  │          │  MMS API │
+└─────────────┘            └──────┬───────┘          └──────────┘
+                                  │ store
+                           ┌──────▼───────┐
+                           │ Supabase     │ (private, signed URLs)
+                           │ Storage/mms  │
+                           └──────────────┘
+
+┌─────────────┐  poll      ┌──────────────┐  claim   ┌──────────┐
+│ cron/30s    │ ─────────► │ sched-sender │ ───────► │ Twilio   │
+│             │            │ claim→send   │          │ SMS API  │
+└─────────────┘            └──────────────┘          └──────────┘
+```
+
+**Current State:**
+- Both features merged to main and deployed to production
+- API auto-redeploys on Render (~2-3 min after push)
+- DB migration applied, MMS bucket created
+- On `main` branch, clean working tree
+
+- Orphaned files on send failure → cleanup in catch block
+  - Extension from browser filename → MIME_TO_EXT mapping
+- Created private 'mms' Supabase Storage bucket (5MB limit, image types only)
+- Applied scheduled delivery DB migration (retry_count, processing status, polling index)
+- Ran Ralph Loop for auto-replies (5 stories, all passed in single pass):
+  - AR-001: auto_reply_rules table + API CRUD
+  - AR-002: Settings UI with Auto-Replies tab in Messages page
+  - AR-003: Keyword matching + Twilio send on inbound SMS webhook
+  - AR-004: "Auto" badge on auto-reply messages in chat thread
+  - AR-005: 4 default seed rules (hours, address, booking, after-hours catch-all)
+- Code review found 3 auto-reply issues — fixed 2 blocking:
+  - HIGH: Auto-reply storm risk → 5-minute cooldown per conversation
+  - MEDIUM: Empty keyword rules accepted → server-side validation
+- Deployed frontend 3x to CF Pages (scheduled+MMS, then auto-replies)
+- Applied auto_reply_rules migration + seeded 4 default rules
+- Created `docs/prds/run-loop.sh` — reusable Ralph Loop runner script
+- All 195 tests pass, builds clean
+
+**Diagram:**
+```
+Messages Page Tabs:
+┌────────┬───────────┬───────────┬──────────────┐
+│ Chats  │ Templates │ Scheduled │ Auto-Replies │  ← NEW tab
+└────────┴───────────┴───────────┴──────────────┘
+
+Inbound SMS flow:
+┌──────────┐  webhook  ┌──────────┐  match   ┌──────────────┐  send   ┌────────┐
+│ Customer │ ────────► │ sms.js   │ ───────► │ auto_reply   │ ──────► │ Twilio │
+│ texts in │           │ /incoming│          │ _rules       │         │ reply  │
+└──────────┘           └────┬─────┘          │ (5min cool)  │         └────────┘
+                            │ save           └──────────────┘
+                       ┌────▼─────┐
+                       │ messages │ ← metadata.source='auto_reply'
+                       └──────────┘
+```
+
+**Current State:**
+- All 3 features live in production: scheduled delivery, MMS, auto-replies
+- 4 default auto-reply rules seeded (all inactive, ready for staff to enable)
+- On `main` branch, clean working tree (except SESSION_NOTES.md)
+- API auto-redeployed on Render
+
+**Issues:**
+- Dependabot: 2 high, 1 low vulnerabilities on default branch (pre-existing)
+- Ralph Loop PRD remaining: broadcast (not started)
+- Auto-reply "soft delete" is really just "disable" — no true delete. Working as designed.
+
+**Next Steps:**
+- Run Ralph Loop for broadcast PRD
+- Test auto-replies end-to-end (enable a rule, send test SMS)
+- Verify MMS end-to-end (send image, check proxy + lightbox)
+- Consider auto-reply rate limiting per phone number (future)
+
+---
+
 ## Session — 2026-02-21 (Session 49, continued)
 **Focus:** Staging environment full setup — auth, Twilio number filtering, CF Pages isolation
+
+---
+
+## Session — 2026-02-21 (Session 49)
+**Focus:** Staging auth setup + production redeploy
 
 **Accomplished:**
 - Created staging login user in Supabase (ops@lemedspa.com / !Mike0990)
