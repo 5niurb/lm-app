@@ -50,3 +50,26 @@
 ## Files
 - prd.json: docs/prds/messaging-auto-replies/prd.json
 - progress.txt: docs/prds/messaging-auto-replies/progress.txt
+
+## Learnings
+
+### AR-003: Auto-reply matching in sms.js
+- `convId` was declared inside the try block — had to hoist it to outer scope so the fire-and-forget auto-reply call (after the try/catch) can access it
+- Business hours logic duplicated inline from voice.js `hours-check` endpoint as `getBusinessHoursStatus()` — avoids self-HTTP call, same logic (Mon-Fri 10-6, Sat 10-4, Sun closed, LA timezone)
+- Auto-reply uses the Twilio `To` number from the inbound message as the `from` for the reply (preserves the same number the customer texted)
+- `processAutoReply()` is called without `await` — true fire-and-forget, doesn't block TwiML response
+- Rules are fetched sorted by priority ascending, and the first match wins — `trigger_type='any'` with high priority (99) acts as catch-all
+
+### AR-004: Auto-reply badge in message thread
+- Badge added in the timestamp line of the message bubble (ChatsTab.svelte ~line 884)
+- Uses `flex items-center gap-1` on the timestamp `<p>` to align badge inline with time
+- Wrapped existing time/status in a `<span>` so flex layout works properly
+- Badge style: `bg-white/15 text-primary-foreground/60` — subtle pill that works on gold outbound bubbles
+- Only shows when `msg.metadata?.source === 'auto_reply'` — manual outbound messages unaffected
+
+### AR-005: Default auto-reply seed data
+- Seed file at `api/db/seed-auto-replies.sql` — 4 rules, all `is_active=false` by default
+- Idempotency via `WHERE NOT EXISTS` — checks for matching trigger_keywords/trigger_type before inserting
+- Used `E'\u2019'` for smart apostrophes in response bodies (PostgreSQL escape syntax)
+- Keyword rules at priority 10, after-hours catch-all at priority 99
+- Google Maps link uses placeholder `https://maps.app.goo.gl/LeMedSpa` — update with real short link when available

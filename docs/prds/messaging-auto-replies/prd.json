@@ -95,8 +95,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 5,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "Put seed file in api/db/seed-auto-replies.sql. The after_hours catch-all has priority=99 so specific keyword rules always fire first."
 		}
 	]
