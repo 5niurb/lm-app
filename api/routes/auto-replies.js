@@ -45,6 +45,13 @@ router.post('/', logAction('auto-replies.create'), async (req, res) => {
 		return res.status(400).json({ error: 'response_body is required' });
 	}
 
+	if (
+		(!trigger_type || trigger_type === 'keyword') &&
+		(!trigger_keywords || trigger_keywords.length === 0)
+	) {
+		return res.status(400).json({ error: 'Keyword rules require at least one keyword' });
+	}
+
 	const { data, error } = await supabaseAdmin
 		.from('auto_reply_rules')
 		.insert({

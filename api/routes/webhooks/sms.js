@@ -79,6 +79,18 @@ async function findMatchingAutoReplyRule(messageBody) {
  */
 async function processAutoReply({ messageBody, fromNumber, toNumber, convId }) {
 	try {
+		// Cooldown: skip if an auto-reply was sent in this conversation within the last 5 minutes
+		const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+		const { data: recent } = await supabaseAdmin
+			.from('messages')
+			.select('id')
+			.eq('conversation_id', convId)
+			.eq('direction', 'outbound')
+			.eq('metadata->>source', 'auto_reply')
+			.gte('created_at', fiveMinAgo)
+			.limit(1);
+		if (recent?.length) return;
+
 		const rule = await findMatchingAutoReplyRule(messageBody);
 		if (!rule) return;
 
