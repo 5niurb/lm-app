@@ -881,18 +881,27 @@
 										</div>
 									{/if}
 									<p
-										class="text-[10px] mt-1 {msg.direction === 'outbound'
+										class="text-[10px] mt-1 flex items-center gap-1 {msg.direction === 'outbound'
 											? 'text-primary-foreground/50'
 											: 'text-text-ghost'}"
 									>
-										{new Date(msg.created_at).toLocaleTimeString('en-US', {
-											hour: 'numeric',
-											minute: '2-digit'
-										})}
-										{#if msg.status === 'delivered'}
-											&middot; Delivered
-										{:else if msg.status === 'failed'}
-											&middot; <span class="text-red-400">Failed</span>
+										<span>
+											{new Date(msg.created_at).toLocaleTimeString('en-US', {
+												hour: 'numeric',
+												minute: '2-digit'
+											})}
+											{#if msg.status === 'delivered'}
+												&middot; Delivered
+											{:else if msg.status === 'failed'}
+												&middot; <span class="text-red-400">Failed</span>
+											{/if}
+										</span>
+										{#if msg.metadata?.source === 'auto_reply'}
+											<span
+												class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-white/15 text-primary-foreground/60"
+											>
+												Auto
+											</span>
 										{/if}
 									</p>
 								</div>

@@ -61,8 +61,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 3,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "Add the auto-reply check AFTER the existing message save + TextMagic forward. Use try/catch so failures don't affect the webhook response. Keep the empty TwiML response as-is."
 		},
 		{
@@ -78,7 +78,7 @@
 			],
 			"priority": 4,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "Check message.metadata?.source === 'auto_reply' in the bubble rendering. Same place where reactions are rendered."
 		},
 		{
