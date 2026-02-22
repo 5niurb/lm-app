@@ -95,6 +95,7 @@ import syncRoutes from './routes/sync.js';
 import appointmentRoutes from './routes/appointments.js';
 import templateRoutes from './routes/templates.js';
 import scheduledMessageRoutes from './routes/scheduled-messages.js';
+import autoReplyRoutes from './routes/auto-replies.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/calls', callRoutes);
@@ -109,6 +110,7 @@ app.use('/api/twilio-history', twilioHistoryRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/scheduled-messages', scheduledMessageRoutes);
+app.use('/api/auto-replies', autoReplyRoutes);
 
 app.listen(PORT, () => {
 	console.log(`LM App API running on port ${PORT}`);

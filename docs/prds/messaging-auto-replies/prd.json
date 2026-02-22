@@ -21,7 +21,7 @@
 			],
 			"priority": 1,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "Follow the same CRUD pattern as api/routes/templates.js. Use supabaseAdmin for all queries."
 		},
 		{
