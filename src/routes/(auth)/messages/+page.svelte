@@ -4,6 +4,7 @@
 	import ChatsTab from '$lib/components/messaging/ChatsTab.svelte';
 	import TemplatesTab from '$lib/components/messaging/TemplatesTab.svelte';
 	import ScheduledTab from '$lib/components/messaging/ScheduledTab.svelte';
+	import AutoRepliesTab from '$lib/components/messaging/AutoRepliesTab.svelte';
 
 	// ─── Shared state ───
 	/** @type {Array<{sid: string, phoneNumber: string, friendlyName: string}>} */
@@ -83,6 +84,12 @@
 						</span>
 					{/if}
 				</TabsTrigger>
+				<TabsTrigger
+					value="auto-replies"
+					class="rounded-none border-b-2 border-transparent data-[state=active]:border-gold data-[state=active]:text-gold data-[state=active]:bg-transparent px-4 py-2.5 text-sm"
+				>
+					Auto-Replies
+				</TabsTrigger>
 			</TabsList>
 		</div>
 
@@ -106,6 +113,10 @@
 				}}
 				onError={handleError}
 			/>
+		</TabsContent>
+
+		<TabsContent value="auto-replies" class="flex-1 overflow-hidden mt-0">
+			<AutoRepliesTab onError={handleError} />
 		</TabsContent>
 	</Tabs>
 

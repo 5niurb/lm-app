@@ -20,8 +20,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 1,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "Follow the same CRUD pattern as api/routes/templates.js. Use supabaseAdmin for all queries."
 		},
 		{
@@ -40,7 +40,7 @@
 			],
 			"priority": 2,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "Match the visual style of TemplatesTab.svelte — same card layout, hover states, category pills. Use Sheet for create/edit forms."
 		},
 		{
