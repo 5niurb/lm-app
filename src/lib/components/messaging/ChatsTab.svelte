@@ -69,13 +69,13 @@
 	const mediaCache = new Map();
 
 	/**
-	 * Check if a media URL is publicly accessible (e.g. Supabase Storage).
+	 * Check if a media URL is publicly accessible (Supabase Storage signed URL).
 	 * Twilio URLs require auth and must go through the proxy.
 	 * @param {string} url
 	 * @returns {boolean}
 	 */
 	function isPublicMediaUrl(url) {
-		return url.startsWith('https://') && !url.includes('api.twilio.com');
+		return url.startsWith('https://') && url.includes('supabase.co/storage');
 	}
 
 	/**
@@ -230,7 +230,20 @@
 		}
 	}
 
+	/** Revoke cached blob URLs to free memory */
+	function clearMediaCache() {
+		for (const promise of mediaCache.values()) {
+			promise
+				.then((url) => {
+					if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+				})
+				.catch(() => {});
+		}
+		mediaCache.clear();
+	}
+
 	async function selectConversation(convo) {
+		clearMediaCache();
 		selectedConvo = convo;
 		loadingMessages = true;
 		try {
@@ -853,7 +866,7 @@
 													>
 														<img
 															src={blobUrl}
-															alt="MMS image"
+															alt="Attached photo"
 															class="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
 														/>
 													</button>
