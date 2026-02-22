@@ -31,7 +31,7 @@
 	</button>
 	<img
 		{src}
-		alt="Full size image"
+		alt="Full size photo"
 		class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
 	/>
 </div>
