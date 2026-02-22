@@ -1,36 +1,49 @@
-## Session — 2026-02-21 (Session 49)
-**Focus:** Staging auth setup + production redeploy
+## Session — 2026-02-21 (Session 49, continued)
+**Focus:** Staging environment full setup — auth, Twilio number filtering, CF Pages isolation
 
 **Accomplished:**
-- Created staging login user in Supabase (lemedapp-staging project `ohdrhqmfzinizrldoaih`)
-  - Email: ops@lemedspa.com, password set, email confirmed, identity record created
-- Redeployed production frontend to CF Pages — verified 200, API healthy, CORS ok
-  - Build note: .env file missing from repo root; must pass all PUBLIC_ vars inline
+- Created staging login user in Supabase (ops@lemedspa.com / !Mike0990)
+- Redeployed production frontend to CF Pages — verified
+- Filtered messaging UI to show only configured Twilio number per environment
+  - `api/routes/twilio-history.js` — uses `TWILIO_PHONE_NUMBER` env var + Twilio API `phoneNumber` filter
+  - Committed `b2e2c6d`, pushed, deployed to production
+- Fixed staging showing production data — three separate issues:
+  1. **Staging API** had production Supabase credentials → updated Render env vars
+  2. **CF Pages custom domain** — `staging.lemedspa.app` on `lm-app` project served production branch
+  3. **Solution:** Created separate `lm-app-staging` CF Pages project (Pages, not Workers!)
+- Set up `lm-app-staging` CF Pages project:
+  - Build command writes `.env` inline (SvelteKit needs vars at build time)
+  - Build output: `.svelte-kit/cloudflare`
+  - Framework preset: SvelteKit
+  - Env vars: staging Supabase + staging API URLs
+- Updated `wrangler.toml` on staging branch → `name = "lm-app-staging"`, staging URLs
+  - Commits: `e560b5d`, `eba87b2` on staging branch
+- Moved `staging.lemedspa.app` custom domain from `lm-app` → `lm-app-staging`
+- Verified staging: frontend 200, API healthy, CORS correct
 
 **Diagram:**
 ```
-Staging Supabase (ohdrhqmfzinizrldoaih)
-  └── auth.users + auth.identities → ops@lemedspa.com ✓
-
-Production deploy (CF Pages, main branch)
-  ├── Build: PUBLIC_API_URL + PUBLIC_SUPABASE_URL + PUBLIC_SUPABASE_ANON_KEY inline
-  ├── Deploy: 157966ef.lm-app.pages.dev
-  ├── lemedspa.app                → 200 ✓
-  ├── api.lemedspa.app/api/health → ok ✓
-  └── CORS                        → lemedspa.app allowed ✓
+PRODUCTION (main branch)              STAGING (staging branch)
+lm-app (CF Pages)                     lm-app-staging (CF Pages)
+  → lemedspa.app ✓                      → staging.lemedspa.app ✓
+  → api.lemedspa.app ✓                  → staging-api.lemedspa.app ✓
+  → Supabase #1 (skvsjcck...)          → Supabase #2 (ohdrhqmf...)
+  → wrangler.toml: name=lm-app         → wrangler.toml: name=lm-app-staging
+  → Twilio: 818 number                 → Twilio: 213 number
 ```
 
 **Current State:**
-- Staging login ready at staging.lemedspa.app (ops@lemedspa.com)
-- Production frontend freshly deployed and verified
-- On `main` branch
+- Staging fully isolated and verified — separate CF Pages, Supabase, API
+- Production deployed and verified
+- On `main` branch, `.mcp.json` unstaged (gitignored)
 
 **Issues:**
-- No .env file in repo root — build requires all PUBLIC_ vars passed inline
 - Dependabot: 2 high, 1 low vulnerabilities on default branch
+- staging branch is behind main (missing Twilio number filter commit)
 
 **Next Steps:**
-- Create .env file with public vars for local dev (or document the inline build pattern)
+- Merge main → staging to sync Twilio number filtering
+- Test staging login flow end-to-end
 - Continue feature development
 
 ---
