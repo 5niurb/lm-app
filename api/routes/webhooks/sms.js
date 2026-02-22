@@ -10,6 +10,118 @@ import {
 	normalizePhone
 } from '../../services/phone-lookup.js';
 
+/**
+ * Check if the business is currently open.
+ * Mirrors the logic in voice.js hours-check endpoint.
+ * @returns {'open' | 'closed'}
+ */
+function getBusinessHoursStatus() {
+	if (process.env.FORCE_HOURS_OPEN === 'true') return 'open';
+
+	const now = new Date();
+	const laTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+	const day = laTime.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+	const hour = laTime.getHours();
+	const minute = laTime.getMinutes();
+	const timeDecimal = hour + minute / 60;
+
+	if (day >= 1 && day <= 5 && timeDecimal >= 10 && timeDecimal < 18) return 'open';
+	if (day === 6 && timeDecimal >= 10 && timeDecimal < 16) return 'open';
+	return 'closed';
+}
+
+/**
+ * Find the highest-priority auto-reply rule that matches the inbound message.
+ * Rules are sorted by priority ascending — first match wins.
+ * @param {string} messageBody - The inbound message text
+ * @returns {Promise<object|null>} The matched rule, or null
+ */
+async function findMatchingAutoReplyRule(messageBody) {
+	const { data: rules, error } = await supabaseAdmin
+		.from('auto_reply_rules')
+		.select('*')
+		.eq('is_active', true)
+		.order('priority', { ascending: true });
+
+	if (error || !rules || rules.length === 0) return null;
+
+	const hoursStatus = getBusinessHoursStatus();
+	const bodyLower = messageBody.toLowerCase();
+
+	for (const rule of rules) {
+		// Check hours restriction
+		if (rule.hours_restriction === 'after_hours' && hoursStatus === 'open') continue;
+		if (rule.hours_restriction === 'business_hours' && hoursStatus === 'closed') continue;
+		// 'always' passes through
+
+		// Check trigger match
+		if (rule.trigger_type === 'keyword') {
+			const keywords = rule.trigger_keywords || [];
+			const matched = keywords.some((kw) => bodyLower.includes(kw.toLowerCase()));
+			if (!matched) continue;
+		}
+		// trigger_type='any' matches all messages — no keyword check needed
+
+		return rule;
+	}
+
+	return null;
+}
+
+/**
+ * Process auto-reply for an inbound message (fire-and-forget).
+ * Sends the reply via Twilio, inserts it into messages, and updates the conversation.
+ * @param {object} params
+ * @param {string} params.messageBody - The inbound message text
+ * @param {string} params.fromNumber - The sender's phone number (customer)
+ * @param {string} params.toNumber - The Twilio number that received the message
+ * @param {string} params.convId - The conversation ID
+ */
+async function processAutoReply({ messageBody, fromNumber, toNumber, convId }) {
+	try {
+		const rule = await findMatchingAutoReplyRule(messageBody);
+		if (!rule) return;
+
+		// Send auto-reply via Twilio
+		const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+
+		const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.API_BASE_URL || '';
+		const statusCallback = baseUrl ? `${baseUrl}/api/webhooks/sms/status` : undefined;
+
+		const twilioMsg = await client.messages.create({
+			to: fromNumber,
+			from: toNumber,
+			body: rule.response_body,
+			...(statusCallback && { statusCallback })
+		});
+
+		// Insert auto-reply message record
+		await supabaseAdmin.from('messages').insert({
+			conversation_id: convId,
+			direction: 'outbound',
+			body: rule.response_body,
+			from_number: toNumber,
+			to_number: fromNumber,
+			twilio_sid: twilioMsg.sid,
+			status: twilioMsg.status || 'sent',
+			metadata: { source: 'auto_reply', rule_id: rule.id }
+		});
+
+		// Update conversation with auto-reply as latest message
+		await supabaseAdmin
+			.from('conversations')
+			.update({
+				last_message: rule.response_body.substring(0, 200),
+				last_at: new Date().toISOString()
+			})
+			.eq('id', convId);
+
+		console.log(`Auto-reply sent: rule=${rule.id}, to=${fromNumber}, conv=${convId}`);
+	} catch (e) {
+		console.error('Auto-reply failed:', e.message);
+	}
+}
+
 const router = Router();
 
 // Twilio sends URL-encoded data; Studio make-http-request sends JSON
@@ -43,11 +155,11 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 		}
 	}
 
+	let convId;
+
 	try {
 		// Find or create conversation — one thread per customer phone number
 		const existing = await findConversation(fromNumber);
-
-		let convId;
 
 		if (existing) {
 			convId = existing.id;
@@ -103,7 +215,12 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 	// Forward to TextMagic for parallel operation (fire-and-forget)
 	forwardToTextMagic(req.body);
 
-	// Respond with empty TwiML (no auto-reply — replies managed from the app)
+	// Check for auto-reply rules (fire-and-forget — doesn't block webhook response)
+	if (convId && body) {
+		processAutoReply({ messageBody: body, fromNumber, toNumber, convId });
+	}
+
+	// Respond with empty TwiML
 	res.type('text/xml');
 	res.send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
 });

@@ -39,8 +39,8 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 2,
-			"passes": false,
-			"inProgress": true,
+			"passes": true,
+			"inProgress": false,
 			"notes": "Match the visual style of TemplatesTab.svelte — same card layout, hover states, category pills. Use Sheet for create/edit forms."
 		},
 		{
@@ -62,7 +62,7 @@
 			],
 			"priority": 3,
 			"passes": false,
-			"inProgress": false,
+			"inProgress": true,
 			"notes": "Add the auto-reply check AFTER the existing message save + TextMagic forward. Use try/catch so failures don't affect the webhook response. Keep the empty TwiML response as-is."
 		},
 		{
