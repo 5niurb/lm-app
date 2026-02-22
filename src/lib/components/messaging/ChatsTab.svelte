@@ -11,7 +11,12 @@
 		PhoneOutgoing,
 		RefreshCw,
 		ArrowDownLeft,
-		ArrowUpRight
+		ArrowUpRight,
+		Check,
+		CheckCheck,
+		Clock,
+		X,
+		AlertTriangle
 	} from '@lucide/svelte';
 	import { resolve } from '$app/paths';
 	import { get } from 'svelte/store';
@@ -58,6 +63,9 @@
 	/** @type {any[]|null} */
 	let logMessages = $state(null);
 	let loadingLog = $state(false);
+
+	// Schedule success banner
+	let scheduleBanner = $state('');
 
 	// Lightbox
 	/** @type {string|null} */
@@ -334,6 +342,39 @@
 		} catch (e) {
 			onError(e.message ?? 'Failed to send message');
 			throw e; // rethrow so ComposeBar doesn't clear input
+		}
+	}
+
+	/**
+	 * Schedule a message for future delivery.
+	 * @param {string} body
+	 * @param {string} scheduledAt - ISO 8601 timestamp
+	 */
+	async function scheduleMessage(body, scheduledAt) {
+		try {
+			const to = selectedConvo?.phone_number || newConvoPhone.trim();
+			const from = selectedNumber || undefined;
+			const conversationId = selectedConvo?.id || undefined;
+
+			await api('/api/scheduled-messages', {
+				method: 'POST',
+				body: JSON.stringify({ to, body, scheduledAt, from, conversationId })
+			});
+
+			const dt = new Date(scheduledAt);
+			const timeStr = dt.toLocaleString('en-US', {
+				month: 'short',
+				day: 'numeric',
+				hour: 'numeric',
+				minute: '2-digit'
+			});
+			scheduleBanner = `Message scheduled for ${timeStr}`;
+			setTimeout(() => {
+				scheduleBanner = '';
+			}, 4000);
+		} catch (e) {
+			onError(e.message ?? 'Failed to schedule message');
+			throw e;
 		}
 	}
 
@@ -890,12 +931,20 @@
 												hour: 'numeric',
 												minute: '2-digit'
 											})}
-											{#if msg.status === 'delivered'}
-												&middot; Delivered
-											{:else if msg.status === 'failed'}
-												&middot; <span class="text-red-400">Failed</span>
-											{/if}
 										</span>
+										{#if msg.direction === 'outbound'}
+											{#if msg.status === 'queued'}
+												<Clock class="h-3 w-3 opacity-50" />
+											{:else if msg.status === 'sent'}
+												<Check class="h-3 w-3 opacity-60" />
+											{:else if msg.status === 'delivered'}
+												<CheckCheck class="h-3 w-3 text-gold" />
+											{:else if msg.status === 'failed'}
+												<X class="h-3 w-3 text-red-400" />
+											{:else if msg.status === 'undelivered'}
+												<AlertTriangle class="h-3 w-3 text-orange-400" />
+											{/if}
+										{/if}
 										{#if msg.metadata?.source === 'auto_reply'}
 											<span
 												class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-white/15 text-primary-foreground/60"
@@ -929,8 +978,22 @@
 				{/if}
 			</div>
 
+			<!-- Schedule success banner -->
+			{#if scheduleBanner}
+				<div
+					class="px-4 py-2 bg-emerald-500/10 border-t border-emerald-500/20 text-emerald-400 text-xs text-center"
+				>
+					{scheduleBanner}
+				</div>
+			{/if}
+
 			<!-- Compose -->
-			<ComposeBar onSend={sendMessage} {onError} placeholder="Type a message..." />
+			<ComposeBar
+				onSend={sendMessage}
+				onSchedule={scheduleMessage}
+				{onError}
+				placeholder="Type a message..."
+			/>
 		{:else if showNewConvo}
 			<!-- New conversation compose view -->
 			<div class="flex-1 flex flex-col">
@@ -979,6 +1042,7 @@
 				</div>
 				<ComposeBar
 					onSend={sendMessage}
+					onSchedule={scheduleMessage}
 					{onError}
 					placeholder="Type a message..."
 					disabled={!newConvoPhone.trim()}

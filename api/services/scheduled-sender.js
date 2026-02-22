@@ -1,6 +1,7 @@
 import twilio from 'twilio';
 import { supabaseAdmin } from './supabase.js';
 import { findConversation, normalizePhone } from './phone-lookup.js';
+import { resolveTags } from './tag-resolver.js';
 
 /**
  * Process due scheduled messages — send via Twilio and update status.
@@ -43,10 +44,16 @@ export async function processScheduledMessages() {
 			process.env.TWILIO_MAIN_PHONE_NUMBER;
 
 		try {
+			// Resolve dynamic tags before sending
+			const resolvedBody = await resolveTags(msg.body, {
+				phoneNumber: msg.to_number,
+				conversationId: msg.conversation_id
+			});
+
 			const twilioMsg = await client.messages.create({
 				to: msg.to_number,
 				from: fromNumber,
-				body: msg.body,
+				body: resolvedBody,
 				...(statusCallback && { statusCallback })
 			});
 
@@ -81,7 +88,7 @@ export async function processScheduledMessages() {
 							twilio_number: fromNumber || null,
 							display_name: contact?.full_name || null,
 							contact_id: contact?.id || null,
-							last_message: msg.body,
+							last_message: resolvedBody,
 							last_at: new Date().toISOString()
 						})
 						.select('id')
@@ -96,7 +103,7 @@ export async function processScheduledMessages() {
 				const { error: msgErr } = await supabaseAdmin.from('messages').insert({
 					conversation_id: convId,
 					direction: 'outbound',
-					body: msg.body,
+					body: resolvedBody,
 					from_number: fromNumber,
 					to_number: msg.to_number,
 					twilio_sid: twilioMsg.sid,
@@ -112,7 +119,7 @@ export async function processScheduledMessages() {
 				await supabaseAdmin
 					.from('conversations')
 					.update({
-						last_message: msg.body,
+						last_message: resolvedBody,
 						last_at: new Date().toISOString(),
 						status: 'active'
 					})

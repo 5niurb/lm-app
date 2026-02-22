@@ -6,6 +6,7 @@ import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { findConversation, normalizePhone } from '../services/phone-lookup.js';
+import { resolveTags } from '../services/tag-resolver.js';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MIME_TO_EXT = {
@@ -216,6 +217,11 @@ router.post(
 			return res.status(500).json({ error: 'No Twilio phone number configured' });
 		}
 
+		// Resolve dynamic tags (e.g. {{first_name}}) before sending
+		const resolvedBody = body
+			? await resolveTags(body, { phoneNumber: toNumber, conversationId })
+			: '';
+
 		let storagePath = null;
 		try {
 			let mediaUrl = null;
@@ -257,7 +263,7 @@ router.post(
 			const twilioMsg = await client.messages.create({
 				to: toNumber,
 				from: fromNumber,
-				body: body || '',
+				body: resolvedBody,
 				...(mediaUrl && { mediaUrl: [mediaUrl] }),
 				...(statusCallback && { statusCallback })
 			});
@@ -285,7 +291,7 @@ router.post(
 							twilio_number: fromNumber || null,
 							display_name: contact?.full_name || null,
 							contact_id: contact?.id || null,
-							last_message: body || (mediaUrl ? '[Image]' : ''),
+							last_message: resolvedBody || (mediaUrl ? '[Image]' : ''),
 							last_at: new Date().toISOString()
 						})
 						.select('id')
@@ -301,7 +307,7 @@ router.post(
 				.insert({
 					conversation_id: convId,
 					direction: 'outbound',
-					body: body || '',
+					body: resolvedBody,
 					from_number: fromNumber,
 					to_number: toNumber,
 					twilio_sid: twilioMsg.sid,
@@ -320,7 +326,7 @@ router.post(
 			await supabaseAdmin
 				.from('conversations')
 				.update({
-					last_message: body || (mediaUrl ? '[Image]' : ''),
+					last_message: resolvedBody || (mediaUrl ? '[Image]' : ''),
 					last_at: new Date().toISOString(),
 					status: 'active'
 				})

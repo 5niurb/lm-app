@@ -9,6 +9,7 @@ import {
 	findConversation,
 	normalizePhone
 } from '../../services/phone-lookup.js';
+import { resolveTags } from '../../services/tag-resolver.js';
 
 /**
  * Check if the business is currently open.
@@ -94,6 +95,12 @@ async function processAutoReply({ messageBody, fromNumber, toNumber, convId }) {
 		const rule = await findMatchingAutoReplyRule(messageBody);
 		if (!rule) return;
 
+		// Resolve dynamic tags in the auto-reply template
+		const resolvedReply = await resolveTags(rule.response_body, {
+			phoneNumber: fromNumber,
+			conversationId: convId
+		});
+
 		// Send auto-reply via Twilio
 		const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
@@ -103,7 +110,7 @@ async function processAutoReply({ messageBody, fromNumber, toNumber, convId }) {
 		const twilioMsg = await client.messages.create({
 			to: fromNumber,
 			from: toNumber,
-			body: rule.response_body,
+			body: resolvedReply,
 			...(statusCallback && { statusCallback })
 		});
 
@@ -111,7 +118,7 @@ async function processAutoReply({ messageBody, fromNumber, toNumber, convId }) {
 		await supabaseAdmin.from('messages').insert({
 			conversation_id: convId,
 			direction: 'outbound',
-			body: rule.response_body,
+			body: resolvedReply,
 			from_number: toNumber,
 			to_number: fromNumber,
 			twilio_sid: twilioMsg.sid,
@@ -123,7 +130,7 @@ async function processAutoReply({ messageBody, fromNumber, toNumber, convId }) {
 		await supabaseAdmin
 			.from('conversations')
 			.update({
-				last_message: rule.response_body.substring(0, 200),
+				last_message: resolvedReply.substring(0, 200),
 				last_at: new Date().toISOString()
 			})
 			.eq('id', convId);
