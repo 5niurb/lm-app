@@ -316,8 +316,8 @@ Files: `calls.md`, `messages.md`, `contacts.md`, `dashboard.md`, `softphone.md`,
 This repo is configured to work in cloud VM sessions (launched from claude.ai/code or the iOS app). Cloud VMs clone the repo fresh — only committed files in `.claude/` are available.
 
 ### What Works in Cloud
-- **Agents:** `code-reviewer`, `qa`, `research` — committed to `.claude/agents/`
-- **Skills:** `/capture-specs`, `/deploy`, `/verify`, `/commit`, `/migrate` — committed to `.claude/skills/`
+- **Agents:** `code-reviewer`, `qa`, `research`, `database-reviewer`, `security-reviewer`, `architect`, `build-error-resolver` — committed to `.claude/agents/`
+- **Skills:** `/capture-specs`, `/deploy`, `/verify`, `/commit`, `/migrate`, `/checkpoint`, `/orchestrate` — committed to `.claude/skills/`
 - **Hooks:** env blocker, prettier auto-format, cloud-setup bootstrap — in `.claude/settings.json`
 - **MCP servers:** context7, sequential-thinking — in `.mcp.json`
 - **Subagent workflow:** Write code → spawn code-reviewer → spawn qa → fix → ship (works identically)

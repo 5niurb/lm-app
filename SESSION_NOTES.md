@@ -1,3 +1,49 @@
+## Session — 2026-02-22 (Session 51)
+**Focus:** End-to-end testing of auto-replies and MMS, fix keyword quote bug
+
+**Accomplished:**
+- Tested auto-replies end-to-end: enabled location rule, sent "Location?" via SMS, verified auto-reply delivered in ~1s with correct metadata
+- Tested MMS end-to-end: inbound image stored in media_urls, renders in UI with lightbox, proxy works
+- Verified "Auto" badge displays correctly on auto-reply messages in chat thread
+- Found and fixed bug: keywords with surrounding quotes (e.g. `"what is your address"`) saved literal quote chars, breaking matching
+  - Fixed in 3 places: frontend (AutoRepliesTab.svelte), API create, API update (auto-replies.js)
+  - Regex: `^["']+|["']+$` strips leading/trailing quotes without affecting middle content
+- Cleaned DB: stripped quotes from location rule keywords
+- Fixed 5 files with stale CRLF formatting that blocked pre-push hook
+- Deployed frontend to CF Pages (7b94d260.lm-app.pages.dev)
+- Pushed to GitHub, API auto-redeploying on Render
+
+**Diagram:**
+```
+SMS Test Flow:
+┌──────────┐  "Location?"  ┌──────────┐  match kw   ┌────────────┐  reply  ┌────────┐
+│ Owner    │ ────────────► │ sms.js   │ ──────────► │ auto_reply │ ──────► │ Twilio │
+│ phone    │  + image(MMS) │ /incoming│             │ _rules     │         │ → user │
+└──────────┘               └──────────┘             └────────────┘         └────────┘
+                                                         │
+                                              quote-strip fix:
+                                              "address" → address
+```
+
+**Current State:**
+- All tests passing (195 tests), build clean
+- Location auto-reply rule active in production (address, location, where, directions)
+- Other 3 rules remain inactive (hours, booking, after-hours catch-all)
+- On `main` branch, clean working tree
+- Frontend + API deployed to production
+
+**Issues:**
+- Dependabot: 2 high, 1 low vulnerabilities (pre-existing)
+- 12 ESLint warnings (pre-existing, non-blocking)
+
+**Next Steps:**
+- Run Ralph Loop for broadcast PRD (last messaging feature)
+- Consider enabling remaining auto-reply rules (hours, booking)
+- Fix Dependabot vulnerabilities
+- Consider auto-reply rate limiting per phone number (future)
+
+---
+
 ## Session — 2026-02-22 (Session 50)
 **Focus:** Ship scheduled delivery, MMS, and auto-replies to production
 
