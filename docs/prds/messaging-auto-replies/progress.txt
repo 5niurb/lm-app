@@ -1,0 +1,52 @@
+# Codebase Patterns — lm-app
+
+## Tech Stack
+- Frontend: SvelteKit 2.50 + Svelte 5 runes + Tailwind v4 + shadcn-svelte
+- API: Express ES modules (import/export), Node 20+, port 3001
+- DB: Supabase PostgreSQL — use supabaseAdmin (service role) for API queries
+- Auth: supabase.auth session in frontend, verifyToken middleware in API
+- File pattern: src/routes/(auth)/[page]/+page.svelte for frontend pages
+- API pattern: api/routes/[feature].js, mounted in api/server.js
+
+## Design Tokens
+- Dark bg: #0a0a0c
+- Gold accent: #C5A55A
+- Card border: rgba(197,165,90,0.12)
+- Hover bg: rgba(197,165,90,0.04)
+- Headings: Playfair Display (serif)
+- Body: Inter (sans-serif)
+
+## Critical Gotchas
+- JS not TS — use JSDoc annotations with @type comments, NO .ts files
+- Svelte 5 runes: $state(), $derived(), $props(), $effect() — NO legacy let reactivity
+- shadcn-svelte components in src/lib/components/ui/ — NEVER edit directly, add via npx shadcn-svelte add
+- Webhook routes mount BEFORE express.json() — Twilio sends URL-encoded
+- Pre-push hook runs prettier --check on ENTIRE repo, not just changed files
+- PUBLIC_API_URL is baked at BUILD TIME — must override for production builds
+- Two Supabase clients: supabase (anon/RLS) and supabaseAdmin (service role)
+- Build guard hook blocks `npx vite build` without PUBLIC_API_URL — use `PUBLIC_API_URL=https://api.lemedspa.app npx vite build`
+- Prettier has no SQL parser — don't include .sql files in prettier --write calls
+
+## Existing Messaging Infrastructure
+- Conversations table: phone_number, twilio_number, display_name, contact_id, last_message, last_at, unread_count, status
+- Messages table: conversation_id, direction, body, from_number, to_number, twilio_sid, status, media_urls (JSONB), reactions (JSONB), metadata (JSONB), sent_by, created_at
+- SMS templates table: name, body, category, tags, is_active, created_by
+- Scheduled messages table: to_number, from_number, body, template_id, conversation_id, scheduled_at, status, sent_at, error_message, created_by
+- API routes: /api/messages/*, /api/templates/*, /api/scheduled-messages/*
+- Webhook: /api/webhooks/sms/incoming, /api/webhooks/sms/status, /api/webhooks/sms/studio-send
+- Frontend components: ChatsTab, TemplatesTab, ScheduledTab, ComposeBar, EmojiPicker, TagInsert, TemplateInsert, SchedulePopover, MessageReactions
+
+## Key Route Patterns (for reference)
+- api/routes/templates.js — CRUD pattern to follow for auto-replies
+- api/routes/webhooks/sms.js — inbound webhook where auto-reply matching hooks in
+- api/services/phone-lookup.js — findConversation(), lookupContactByPhone() utilities
+- src/lib/components/messaging/TemplatesTab.svelte — UI pattern to follow for auto-replies settings
+
+## Commit Convention
+- Format: [messaging] Brief description
+- Co-author line: Co-Authored-By: Claude <noreply@anthropic.com>
+- Stage specific files, never git add -A
+
+## Files
+- prd.json: docs/prds/messaging-auto-replies/prd.json
+- progress.txt: docs/prds/messaging-auto-replies/progress.txt

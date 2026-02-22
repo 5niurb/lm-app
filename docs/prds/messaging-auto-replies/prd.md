@@ -3,16 +3,21 @@
 ## Overview
 Automatic responses to common inbound SMS messages (hours, address, booking link) without staff intervention. Staff configures keyword-based rules with optional business hours restrictions. Only one auto-reply fires per inbound message (highest priority wins).
 
+## Files
+- **prd.json:** `docs/prds/messaging-auto-replies/prd.json`
+- **progress.txt:** `docs/prds/messaging-auto-replies/progress.txt`
+
 ## Context for Agent
 - **Branch name:** ralph/auto-replies
 - **Tech stack:** SvelteKit + Svelte 5 runes, Express ES modules, Supabase, Tailwind v4
-- **Key files touched:**
-  - `api/db/migration-auto-replies.sql` — new table
-  - `api/routes/auto-replies.js` — new CRUD route
-  - `api/routes/webhooks/sms.js` — add auto-reply matching after message save
-  - `api/server.js` — mount new route
-  - `src/routes/(auth)/settings/+page.svelte` — or new settings sub-section
-  - `src/lib/components/messaging/ChatsTab.svelte` — auto-reply badge on bubbles
+- **Key files to modify:**
+  - `api/db/migration-auto-replies.sql` — CREATE new table (new file)
+  - `api/routes/auto-replies.js` — CRUD route (new file)
+  - `api/routes/webhooks/sms.js` — add auto-reply matching after message save (existing file)
+  - `api/server.js` — mount new route (existing file, add import + app.use)
+  - `src/routes/(auth)/settings/+page.svelte` — or new settings sub-section (existing file or new component)
+  - `src/lib/components/messaging/ChatsTab.svelte` — auto-reply badge on bubbles (existing file)
+  - `api/db/seed-auto-replies.sql` — default rules (new file)
 - **Design system:** Dark bg #0a0a0c, gold accent #C5A55A, Playfair Display headings
 - **API base:** http://localhost:3001 (dev) / https://api.lemedspa.app (prod)
 
