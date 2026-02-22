@@ -52,11 +52,21 @@ router.post('/', logAction('auto-replies.create'), async (req, res) => {
 		return res.status(400).json({ error: 'Keyword rules require at least one keyword' });
 	}
 
+	// Strip surrounding quotes from keywords (users sometimes wrap phrases in quotes)
+	const cleanKeywords = (trigger_keywords || [])
+		.map((k) =>
+			k
+				.trim()
+				.replace(/^["']+|["']+$/g, '')
+				.trim()
+		)
+		.filter(Boolean);
+
 	const { data, error } = await supabaseAdmin
 		.from('auto_reply_rules')
 		.insert({
 			trigger_type: trigger_type || 'keyword',
-			trigger_keywords: trigger_keywords || [],
+			trigger_keywords: cleanKeywords,
 			response_body,
 			is_active: is_active !== undefined ? is_active : true,
 			priority: priority || 10,
@@ -96,6 +106,18 @@ router.put('/:id', logAction('auto-replies.update'), async (req, res) => {
 		if (req.body[key] !== undefined) {
 			updates[key] = req.body[key];
 		}
+	}
+
+	// Strip surrounding quotes from keywords
+	if (updates.trigger_keywords && Array.isArray(updates.trigger_keywords)) {
+		updates.trigger_keywords = updates.trigger_keywords
+			.map((k) =>
+				k
+					.trim()
+					.replace(/^["']+|["']+$/g, '')
+					.trim()
+			)
+			.filter(Boolean);
 	}
 
 	if (Object.keys(updates).length === 0) {

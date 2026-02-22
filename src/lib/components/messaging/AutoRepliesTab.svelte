@@ -78,7 +78,13 @@
 		try {
 			const keywords = formKeywords
 				.split(',')
-				.map((k) => k.trim().toLowerCase())
+				.map((k) =>
+					k
+						.trim()
+						.replace(/^["']+|["']+$/g, '')
+						.trim()
+						.toLowerCase()
+				)
 				.filter(Boolean);
 			const payload = {
 				trigger_type: formTriggerType,
