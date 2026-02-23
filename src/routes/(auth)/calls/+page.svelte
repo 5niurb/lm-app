@@ -292,20 +292,20 @@
 	<!-- Header -->
 	<div>
 		<h1 class="text-2xl tracking-wide">Phone Log</h1>
-		<p class="text-sm text-muted-foreground mt-1">All calls, voicemails & activity at a glance.</p>
+		<p class="text-sm text-text-secondary mt-1">All calls, voicemails & activity at a glance.</p>
 	</div>
 
 	<!-- Error -->
 	{#if error}
-		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
-			<p class="text-sm text-red-400">{error}</p>
+		<div class="rounded border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3">
+			<p class="text-sm text-vivid-rose">{error}</p>
 		</div>
 	{/if}
 
 	<!-- Main list card -->
-	<div class="rounded border border-border overflow-hidden bg-card">
+	<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
 		<!-- Search + filters -->
-		<div class="px-5 py-4 border-b border-border">
+		<div class="px-5 py-4 border-b border-border-subtle">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 				<form
 					class="relative flex-1"
@@ -314,7 +314,7 @@
 						handleSearch();
 					}}
 				>
-					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-text-secondary" />
 					<Input placeholder="Search by name or phone number..." class="pl-8" bind:value={search} />
 				</form>
 				<div class="flex flex-wrap gap-1">
@@ -399,9 +399,11 @@
 					{/each}
 				</div>
 			{:else if calls.length === 0}
-				<div class="flex h-48 items-center justify-center text-muted-foreground">
+				<div class="flex h-48 items-center justify-center text-text-secondary">
 					<div class="text-center">
-						<Phone class="mx-auto mb-3 h-8 w-8 text-gold-dim" />
+						<div class="icon-box-xl grad-blue mx-auto mb-3">
+							<Phone class="h-5 w-5 text-white" />
+						</div>
 						<p class="text-sm text-text-tertiary">No call records found.</p>
 						{#if search || filter !== 'all'}
 							<p class="text-xs text-text-ghost mt-1">Try adjusting your search or filter.</p>
@@ -418,7 +420,7 @@
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
-							class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-gold-glow border border-transparent hover:border-border {i >
+							class="group flex items-start gap-3 rounded-md px-3 py-3 transition-all duration-200 hover:bg-surface-hover border border-transparent hover:border-border-subtle {i >
 							0
 								? 'border-t border-t-border-subtle'
 								: ''}"
@@ -426,14 +428,14 @@
 							<!-- Direction icon -->
 							<div class="mt-0.5 shrink-0">
 								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
-									<PhoneMissed class="h-4 w-4 text-red-400/70" />
+									<PhoneMissed class="h-4 w-4 text-vivid-rose" />
 								{:else if call.direction === 'inbound'}
 									<PhoneIncoming
-										class="h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors"
+										class="h-4 w-4 text-vivid-blue/70 group-hover:text-vivid-blue transition-colors"
 									/>
 								{:else}
 									<PhoneOutgoing
-										class="h-4 w-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors"
+										class="h-4 w-4 text-vivid-emerald/70 group-hover:text-vivid-emerald transition-colors"
 									/>
 								{/if}
 							</div>
@@ -464,7 +466,7 @@
 											>
 												<a
 													href={resolve(`/softphone?call=${encodeURIComponent(callPhone)}`)}
-													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-vivid-emerald/30 text-vivid-emerald/50 hover:bg-vivid-emerald/10 hover:text-vivid-emerald hover:border-vivid-emerald transition-all"
 													title="Call back"
 												>
 													<PhoneOutgoing class="h-3.5 w-3.5" />
@@ -477,7 +479,7 @@
 																: ''
 														}&new=true`
 													)}
-													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
+													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-vivid-blue/30 text-vivid-blue/50 hover:bg-vivid-blue/10 hover:text-vivid-blue hover:border-vivid-blue transition-all"
 													title="Send message"
 												>
 													<MessageSquare class="h-3.5 w-3.5" />
@@ -552,7 +554,7 @@
 													{/if}
 												</button>
 												<button
-													class="inline-flex items-center justify-center h-6 w-6 rounded text-text-ghost hover:text-red-400 transition-colors"
+													class="inline-flex items-center justify-center h-6 w-6 rounded text-text-ghost hover:text-vivid-rose transition-colors"
 													title="Delete voicemail"
 													onclick={(e) => {
 														e.stopPropagation();
@@ -564,13 +566,13 @@
 											</div>
 										{/if}
 									{:else if summary.type === 'answered'}
-										<span class="text-xs text-emerald-400/60">{summary.text}</span>
+										<span class="text-xs text-vivid-emerald/70">{summary.text}</span>
 									{:else if summary.type === 'missed'}
-										<span class="text-xs text-red-400/70">{summary.text}</span>
+										<span class="text-xs text-vivid-rose/70">{summary.text}</span>
 									{:else if summary.type === 'abandoned'}
 										<span class="text-xs text-text-tertiary">{summary.text}</span>
 									{:else if summary.type === 'failed'}
-										<span class="text-xs text-red-400/50">{summary.text}</span>
+										<span class="text-xs text-vivid-rose/50">{summary.text}</span>
 									{:else}
 										<span class="text-xs text-text-tertiary">{summary.text}</span>
 									{/if}
@@ -583,7 +585,7 @@
 				<!-- Pagination -->
 				{#if totalCount > pageSize}
 					<div class="flex items-center justify-between pt-4">
-						<p class="text-sm text-muted-foreground">
+						<p class="text-sm text-text-secondary">
 							Showing {(currentPage - 1) * pageSize + 1}–{Math.min(
 								currentPage * pageSize,
 								totalCount
@@ -593,7 +595,7 @@
 							<Button variant="outline" size="sm" onclick={prevPage} disabled={currentPage <= 1}>
 								<ChevronLeft class="h-4 w-4" />
 							</Button>
-							<span class="flex items-center px-2 text-sm text-muted-foreground"
+							<span class="flex items-center px-2 text-sm text-text-secondary"
 								>{currentPage} / {totalPages}</span
 							>
 							<Button

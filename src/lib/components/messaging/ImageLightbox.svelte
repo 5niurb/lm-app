@@ -24,7 +24,7 @@
 	}}
 >
 	<button
-		class="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-10"
+		class="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-surface-hover text-foreground hover:bg-surface-raised transition-colors z-10"
 		onclick={onClose}
 	>
 		<X class="h-5 w-5" />

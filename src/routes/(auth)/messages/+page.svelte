@@ -122,11 +122,11 @@
 
 	{#if error}
 		<div
-			class="fixed bottom-4 right-4 rounded border border-red-500/30 bg-red-500/10 px-4 py-2 backdrop-blur z-50"
+			class="fixed bottom-4 right-4 rounded border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-2 backdrop-blur z-50"
 		>
-			<p class="text-sm text-red-400">{error}</p>
+			<p class="text-sm text-vivid-rose">{error}</p>
 			<button
-				class="text-xs text-red-400/60 hover:text-red-400 mt-1"
+				class="text-xs text-vivid-rose/60 hover:text-vivid-rose mt-1"
 				onclick={() => {
 					error = '';
 				}}>Dismiss</button

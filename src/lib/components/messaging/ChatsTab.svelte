@@ -646,7 +646,7 @@
 					handleSearch();
 				}}
 			>
-				<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+				<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-text-secondary" />
 				<Input placeholder="Search conversations..." class="pl-8 h-9 text-sm" bind:value={search} />
 			</form>
 			{#if showNewConvo}
@@ -695,7 +695,7 @@
 				{:else}
 					{#each conversations as convo (convo.id)}
 						<div
-							class="group border-b border-border-subtle transition-all duration-200 hover:bg-gold-glow {selectedConvo?.id ===
+							class="group border-b border-border-subtle transition-all duration-200 hover:bg-surface-hover {selectedConvo?.id ===
 							convo.id
 								? 'bg-gold-glow border-l-2 border-l-gold'
 								: ''}"
@@ -720,7 +720,7 @@
 													href={resolve(
 														`/softphone?call=${encodeURIComponent(convo.phone_number)}`
 													)}
-													class="shrink-0 opacity-0 group-hover:opacity-100 inline-flex items-center justify-center h-6 w-6 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+													class="shrink-0 opacity-0 group-hover:opacity-100 inline-flex items-center justify-center h-6 w-6 rounded-md border border-vivid-emerald/30 text-vivid-emerald/50 hover:bg-vivid-emerald/10 hover:text-vivid-emerald hover:border-vivid-emerald transition-all"
 													title="Call {convo.display_name || formatPhone(convo.phone_number)}"
 													onclick={(e) => e.stopPropagation()}
 												>
@@ -790,16 +790,16 @@
 				{:else}
 					{#each logMessages as msg (msg.id)}
 						<button
-							class="w-full text-left px-4 py-2.5 border-b border-border-subtle hover:bg-gold-glow transition-colors"
+							class="w-full text-left px-4 py-2.5 border-b border-border-subtle hover:bg-surface-hover transition-colors"
 							onclick={() => openConvoFromLog(msg)}
 						>
 							<div class="flex items-start justify-between gap-2">
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-1.5">
 										{#if msg.direction === 'inbound'}
-											<ArrowDownLeft class="h-3 w-3 text-emerald-400 shrink-0" />
+											<ArrowDownLeft class="h-3 w-3 text-vivid-emerald shrink-0" />
 										{:else}
-											<ArrowUpRight class="h-3 w-3 text-blue-400 shrink-0" />
+											<ArrowUpRight class="h-3 w-3 text-vivid-blue shrink-0" />
 										{/if}
 										{#if msg.conversation?.contact_id && msg.conversation?.display_name}
 											<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
@@ -869,7 +869,7 @@
 				<div class="flex items-center gap-1.5 shrink-0 ml-auto">
 					<a
 						href={resolve(`/softphone?call=${encodeURIComponent(selectedConvo.phone_number)}`)}
-						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-vivid-emerald/30 text-vivid-emerald/50 hover:bg-vivid-emerald/10 hover:text-vivid-emerald hover:border-vivid-emerald transition-all"
 						title="Call {selectedConvo.display_name || formatPhone(selectedConvo.phone_number)}"
 					>
 						<PhoneOutgoing class="h-4 w-4" />
@@ -933,7 +933,7 @@
 											})}
 										</span>
 										<button
-											class="text-[10px] text-red-400 hover:text-red-300 transition-colors font-medium"
+											class="text-[10px] text-vivid-rose hover:text-vivid-rose transition-colors font-medium"
 											onclick={() => cancelScheduled(msg._realId)}
 										>
 											Cancel
@@ -1014,9 +1014,9 @@
 												{:else if msg.status === 'sending' || msg.status === 'sent'}
 													<Check class="h-3 w-3 text-white/80" />
 												{:else if msg.status === 'delivered' || msg.status === 'read'}
-													<CheckCheck class="h-3 w-3 text-emerald-300" />
+													<CheckCheck class="h-3 w-3 text-vivid-emerald" />
 												{:else if msg.status === 'failed'}
-													<X class="h-3 w-3 text-red-300" />
+													<X class="h-3 w-3 text-vivid-rose" />
 												{:else if msg.status === 'undelivered'}
 													<AlertTriangle class="h-3 w-3 text-orange-300" />
 												{/if}
@@ -1058,7 +1058,7 @@
 			<!-- Schedule success banner -->
 			{#if scheduleBanner}
 				<div
-					class="px-4 py-2 bg-emerald-500/10 border-t border-emerald-500/20 text-emerald-400 text-xs text-center"
+					class="px-4 py-2 bg-vivid-emerald/10 border-t border-vivid-emerald/20 text-vivid-emerald text-xs text-center"
 				>
 					{scheduleBanner}
 				</div>
@@ -1147,7 +1147,7 @@
 						Choose a conversation from the left, or start a new one.
 					</p>
 					<button
-						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-gold-glow transition-colors"
+						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-surface-hover transition-colors"
 						onclick={() => {
 							showNewConvo = true;
 						}}

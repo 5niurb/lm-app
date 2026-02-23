@@ -49,8 +49,8 @@
 
 	function getCategoryColor(cat) {
 		const colors = {
-			appointment: 'text-blue-400 bg-blue-400/10',
-			follow_up: 'text-emerald-400 bg-emerald-400/10',
+			appointment: 'text-vivid-blue bg-vivid-blue/10',
+			follow_up: 'text-vivid-emerald bg-vivid-emerald/10',
 			promotion: 'text-amber-400 bg-amber-400/10',
 			reminder: 'text-orange-400 bg-orange-400/10',
 			greeting: 'text-pink-400 bg-pink-400/10',

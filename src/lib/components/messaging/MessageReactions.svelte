@@ -74,7 +74,7 @@
 	{#each reactions as emoji (emoji)}
 		<button
 			class="flex items-center justify-center h-8 w-8 rounded-full text-lg
-				hover:bg-gold-glow hover:scale-125 active:scale-95 transition-all duration-100"
+				hover:bg-surface-hover hover:scale-125 active:scale-95 transition-all duration-100"
 			onclick={() => onReact(emoji)}
 			title="React with {emoji}"
 		>

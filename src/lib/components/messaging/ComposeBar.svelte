@@ -170,7 +170,7 @@
 				/>
 				<button
 					type="button"
-					class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-500 transition-colors"
+					class="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-vivid-rose text-white hover:bg-vivid-rose/80 transition-colors"
 					title="Remove attachment"
 					onclick={removeAttachment}
 				>

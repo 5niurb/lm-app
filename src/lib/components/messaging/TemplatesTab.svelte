@@ -135,8 +135,8 @@
 
 	function getCategoryColor(cat) {
 		const colors = {
-			appointment: 'text-blue-400 bg-blue-400/10',
-			follow_up: 'text-emerald-400 bg-emerald-400/10',
+			appointment: 'text-vivid-blue bg-vivid-blue/10',
+			follow_up: 'text-vivid-emerald bg-vivid-emerald/10',
 			promotion: 'text-amber-400 bg-amber-400/10',
 			reminder: 'text-orange-400 bg-orange-400/10',
 			greeting: 'text-pink-400 bg-pink-400/10',
@@ -147,9 +147,9 @@
 	}
 
 	function getCharCountColor(len) {
-		if (len <= 160) return 'text-emerald-400';
+		if (len <= 160) return 'text-vivid-emerald';
 		if (len <= 320) return 'text-amber-400';
-		return 'text-red-400';
+		return 'text-vivid-rose';
 	}
 
 	/** Replace merge tags with sample data for preview */
@@ -219,7 +219,7 @@
 				loadTemplates();
 			}}
 		>
-			<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+			<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-text-secondary" />
 			<Input placeholder="Search templates..." class="pl-8 h-9 text-sm" bind:value={search} />
 		</form>
 	</div>
@@ -248,7 +248,7 @@
 					</p>
 					<p class="text-xs text-text-ghost mt-1">Create a template to speed up messaging.</p>
 					<button
-						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-gold-glow transition-colors"
+						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-surface-hover transition-colors"
 						onclick={openCreate}
 					>
 						<Plus class="h-3.5 w-3.5" />
@@ -259,7 +259,7 @@
 		{:else}
 			{#each templates as tpl (tpl.id)}
 				<div
-					class="border-b border-border-subtle px-4 py-3 hover:bg-gold-glow transition-colors group"
+					class="border-b border-border-subtle px-4 py-3 hover:bg-surface-hover transition-colors group"
 				>
 					<div class="flex items-start justify-between gap-3">
 						<div class="min-w-0 flex-1">
@@ -289,7 +289,7 @@
 								<Pencil class="h-3.5 w-3.5" />
 							</button>
 							<button
-								class="h-7 w-7 inline-flex items-center justify-center rounded-md text-text-tertiary hover:text-red-400 hover:bg-red-400/10 transition-colors"
+								class="h-7 w-7 inline-flex items-center justify-center rounded-md text-text-tertiary hover:text-vivid-rose hover:bg-vivid-rose/10 transition-colors"
 								title="Delete"
 								onclick={() => handleDelete(tpl)}
 							>
@@ -350,7 +350,7 @@
 					bind:value={formBody}
 					placeholder="Write your template message..."
 					rows="5"
-					class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-gold focus:outline-none resize-none"
+					class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-text-secondary focus:border-gold focus:outline-none resize-none"
 				></textarea>
 			</div>
 

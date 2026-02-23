@@ -287,7 +287,7 @@
 <div class="space-y-6">
 	<div>
 		<h1 class="text-2xl tracking-wide">Settings</h1>
-		<p class="text-sm text-muted-foreground mt-1">
+		<p class="text-sm text-text-secondary mt-1">
 			Manage business hours, phone system, and routing.
 		</p>
 	</div>
@@ -302,7 +302,7 @@
 		</div>
 	{:else}
 		<!-- Tab navigation -->
-		<div class="flex gap-1 border-b border-border">
+		<div class="flex gap-1 border-b border-border-subtle">
 			{#each tabs as tab (tab.id)}
 				<button
 					class="flex items-center gap-1.5 px-4 py-2.5 text-sm transition-colors relative {activeTab ===
@@ -326,8 +326,8 @@
 			{#if activeTab === 'hours'}
 				<div class="space-y-6">
 					<!-- Clinic info -->
-					<div class="rounded border border-border overflow-hidden bg-card">
-						<div class="px-5 py-4 border-b border-border">
+					<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+						<div class="px-5 py-4 border-b border-border-subtle">
 							<h2 class="text-base tracking-wide">Clinic Information</h2>
 						</div>
 						<div class="p-5 space-y-4">
@@ -344,7 +344,7 @@
 									<Label class="text-xs text-text-secondary mb-1.5">Timezone</Label>
 									<select
 										bind:value={clinicTimezone}
-										class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
+										class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-foreground"
 									>
 										<option value="America/Los_Angeles">Pacific (Los Angeles)</option>
 										<option value="America/Denver">Mountain (Denver)</option>
@@ -357,8 +357,8 @@
 					</div>
 
 					<!-- Weekly schedule -->
-					<div class="rounded border border-border overflow-hidden bg-card">
-						<div class="px-5 py-4 border-b border-border">
+					<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+						<div class="px-5 py-4 border-b border-border-subtle">
 							<h2 class="text-base tracking-wide">Weekly Schedule</h2>
 							<p class="text-xs text-text-tertiary mt-0.5">
 								Set open/close hours for each day. Calls outside these hours go to voicemail.
@@ -370,7 +370,7 @@
 									{@const hours = businessHours[dayKey]}
 									<div
 										class="flex items-center gap-4 py-2 {i < 6
-											? 'border-b border-border-subtle'
+											? 'border-b border-border-subtle-subtle'
 											: ''}"
 									>
 										<div class="w-28">
@@ -399,7 +399,9 @@
 														</svg>
 													{/if}
 												</div>
-												<span class={hours ? 'text-white' : 'text-text-tertiary'}>{DAYS[i]}</span>
+												<span class={hours ? 'text-foreground' : 'text-text-tertiary'}
+													>{DAYS[i]}</span
+												>
 											</button>
 										</div>
 										{#if hours}
@@ -410,7 +412,7 @@
 													oninput={(e) => {
 														businessHours[dayKey].open = e.target.value;
 													}}
-													class="h-8 px-2 rounded text-sm bg-surface-subtle border border-border text-white"
+													class="h-8 px-2 rounded text-sm bg-surface-subtle border border-border text-foreground"
 												/>
 												<span class="text-xs text-text-tertiary">to</span>
 												<input
@@ -419,7 +421,7 @@
 													oninput={(e) => {
 														businessHours[dayKey].close = e.target.value;
 													}}
-													class="h-8 px-2 rounded text-sm bg-surface-subtle border border-border text-white"
+													class="h-8 px-2 rounded text-sm bg-surface-subtle border border-border text-foreground"
 												/>
 											</div>
 										{:else}
@@ -445,8 +447,8 @@
 				<!-- ===================== PHONE SYSTEM ===================== -->
 			{:else if activeTab === 'phone'}
 				<div class="space-y-6">
-					<div class="rounded border border-border overflow-hidden bg-card">
-						<div class="px-5 py-4 border-b border-border flex items-center justify-between">
+					<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+						<div class="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
 							<div>
 								<h2 class="text-base tracking-wide">Phone Extensions</h2>
 								<p class="text-xs text-text-tertiary mt-0.5">
@@ -572,7 +574,7 @@
 											<div class="flex items-center gap-3">
 												<span
 													class="text-xs {ext.voicemail_enabled
-														? 'text-green-400'
+														? 'text-vivid-emerald'
 														: 'text-text-ghost'}"
 												>
 													{ext.voicemail_enabled ? 'VM on' : 'VM off'}
@@ -580,12 +582,12 @@
 												<span class="text-xs text-text-tertiary">{ext.ring_timeout}s ring</span>
 												<button
 													onclick={() => startEditExt(ext)}
-													class="text-xs text-text-tertiary hover:text-white cursor-pointer"
+													class="text-xs text-text-tertiary hover:text-foreground cursor-pointer"
 													>Edit</button
 												>
 												<button
 													onclick={() => deleteExtension(ext.id)}
-													class="text-xs text-red-400/50 hover:text-red-400 cursor-pointer"
+													class="text-xs text-vivid-rose/50 hover:text-vivid-rose cursor-pointer"
 													>Delete</button
 												>
 											</div>
@@ -600,8 +602,8 @@
 				<!-- ===================== CALL ROUTING ===================== -->
 			{:else if activeTab === 'routing'}
 				<div class="space-y-6">
-					<div class="rounded border border-border overflow-hidden bg-card">
-						<div class="px-5 py-4 border-b border-border flex items-center justify-between">
+					<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+						<div class="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
 							<div>
 								<h2 class="text-base tracking-wide">Call Routing Rules</h2>
 								<p class="text-xs text-text-tertiary mt-0.5">
@@ -679,7 +681,7 @@
 											<input
 												type="time"
 												bind:value={ruleForm.start_time}
-												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-foreground"
 											/>
 										</div>
 										<div>
@@ -689,7 +691,7 @@
 											<input
 												type="time"
 												bind:value={ruleForm.end_time}
-												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-foreground"
 											/>
 										</div>
 									</div>
@@ -700,7 +702,7 @@
 											<Label class="text-xs text-text-secondary mb-1.5">Action</Label>
 											<select
 												bind:value={ruleForm.action_type}
-												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-foreground"
 											>
 												{#each ACTION_TYPES as at (at.value)}
 													<option value={at.value}>{at.label}</option>
@@ -724,7 +726,7 @@
 											<Label class="text-xs text-text-secondary mb-1.5">Fallback Action</Label>
 											<select
 												bind:value={ruleForm.fallback_action}
-												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-white"
+												class="w-full h-9 px-3 rounded-md text-sm bg-surface-subtle border border-border text-foreground"
 											>
 												<option value="voicemail">Voicemail</option>
 												<option value="ring_extension">Ring Extension</option>
@@ -799,7 +801,7 @@
 												<span class="text-xs font-mono text-text-tertiary">#{rule.priority}</span>
 												<span
 													class="text-sm {rule.is_active
-														? 'text-white'
+														? 'text-foreground'
 														: 'text-text-tertiary line-through'}">{rule.name}</span
 												>
 												<span class="text-xs text-text-tertiary"
@@ -822,19 +824,19 @@
 												<button
 													onclick={() => toggleRuleActive(rule)}
 													class="text-xs cursor-pointer {rule.is_active
-														? 'text-green-400'
+														? 'text-vivid-emerald'
 														: 'text-text-tertiary'}"
 												>
 													{rule.is_active ? 'Active' : 'Inactive'}
 												</button>
 												<button
 													onclick={() => startEditRule(rule)}
-													class="text-xs text-text-tertiary hover:text-white cursor-pointer"
+													class="text-xs text-text-tertiary hover:text-foreground cursor-pointer"
 													>Edit</button
 												>
 												<button
 													onclick={() => deleteRoutingRule(rule.id)}
-													class="text-xs text-red-400/50 hover:text-red-400 cursor-pointer"
+													class="text-xs text-vivid-rose/50 hover:text-vivid-rose cursor-pointer"
 													>Delete</button
 												>
 											</div>
@@ -849,8 +851,8 @@
 				<!-- ===================== SECURITY ===================== -->
 			{:else if activeTab === 'security'}
 				<div class="space-y-6">
-					<div class="rounded border border-border overflow-hidden bg-card">
-						<div class="px-5 py-4 border-b border-border">
+					<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+						<div class="px-5 py-4 border-b border-border-subtle">
 							<h2 class="text-base tracking-wide">Security Status</h2>
 							<p class="text-xs text-text-tertiary mt-0.5">
 								HIPAA-ready security infrastructure. Features are enabled progressively.
@@ -860,49 +862,49 @@
 							<!-- Status checklist -->
 							<div class="space-y-3">
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-green-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-emerald"></div>
 									<span class="text-sm">Email + password authentication</span>
-									<span class="text-xs text-green-400 ml-auto">Active</span>
+									<span class="text-xs text-vivid-emerald ml-auto">Active</span>
 								</div>
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-green-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-emerald"></div>
 									<span class="text-sm">Domain restriction (@lemedspa.com)</span>
-									<span class="text-xs text-green-400 ml-auto">Active</span>
+									<span class="text-xs text-vivid-emerald ml-auto">Active</span>
 								</div>
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-green-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-emerald"></div>
 									<span class="text-sm">Audit logging on all API actions</span>
-									<span class="text-xs text-green-400 ml-auto">Active</span>
+									<span class="text-xs text-vivid-emerald ml-auto">Active</span>
 								</div>
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-green-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-emerald"></div>
 									<span class="text-sm">Row-Level Security (RLS) on all tables</span>
-									<span class="text-xs text-green-400 ml-auto">Active</span>
+									<span class="text-xs text-vivid-emerald ml-auto">Active</span>
 								</div>
 								<Separator class="bg-gold-glow" />
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-amber"></div>
 									<span class="text-sm">Two-factor authentication (OTP)</span>
-									<span class="text-xs text-yellow-400 ml-auto">Ready — not enabled</span>
+									<span class="text-xs text-vivid-amber ml-auto">Ready — not enabled</span>
 								</div>
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-amber"></div>
 									<span class="text-sm">Trusted device management</span>
-									<span class="text-xs text-yellow-400 ml-auto">Ready — not enabled</span>
+									<span class="text-xs text-vivid-amber ml-auto">Ready — not enabled</span>
 								</div>
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-amber"></div>
 									<span class="text-sm">IP allowlist</span>
-									<span class="text-xs text-yellow-400 ml-auto"
+									<span class="text-xs text-vivid-amber ml-auto"
 										>Ready — {allowedIps.length === 0
 											? 'no IPs set'
 											: `${allowedIps.length} IPs`}</span
 									>
 								</div>
 								<div class="flex items-center gap-3 py-2">
-									<div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+									<div class="w-2 h-2 rounded-full bg-vivid-amber"></div>
 									<span class="text-sm">Business hours access control</span>
-									<span class="text-xs text-yellow-400 ml-auto">Ready — not enabled</span>
+									<span class="text-xs text-vivid-amber ml-auto">Ready — not enabled</span>
 								</div>
 								<Separator class="bg-gold-glow" />
 								<div class="flex items-center gap-3 py-2">
@@ -915,8 +917,8 @@
 					</div>
 
 					<!-- MFA Settings (display only for now) -->
-					<div class="rounded border border-border overflow-hidden bg-card">
-						<div class="px-5 py-4 border-b border-border">
+					<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+						<div class="px-5 py-4 border-b border-border-subtle">
 							<h2 class="text-base tracking-wide">MFA Configuration</h2>
 						</div>
 						<div class="p-5 space-y-3">

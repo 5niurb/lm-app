@@ -141,9 +141,9 @@
 
 	function getHoursColor(restriction) {
 		const colors = {
-			always: 'text-emerald-400 bg-emerald-400/10',
+			always: 'text-vivid-emerald bg-vivid-emerald/10',
 			after_hours: 'text-amber-400 bg-amber-400/10',
-			business_hours: 'text-blue-400 bg-blue-400/10'
+			business_hours: 'text-vivid-blue bg-vivid-blue/10'
 		};
 		return colors[restriction] || colors.always;
 	}
@@ -196,7 +196,7 @@
 						Create rules to auto-respond to common questions.
 					</p>
 					<button
-						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-gold-glow transition-colors"
+						class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs text-gold border border-border hover:bg-surface-hover transition-colors"
 						onclick={openCreate}
 					>
 						<Plus class="h-3.5 w-3.5" />
@@ -207,7 +207,7 @@
 		{:else}
 			{#each rules as rule (rule.id)}
 				<div
-					class="border-b border-border-subtle px-4 py-3 hover:bg-gold-glow transition-colors group"
+					class="border-b border-border-subtle px-4 py-3 hover:bg-surface-hover transition-colors group"
 				>
 					<div class="flex items-start justify-between gap-3">
 						<div class="min-w-0 flex-1">
@@ -245,7 +245,7 @@
 									<Pencil class="h-3.5 w-3.5" />
 								</button>
 								<button
-									class="h-7 w-7 inline-flex items-center justify-center rounded-md text-text-tertiary hover:text-red-400 hover:bg-red-400/10 transition-colors"
+									class="h-7 w-7 inline-flex items-center justify-center rounded-md text-text-tertiary hover:text-vivid-rose hover:bg-vivid-rose/10 transition-colors"
 									title="Delete"
 									onclick={() => handleDelete(rule)}
 								>
@@ -298,7 +298,7 @@
 					bind:value={formResponseBody}
 					placeholder="The auto-reply message to send..."
 					rows="5"
-					class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-gold focus:outline-none resize-none"
+					class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-text-secondary focus:border-gold focus:outline-none resize-none"
 				></textarea>
 			</div>
 

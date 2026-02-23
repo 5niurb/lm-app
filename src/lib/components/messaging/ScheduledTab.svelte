@@ -127,8 +127,8 @@
 	function getStatusColor(status) {
 		const colors = {
 			pending: 'text-amber-400 bg-amber-400/10',
-			sent: 'text-emerald-400 bg-emerald-400/10',
-			failed: 'text-red-400 bg-red-400/10',
+			sent: 'text-vivid-emerald bg-vivid-emerald/10',
+			failed: 'text-vivid-rose bg-vivid-rose/10',
 			cancelled: 'text-text-tertiary bg-surface-subtle'
 		};
 		return colors[status] || colors.pending;
@@ -198,7 +198,7 @@
 		{:else}
 			{#each messages as msg (msg.id)}
 				<div
-					class="border-b border-border-subtle px-4 py-3 hover:bg-gold-glow transition-colors group"
+					class="border-b border-border-subtle px-4 py-3 hover:bg-surface-hover transition-colors group"
 				>
 					<div class="flex items-start justify-between gap-3">
 						<div class="min-w-0 flex-1">
@@ -216,7 +216,7 @@
 							</div>
 							<p class="text-xs text-text-tertiary line-clamp-2 mb-1">{msg.body}</p>
 							{#if msg.status === 'sent' && msg.sent_at}
-								<p class="text-[10px] text-emerald-400 mb-1">
+								<p class="text-[10px] text-vivid-emerald mb-1">
 									Sent {new Date(msg.sent_at).toLocaleDateString('en-US', {
 										month: 'short',
 										day: 'numeric'
@@ -227,12 +227,12 @@
 								</p>
 							{/if}
 							{#if msg.status === 'failed' && msg.error_message}
-								<p class="text-[10px] text-red-400 mb-1">
+								<p class="text-[10px] text-vivid-rose mb-1">
 									{msg.error_message}
 								</p>
 							{/if}
 							{#if msg.status === 'failed' && msg.retry_count}
-								<p class="text-[10px] text-red-400/70 mb-1">
+								<p class="text-[10px] text-vivid-rose/70 mb-1">
 									Failed after {msg.retry_count} attempt{msg.retry_count === 1 ? '' : 's'}
 								</p>
 							{/if}
@@ -265,7 +265,7 @@
 									<Pencil class="h-3.5 w-3.5" />
 								</button>
 								<button
-									class="h-7 w-7 inline-flex items-center justify-center rounded-md text-text-tertiary hover:text-red-400 hover:bg-red-400/10 transition-colors"
+									class="h-7 w-7 inline-flex items-center justify-center rounded-md text-text-tertiary hover:text-vivid-rose hover:bg-vivid-rose/10 transition-colors"
 									title="Cancel"
 									onclick={() => handleCancel(msg)}
 								>
@@ -329,7 +329,7 @@
 					<textarea
 						bind:value={editBody}
 						rows="5"
-						class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-gold focus:outline-none resize-none"
+						class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-text-secondary focus:border-gold focus:outline-none resize-none"
 					></textarea>
 				</div>
 			</div>
