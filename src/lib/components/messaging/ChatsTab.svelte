@@ -892,15 +892,15 @@
 							<Skeleton class="h-10 w-3/4" />
 						{/each}
 					</div>
-				{:else if messages.length === 0}
+				{:else if combinedThread.length === 0}
 					<div class="flex h-full items-center justify-center">
 						<p class="text-sm text-text-tertiary">No messages in this conversation yet.</p>
 					</div>
 				{:else}
-					{#each messages as msg, i (msg.id)}
-						{@const senderName = getSenderName(msg)}
+					{#each combinedThread as msg, i (msg.id)}
+						{@const senderName = msg.__scheduled ? null : getSenderName(msg)}
 						{@const msgDate = new Date(msg.created_at)}
-						{@const prevDate = i > 0 ? new Date(messages[i - 1].created_at) : null}
+						{@const prevDate = i > 0 ? new Date(combinedThread[i - 1].created_at) : null}
 						{@const showDaySep = !prevDate || msgDate.toDateString() !== prevDate.toDateString()}
 						{#if showDaySep}
 							<div class="flex items-center gap-3 py-1">
@@ -913,114 +913,144 @@
 								<div class="flex-1 h-px bg-border"></div>
 							</div>
 						{/if}
-						<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
-							<div class="relative group">
-								<!-- svelte-ignore a11y_no_static_element_interactions -->
+						{#if msg.__scheduled}
+							<!-- Scheduled message bubble — translucent gold, dashed border -->
+							<div class="flex justify-end">
 								<div
-									class="max-w-full rounded-2xl px-4 py-2.5 select-none {msg.direction ===
-									'outbound'
-										? 'bg-gold text-primary-foreground rounded-br-md'
-										: 'bg-surface-raised border border-border text-text-primary rounded-bl-md'}"
-									oncontextmenu={(e) => openReactionBar(e, msg, i)}
-									ontouchstart={(e) => startLongPress(e, msg, i)}
-									ontouchend={cancelLongPress}
-									ontouchmove={cancelLongPress}
+									class="max-w-full rounded-2xl px-4 py-2.5 rounded-br-md border border-dashed border-gold/50 bg-gold/25"
 								>
-									{#if senderName}
-										<p
-											class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound'
-												? 'text-primary-foreground/60'
-												: 'text-gold-dim'}"
-										>
-											{senderName}
-										</p>
-									{/if}
-									{#if msg.body}
-										<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
-									{/if}
-									{#if msg.media_urls?.length > 0}
-										<div class="flex flex-wrap gap-1.5 {msg.body ? 'mt-1.5' : ''}">
-											{#each msg.media_urls as mediaUrl, idx}
-												{#await getMediaBlobUrl(msg.id, idx, mediaUrl)}
-													<div
-														class="w-[240px] h-[160px] rounded-lg bg-surface-subtle animate-pulse"
-													></div>
-												{:then blobUrl}
-													<button
-														class="block"
-														onclick={() => {
-															lightboxSrc = blobUrl;
-														}}
-													>
-														<img
-															src={blobUrl}
-															alt="Attached photo"
-															class="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-														/>
-													</button>
-												{:catch}
-													<div
-														class="w-[240px] h-[100px] rounded-lg bg-surface-subtle border border-border flex items-center justify-center"
-													>
-														<span class="text-xs text-text-tertiary">Image unavailable</span>
-													</div>
-												{/await}
-											{/each}
-										</div>
-									{/if}
-									<p
-										class="text-[10px] mt-1 flex items-center gap-1 {msg.direction === 'outbound'
-											? 'text-primary-foreground/50'
-											: 'text-text-ghost'}"
-									>
-										<span>
-											{new Date(msg.created_at).toLocaleTimeString('en-US', {
+									<p class="text-sm whitespace-pre-wrap break-words text-text-primary">
+										{msg.body}
+									</p>
+									<div class="flex items-center gap-2 mt-1.5">
+										<span class="flex items-center gap-1 text-[10px] text-gold-dim">
+											<Clock class="h-3 w-3" />
+											Scheduled for {new Date(msg.scheduled_at).toLocaleString('en-US', {
+												month: 'short',
+												day: 'numeric',
 												hour: 'numeric',
 												minute: '2-digit'
 											})}
 										</span>
-										{#if msg.direction === 'outbound'}
-											{#if msg.status === 'queued' || msg.status === 'accepted'}
-												<Clock class="h-3 w-3 text-white/60" />
-											{:else if msg.status === 'sending' || msg.status === 'sent'}
-												<Check class="h-3 w-3 text-white/80" />
-											{:else if msg.status === 'delivered' || msg.status === 'read'}
-												<CheckCheck class="h-3 w-3 text-emerald-300" />
-											{:else if msg.status === 'failed'}
-												<X class="h-3 w-3 text-red-300" />
-											{:else if msg.status === 'undelivered'}
-												<AlertTriangle class="h-3 w-3 text-orange-300" />
-											{/if}
-										{/if}
-										{#if msg.metadata?.source === 'auto_reply'}
-											<span
-												class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-white/15 text-primary-foreground/60"
-											>
-												Auto
-											</span>
-										{/if}
-									</p>
-								</div>
-								{#if msg.reactions?.length > 0}
-									<div
-										class="flex gap-0.5 mt-[-6px] {msg.direction === 'outbound'
-											? 'justify-end pr-2'
-											: 'justify-start pl-2'}"
-									>
-										{#each [...new Set(msg.reactions.map((r) => r.emoji))] as emoji (emoji)}
-											{@const count = msg.reactions.filter((r) => r.emoji === emoji).length}
-											<span
-												class="inline-flex items-center gap-0.5 rounded-full bg-surface-raised border border-border px-1.5 py-0.5 text-xs shadow-sm"
-											>
-												{emoji}{#if count > 1}<span class="text-[9px] text-text-tertiary"
-														>{count}</span
-													>{/if}
-											</span>
-										{/each}
+										<button
+											class="text-[10px] text-red-400 hover:text-red-300 transition-colors font-medium"
+											onclick={() => cancelScheduled(msg._realId)}
+										>
+											Cancel
+										</button>
 									</div>
-								{/if}
+								</div>
 							</div>
-						</div>
+						{:else}
+							<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
+								<div class="relative group">
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<div
+										class="max-w-full rounded-2xl px-4 py-2.5 select-none {msg.direction ===
+										'outbound'
+											? 'bg-gold text-primary-foreground rounded-br-md'
+											: 'bg-surface-raised border border-border text-text-primary rounded-bl-md'}"
+										oncontextmenu={(e) => openReactionBar(e, msg, i)}
+										ontouchstart={(e) => startLongPress(e, msg, i)}
+										ontouchend={cancelLongPress}
+										ontouchmove={cancelLongPress}
+									>
+										{#if senderName}
+											<p
+												class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound'
+													? 'text-primary-foreground/60'
+													: 'text-gold-dim'}"
+											>
+												{senderName}
+											</p>
+										{/if}
+										{#if msg.body}
+											<p class="text-sm whitespace-pre-wrap break-words">{msg.body}</p>
+										{/if}
+										{#if msg.media_urls?.length > 0}
+											<div class="flex flex-wrap gap-1.5 {msg.body ? 'mt-1.5' : ''}">
+												{#each msg.media_urls as mediaUrl, idx}
+													{#await getMediaBlobUrl(msg.id, idx, mediaUrl)}
+														<div
+															class="w-[240px] h-[160px] rounded-lg bg-surface-subtle animate-pulse"
+														></div>
+													{:then blobUrl}
+														<button
+															class="block"
+															onclick={() => {
+																lightboxSrc = blobUrl;
+															}}
+														>
+															<img
+																src={blobUrl}
+																alt="Attached photo"
+																class="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+															/>
+														</button>
+													{:catch}
+														<div
+															class="w-[240px] h-[100px] rounded-lg bg-surface-subtle border border-border flex items-center justify-center"
+														>
+															<span class="text-xs text-text-tertiary">Image unavailable</span>
+														</div>
+													{/await}
+												{/each}
+											</div>
+										{/if}
+										<p
+											class="text-[10px] mt-1 flex items-center gap-1 {msg.direction === 'outbound'
+												? 'text-primary-foreground/50'
+												: 'text-text-ghost'}"
+										>
+											<span>
+												{new Date(msg.created_at).toLocaleTimeString('en-US', {
+													hour: 'numeric',
+													minute: '2-digit'
+												})}
+											</span>
+											{#if msg.direction === 'outbound'}
+												{#if msg.status === 'queued' || msg.status === 'accepted'}
+													<Clock class="h-3 w-3 text-white/60" />
+												{:else if msg.status === 'sending' || msg.status === 'sent'}
+													<Check class="h-3 w-3 text-white/80" />
+												{:else if msg.status === 'delivered' || msg.status === 'read'}
+													<CheckCheck class="h-3 w-3 text-emerald-300" />
+												{:else if msg.status === 'failed'}
+													<X class="h-3 w-3 text-red-300" />
+												{:else if msg.status === 'undelivered'}
+													<AlertTriangle class="h-3 w-3 text-orange-300" />
+												{/if}
+											{/if}
+											{#if msg.metadata?.source === 'auto_reply'}
+												<span
+													class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-white/15 text-primary-foreground/60"
+												>
+													Auto
+												</span>
+											{/if}
+										</p>
+									</div>
+									{#if msg.reactions?.length > 0}
+										<div
+											class="flex gap-0.5 mt-[-6px] {msg.direction === 'outbound'
+												? 'justify-end pr-2'
+												: 'justify-start pl-2'}"
+										>
+											{#each [...new Set(msg.reactions.map((r) => r.emoji))] as emoji (emoji)}
+												{@const count = msg.reactions.filter((r) => r.emoji === emoji).length}
+												<span
+													class="inline-flex items-center gap-0.5 rounded-full bg-surface-raised border border-border px-1.5 py-0.5 text-xs shadow-sm"
+												>
+													{emoji}{#if count > 1}<span class="text-[9px] text-text-tertiary"
+															>{count}</span
+														>{/if}
+												</span>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							</div>
+						{/if}
 					{/each}
 				{/if}
 			</div>

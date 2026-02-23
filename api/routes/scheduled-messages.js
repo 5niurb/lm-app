@@ -22,6 +22,10 @@ router.get('/', logAction('scheduled.list'), async (req, res) => {
 		.from('scheduled_messages')
 		.select('*, template:sms_templates(id, name)', { count: 'exact' });
 
+	if (req.query.conversationId) {
+		query = query.eq('conversation_id', req.query.conversationId);
+	}
+
 	if (req.query.status && req.query.status !== 'all') {
 		query = query.eq('status', req.query.status);
 	} else {
