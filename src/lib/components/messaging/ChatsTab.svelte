@@ -679,7 +679,7 @@
 							</div>
 							<p
 								class="text-sm font-light text-text-tertiary"
-								style="font-family: 'Playfair Display', serif;"
+								style="font-family: var(--font-display);"
 							>
 								No conversations
 							</p>
@@ -781,7 +781,7 @@
 							</div>
 							<p
 								class="text-sm font-light text-text-tertiary"
-								style="font-family: 'Playfair Display', serif;"
+								style="font-family: var(--font-display);"
 							>
 								No {directionFilter} messages
 							</p>
@@ -1079,7 +1079,7 @@
 					{#if newConvoDisplayName}
 						<p
 							class="text-base font-medium text-text-primary mb-1"
-							style="font-family: 'Playfair Display', serif;"
+							style="font-family: var(--font-display);"
 						>
 							{newConvoDisplayName}
 						</p>
@@ -1139,7 +1139,7 @@
 					</div>
 					<p
 						class="text-base font-light text-text-tertiary mb-1"
-						style="font-family: 'Playfair Display', serif;"
+						style="font-family: var(--font-display);"
 					>
 						No conversation selected
 					</p>

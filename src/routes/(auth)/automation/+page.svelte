@@ -593,7 +593,7 @@
 				>
 				<div
 					class="text-2xl font-light text-text-primary mt-1"
-					style="font-family: 'Playfair Display', serif;"
+					style="font-family: var(--font-display);"
 				>
 					{stats.total}
 				</div>
@@ -603,7 +603,7 @@
 				>
 				<div
 					class="text-2xl font-light text-text-primary mt-1"
-					style="font-family: 'Playfair Display', serif;"
+					style="font-family: var(--font-display);"
 				>
 					{stats.deliveryRate}%
 				</div>
@@ -612,7 +612,7 @@
 				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary">Open Rate</span>
 				<div
 					class="text-2xl font-light text-text-primary mt-1"
-					style="font-family: 'Playfair Display', serif;"
+					style="font-family: var(--font-display);"
 				>
 					{stats.openRate}%
 				</div>
@@ -621,7 +621,7 @@
 				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary">Failed</span>
 				<div
 					class="text-2xl font-light {stats.failed > 0 ? 'text-red-400' : 'text-text-primary'} mt-1"
-					style="font-family: 'Playfair Display', serif;"
+					style="font-family: var(--font-display);"
 				>
 					{stats.failed}
 				</div>

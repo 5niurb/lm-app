@@ -722,7 +722,7 @@
 				</div>
 				<p
 					class="text-base font-light text-text-tertiary mb-1"
-					style="font-family: 'Playfair Display', serif;"
+					style="font-family: var(--font-display);"
 				>
 					No services yet
 				</p>
@@ -792,7 +792,7 @@
 									<!-- Service name -->
 									<h3
 										class="text-base text-text-primary pr-16 mb-2"
-										style="font-family: 'Playfair Display', serif;"
+										style="font-family: var(--font-display);"
 									>
 										{service.name}
 									</h3>
@@ -872,7 +872,7 @@
 										<div class="flex items-center gap-3">
 											<h3
 												class="text-sm text-text-secondary"
-												style="font-family: 'Playfair Display', serif;"
+												style="font-family: var(--font-display);"
 											>
 												{service.name}
 											</h3>

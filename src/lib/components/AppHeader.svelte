@@ -50,7 +50,6 @@
 
 	async function loadNotifications() {
 		try {
-			// Pull recent missed calls and unread voicemails as notifications
 			const [callsRes, vmRes] = await Promise.all([
 				api('/api/calls?direction=inbound&disposition=missed&pageSize=5').catch(() => ({
 					data: []
@@ -86,7 +85,6 @@
 				}
 			}
 
-			// Sort by time descending
 			items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 			notifications = items.slice(0, 8);
 		} catch {
@@ -157,7 +155,6 @@
 	}
 
 	/**
-	 * Format relative time for notifications
 	 * @param {string} dateStr
 	 */
 	function timeAgo(dateStr) {
@@ -172,7 +169,7 @@
 	}
 </script>
 
-<header class="flex h-14 items-center gap-2 border-b border-[var(--border-subtle)] px-4">
+<header class="flex h-14 items-center gap-2 border-b border-border-subtle px-4">
 	<SidebarTrigger />
 	<Separator orientation="vertical" class="h-6" />
 
@@ -182,19 +179,17 @@
 			<div class="flex items-center gap-1.5">
 				<div
 					class="h-2 w-2 rounded-full {clinicOpen
-						? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.4)]'
-						: 'bg-[var(--text-ghost)]'}"
+						? 'bg-vivid-emerald shadow-[0_0_6px_rgba(16,185,129,0.5)]'
+						: 'bg-text-ghost'}"
 				></div>
 				<span
-					class="text-[11px] font-medium {clinicOpen
-						? 'text-emerald-400/80'
-						: 'text-[var(--text-tertiary)]'}"
+					class="text-[11px] font-medium {clinicOpen ? 'text-vivid-emerald' : 'text-text-tertiary'}"
 				>
 					{clinicOpen ? 'Open' : 'Closed'}
 				</span>
 			</div>
 			{#if nextChange}
-				<span class="text-[10px] text-[var(--text-ghost)]">{nextChange}</span>
+				<span class="text-[10px] text-text-ghost">{nextChange}</span>
 			{/if}
 		</div>
 	{/if}
@@ -205,13 +200,13 @@
 	<Button
 		variant="ghost"
 		size="sm"
-		class="h-8 gap-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hidden sm:flex"
+		class="h-8 gap-1.5 text-text-tertiary hover:text-text-secondary hidden sm:flex"
 		onclick={() => onOpenCommandPalette?.()}
 	>
 		<Search class="h-3.5 w-3.5" />
 		<span class="text-xs">Search</span>
 		<kbd
-			class="ml-1 inline-flex h-5 items-center gap-0.5 rounded border border-[var(--border-subtle)] bg-[var(--surface-subtle)] px-1.5 text-[10px] text-[var(--text-ghost)]"
+			class="ml-1 inline-flex h-5 items-center gap-0.5 rounded border border-border-subtle bg-surface-subtle px-1.5 text-[10px] text-text-ghost"
 		>
 			<Command class="h-2.5 w-2.5" />K
 		</kbd>
@@ -221,7 +216,7 @@
 	<Button
 		variant="ghost"
 		size="sm"
-		class="h-8 gap-1.5 text-[var(--text-secondary)] hover:text-[var(--gold)]"
+		class="h-8 gap-1.5 text-text-secondary hover:text-gold"
 		onclick={() => goto(resolve('/softphone'))}
 	>
 		<Phone class="h-3.5 w-3.5" />
@@ -235,13 +230,13 @@
 				<Button
 					variant="ghost"
 					size="sm"
-					class="relative h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+					class="relative h-8 w-8 text-text-secondary hover:text-text-primary"
 					{...props}
 				>
 					<Bell class="h-4 w-4" />
 					{#if unreadCount > 0}
 						<span
-							class="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#C5A55A] px-1 text-[9px] font-bold text-[#1A1A1A]"
+							class="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full grad-rose px-1 text-[9px] font-bold text-white"
 						>
 							{unreadCount > 9 ? '9+' : unreadCount}
 						</span>
@@ -252,7 +247,7 @@
 
 		<DropdownMenu.Content align="end" class="w-80">
 			<DropdownMenu.Label>
-				<span class="text-sm font-medium">Notifications</span>
+				<span class="text-sm font-semibold">Notifications</span>
 			</DropdownMenu.Label>
 			<DropdownMenu.Separator />
 			{#if notifications.length === 0}
@@ -266,8 +261,15 @@
 							else if (notif.type === 'voicemail') goto(resolve('/calls'));
 						}}
 					>
-						<span class="text-xs leading-snug">{notif.title}</span>
-						<span class="text-[10px] text-muted-foreground">{timeAgo(notif.time)}</span>
+						<div class="flex items-center gap-2">
+							{#if !notif.read}
+								<div class="h-1.5 w-1.5 rounded-full grad-indigo shrink-0"></div>
+							{/if}
+							<span class="text-xs leading-snug">{notif.title}</span>
+						</div>
+						<span class="text-[10px] text-muted-foreground {!notif.read ? 'ml-3.5' : ''}"
+							>{timeAgo(notif.time)}</span
+						>
 					</DropdownMenu.Item>
 				{/each}
 			{/if}
@@ -287,7 +289,7 @@
 						{#if $profile?.avatar_url}
 							<Avatar.Image src={$profile.avatar_url} alt={$profile.full_name} />
 						{/if}
-						<Avatar.Fallback>
+						<Avatar.Fallback class="grad-indigo text-white text-xs font-semibold">
 							{$profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
 						</Avatar.Fallback>
 					</Avatar.Root>

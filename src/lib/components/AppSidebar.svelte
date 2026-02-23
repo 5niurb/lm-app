@@ -15,28 +15,45 @@
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 
-	/** @type {Array<{ label: string, items: Array<{ href: string, label: string, icon: any, badgeKey?: string }> }>} */
+	/**
+	 * @typedef {{ href: string, label: string, icon: any, badgeKey?: string, color: string }} NavItem
+	 * @typedef {{ label: string, items: NavItem[] }} NavGroup
+	 */
+
+	/** @type {NavGroup[]} */
 	const navGroups = [
 		{
 			label: 'Communications',
 			items: [
-				{ href: '/softphone', label: 'Softphone', icon: Headset },
-				{ href: '/calls', label: 'Phone Log', icon: Phone, badgeKey: 'unheardVoicemails' },
-				{ href: '/messages', label: 'Messages', icon: MessageSquare, badgeKey: 'unreadMessages' }
+				{ href: '/softphone', label: 'Softphone', icon: Headset, color: 'grad-cyan' },
+				{
+					href: '/calls',
+					label: 'Phone Log',
+					icon: Phone,
+					badgeKey: 'unheardVoicemails',
+					color: 'grad-blue'
+				},
+				{
+					href: '/messages',
+					label: 'Messages',
+					icon: MessageSquare,
+					badgeKey: 'unreadMessages',
+					color: 'grad-emerald'
+				}
 			]
 		},
 		{
 			label: 'Operations',
 			items: [
-				{ href: '/appointments', label: 'Schedule', icon: CalendarDays },
-				{ href: '/contacts', label: 'Contacts', icon: Users },
-				{ href: '/services', label: 'Services', icon: Sparkles },
-				{ href: '/automation', label: 'Automation', icon: Zap }
+				{ href: '/appointments', label: 'Schedule', icon: CalendarDays, color: 'grad-amber' },
+				{ href: '/contacts', label: 'Contacts', icon: Users, color: 'grad-rose' },
+				{ href: '/services', label: 'Services', icon: Sparkles, color: 'grad-violet' },
+				{ href: '/automation', label: 'Automation', icon: Zap, color: 'grad-orange' }
 			]
 		},
 		{
 			label: 'System',
-			items: [{ href: '/settings', label: 'Settings', icon: Settings }]
+			items: [{ href: '/settings', label: 'Settings', icon: Settings, color: 'grad-slate' }]
 		}
 	];
 
@@ -72,21 +89,18 @@
 	<Sidebar.Header>
 		<div class="flex items-center gap-3 px-3 py-4">
 			<div
-				class="flex h-9 w-9 items-center justify-center rounded bg-[#C5A55A] text-[#1A1A1A] text-sm font-semibold tracking-wider"
-				style="font-family: 'Playfair Display', serif;"
+				class="flex h-9 w-9 items-center justify-center rounded-lg grad-gold text-white text-sm font-bold tracking-wider"
+				style="font-family: 'Outfit', sans-serif;"
 			>
 				LM
 			</div>
 			<div class="flex flex-col">
 				<span
-					class="text-sm font-medium tracking-wide text-[rgba(255,255,255,0.85)]"
-					style="font-family: 'Playfair Display', serif;"
-					>LEMEDSPA<span class="text-[8px] align-super text-[rgba(197,165,90,0.6)]">&reg;</span
-					></span
+					class="text-sm font-semibold tracking-wide text-text-primary"
+					style="font-family: 'Outfit', sans-serif;"
+					>LEMEDSPA<span class="text-[8px] align-super text-text-tertiary">&reg;</span></span
 				>
-				<span class="text-[10px] uppercase tracking-[0.2em] text-[rgba(197,165,90,0.5)]"
-					>Operations</span
-				>
+				<span class="text-[10px] uppercase tracking-[0.15em] text-text-tertiary">Operations</span>
 			</div>
 		</div>
 	</Sidebar.Header>
@@ -99,9 +113,11 @@
 					<Sidebar.MenuItem>
 						<Sidebar.MenuButton isActive={page.url.pathname === '/dashboard'}>
 							{#snippet child({ props })}
-								<a href={resolve('/dashboard')} {...props} class="flex items-center gap-2 w-full">
-									<LayoutDashboard class="h-4 w-4" />
-									<span>Dashboard</span>
+								<a href={resolve('/dashboard')} {...props} class="flex items-center gap-3 w-full">
+									<span class="icon-box grad-gold">
+										<LayoutDashboard class="h-3.5 w-3.5 text-white" />
+									</span>
+									<span class="font-medium">Dashboard</span>
 								</a>
 							{/snippet}
 						</Sidebar.MenuButton>
@@ -127,16 +143,18 @@
 											{...props}
 											class="flex items-center justify-between w-full"
 										>
-											<span class="flex items-center gap-2">
-												<item.icon class="h-4 w-4" />
-												<span>{item.label}</span>
+											<span class="flex items-center gap-3">
+												<span class="icon-box {item.color}">
+													<item.icon class="h-3.5 w-3.5 text-white" />
+												</span>
+												<span class="font-medium">{item.label}</span>
 											</span>
 											{#if item.badgeKey && badges[item.badgeKey] > 0}
 												<span
 													class="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold {item.badgeKey ===
 													'unheardVoicemails'
-														? 'bg-red-500/80 text-white'
-														: 'bg-[#C5A55A] text-[#1A1A1A]'}"
+														? 'bg-vivid-rose/20 text-vivid-rose'
+														: 'bg-vivid-emerald/20 text-vivid-emerald'}"
 												>
 													{badges[item.badgeKey]}
 												</span>
@@ -153,10 +171,8 @@
 	</Sidebar.Content>
 
 	<Sidebar.Footer>
-		<div class="px-3 py-3 border-t border-[rgba(197,165,90,0.1)]">
-			<span class="text-[10px] uppercase tracking-[0.15em] text-[rgba(255,255,255,0.25)]"
-				>LM App v1.0</span
-			>
+		<div class="px-3 py-3 border-t border-border-subtle">
+			<span class="text-[10px] uppercase tracking-[0.12em] text-text-ghost">LM App v1.0</span>
 		</div>
 	</Sidebar.Footer>
 

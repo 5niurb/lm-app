@@ -238,7 +238,7 @@
 				>
 				<span
 					class="ml-2 text-xl font-light text-text-primary"
-					style="font-family: 'Playfair Display', serif;">{stats.total}</span
+					style="font-family: var(--font-display);">{stats.total}</span
 				>
 			</button>
 			{#each Object.entries(tagConfig) as [key, config] (key)}
@@ -260,7 +260,7 @@
 						>
 						<span
 							class="ml-2 text-xl font-light text-text-primary"
-							style="font-family: 'Playfair Display', serif;">{stats.byTag[key]}</span
+							style="font-family: var(--font-display);">{stats.byTag[key]}</span
 						>
 					</button>
 				{/if}
@@ -304,7 +304,7 @@
 						</div>
 						<p
 							class="text-sm font-light text-text-tertiary mb-1"
-							style="font-family: 'Playfair Display', serif;"
+							style="font-family: var(--font-display);"
 						>
 							No contacts found
 						</p>
@@ -333,7 +333,7 @@
 								<div class="flex items-center gap-3 min-w-0 flex-1">
 									<div
 										class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-glow text-sm font-medium text-gold"
-										style="font-family: 'Playfair Display', serif;"
+										style="font-family: var(--font-display);"
 									>
 										{(
 											contact.first_name?.[0] ||
@@ -343,7 +343,7 @@
 									</div>
 									<p
 										class="font-medium text-text-primary truncate text-sm group-hover:text-base group-hover:tracking-wide transition-all duration-200"
-										style="font-family: 'Playfair Display', serif;"
+										style="font-family: var(--font-display);"
 									>
 										{contact.full_name || (contact.phone ? formatPhone(contact.phone) : 'Unknown')}
 									</p>
@@ -439,7 +439,7 @@
 					<!-- Large avatar -->
 					<div
 						class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold-glow text-xl font-medium text-gold border border-border"
-						style="font-family: 'Playfair Display', serif;"
+						style="font-family: var(--font-display);"
 					>
 						{#if expandedContact}
 							{(
@@ -454,7 +454,7 @@
 					<div class="min-w-0">
 						<h2
 							class="text-xl font-medium text-text-primary truncate tracking-wide"
-							style="font-family: 'Playfair Display', serif;"
+							style="font-family: var(--font-display);"
 						>
 							{#if expandedContact}
 								{expandedContact.full_name ||

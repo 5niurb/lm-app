@@ -549,7 +549,7 @@
 
 							<p
 								class="text-3xl font-light text-text-primary"
-								style="font-family: 'Playfair Display', serif;"
+								style="font-family: var(--font-display);"
 							>
 								{formatPhone(callerInfo)}
 							</p>
@@ -591,7 +591,7 @@
 							</div>
 							<p
 								class="text-2xl font-light text-text-primary"
-								style="font-family: 'Playfair Display', serif;"
+								style="font-family: var(--font-display);"
 							>
 								{formatPhone(callerInfo)}
 							</p>
@@ -614,7 +614,7 @@
 
 							<p
 								class="text-xl font-light text-text-primary"
-								style="font-family: 'Playfair Display', serif;"
+								style="font-family: var(--font-display);"
 							>
 								{formatPhone(callerInfo)}
 							</p>
@@ -672,7 +672,7 @@
 							{#each row as digit (digit)}
 								<button
 									class="dial-btn h-16 w-16 mx-auto rounded-full bg-gold-glow border border-border hover:bg-gold-glow hover:border-border text-xl font-light transition-all duration-150 text-text-primary"
-									style="font-family: 'Playfair Display', serif;"
+									style="font-family: var(--font-display);"
 									onclick={() => sendDigit(digit)}
 								>
 									{digit}
@@ -720,7 +720,7 @@
 							</div>
 							<p
 								class="text-sm font-light text-text-tertiary mb-1"
-								style="font-family: 'Playfair Display', serif;"
+								style="font-family: var(--font-display);"
 							>
 								No calls yet
 							</p>

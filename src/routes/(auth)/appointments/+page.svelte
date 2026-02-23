@@ -320,7 +320,7 @@
 						</div>
 						<p
 							class="text-sm font-light text-text-tertiary mb-1"
-							style="font-family: 'Playfair Display', serif;"
+							style="font-family: var(--font-display);"
 						>
 							No appointments scheduled
 						</p>
@@ -438,7 +438,7 @@
 						</p>
 						<p
 							class="text-lg font-light mt-0.5 {day.isToday ? 'text-gold' : 'text-text-primary'}"
-							style="font-family: 'Playfair Display', serif;"
+							style="font-family: var(--font-display);"
 						>
 							{day.dayNum}
 						</p>
@@ -512,7 +512,7 @@
 				<div class="min-w-0">
 					<h2
 						class="text-xl font-medium text-text-primary truncate tracking-wide"
-						style="font-family: 'Playfair Display', serif;"
+						style="font-family: var(--font-display);"
 					>
 						{selectedAppt.patient_name}
 					</h2>
@@ -659,7 +659,7 @@
 					<div class="flex items-center gap-3">
 						<div
 							class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-glow text-sm font-medium text-gold"
-							style="font-family: 'Playfair Display', serif;"
+							style="font-family: var(--font-display);"
 						>
 							{(selectedAppt.patient_name?.[0] || '?').toUpperCase()}
 						</div>

@@ -9,7 +9,9 @@
 		PhoneOutgoing,
 		MessageSquare,
 		ArrowRight,
-		CalendarDays
+		CalendarDays,
+		TrendingUp,
+		TrendingDown
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
@@ -41,7 +43,6 @@
 			dailyStats = dailyRes.data || [];
 			businessHours = settingsRes.data?.business_hours || {};
 
-			// Try to get unread messages count
 			try {
 				const msgRes = await api('/api/messages/stats');
 				messageStats = msgRes;
@@ -49,7 +50,6 @@
 				messageStats = null;
 			}
 
-			// Try to load today's appointments from Google Calendar
 			try {
 				const apptRes = await api('/api/appointments/today');
 				const now = new Date();
@@ -90,14 +90,13 @@
 		return { text: call.status || '', type: 'default' };
 	}
 
-	// Business hours helpers
 	function isClinicOpen() {
 		if (!businessHours) return null;
 		const now = new Date();
 		const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 		const dayKey = dayNames[now.getDay()];
 		const hours = businessHours[dayKey];
-		if (!hours) return false; // closed today
+		if (!hours) return false;
 
 		const nowMinutes = now.getHours() * 60 + now.getMinutes();
 		const [openH, openM] = hours.open.split(':').map(Number);
@@ -130,7 +129,6 @@
 		return '';
 	}
 
-	// Chart helpers
 	function chartMax() {
 		if (!dailyStats || dailyStats.length === 0) return 1;
 		return Math.max(1, ...dailyStats.map((d) => d.total));
@@ -143,7 +141,6 @@
 
 	let clinicOpen = $derived(isClinicOpen());
 
-	// Sparkline helpers
 	let sparkTotalMax = $derived(
 		dailyStats && dailyStats.length > 0 ? Math.max(1, ...dailyStats.map((d) => d.total)) : 1
 	);
@@ -159,24 +156,25 @@
 	}
 </script>
 
-<div class="space-y-8">
+<div class="space-y-6">
+	<!-- Page Header -->
 	<div class="flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl tracking-wide">Dashboard</h1>
-			<p class="text-sm text-muted-foreground mt-1">
-				Overview of your call activity — last 7 days.
-			</p>
+			<h1 class="text-2xl">Dashboard</h1>
+			<p class="text-sm text-text-secondary mt-0.5">Your clinic at a glance — last 7 days</p>
 		</div>
 		{#if businessHours}
 			<div
 				class="flex items-center gap-2 px-3 py-1.5 rounded-full border {clinicOpen
-					? 'border-green-500/20 bg-green-500/5'
-					: 'border-border-default bg-surface-subtle'}"
+					? 'border-vivid-emerald/20 bg-vivid-emerald/5'
+					: 'border-border bg-surface-subtle'}"
 			>
 				<div
-					class="w-2 h-2 rounded-full {clinicOpen ? 'bg-green-400 animate-pulse' : 'bg-text-ghost'}"
+					class="w-2 h-2 rounded-full {clinicOpen
+						? 'bg-vivid-emerald animate-pulse shadow-[0_0_6px_rgba(16,185,129,0.4)]'
+						: 'bg-text-ghost'}"
 				></div>
-				<span class="text-xs {clinicOpen ? 'text-green-400' : 'text-text-tertiary'}">
+				<span class="text-xs {clinicOpen ? 'text-vivid-emerald' : 'text-text-tertiary'}">
 					{clinicOpen ? 'Clinic Open' : 'Closed'}
 					{#if clinicOpen === false}
 						<span class="text-text-ghost"> · Opens {getNextOpen()}</span>
@@ -187,53 +185,47 @@
 	</div>
 
 	{#if error}
-		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
-			<p class="text-sm text-red-400">{error}</p>
-			<p class="text-xs text-red-400/60 mt-1">Make sure the API server is running on port 3001.</p>
+		<div class="rounded-lg border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3">
+			<p class="text-sm text-vivid-rose">{error}</p>
+			<p class="text-xs text-vivid-rose/60 mt-1">
+				Make sure the API server is running on port 3001.
+			</p>
 		</div>
 	{/if}
 
-	<!-- Stat Cards -->
+	<!-- Stat Cards — each with unique color -->
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-		<div
-			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
-		>
+		<!-- Total Calls -->
+		<div class="group card-gradient p-5">
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Total Calls</span>
-				<Phone class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity" />
+				<span class="text-xs font-medium text-text-tertiary">Total Calls</span>
+				<div class="icon-box grad-blue">
+					<Phone class="h-3.5 w-3.5 text-white" />
+				</div>
 			</div>
 			{#if stats}
-				<div
-					class="text-3xl font-light text-text-primary"
-					style="font-family: 'Playfair Display', serif;"
-				>
-					{stats.totalCalls}
-				</div>
-				<!-- Sparkline: daily totals -->
+				<div class="text-3xl font-bold text-text-primary">{stats.totalCalls}</div>
 				{#if dailyStats && dailyStats.length > 0}
 					<svg
-						class="w-full h-8 mt-2 opacity-40 group-hover:opacity-70 transition-opacity"
+						class="w-full h-8 mt-2 opacity-50 group-hover:opacity-80 transition-opacity"
 						viewBox="0 0 {dailyStats.length * 20} 30"
 						preserveAspectRatio="none"
 					>
-						<defs
-							><linearGradient id="spark-gold-total" x1="0" y1="0" x2="0" y2="1"
-								><stop offset="0%" stop-color="var(--gold)" stop-opacity="0.3" /><stop
-									offset="100%"
-									stop-color="var(--gold)"
-									stop-opacity="0"
-								/></linearGradient
-							></defs
-						>
+						<defs>
+							<linearGradient id="spark-blue-total" x1="0" y1="0" x2="0" y2="1">
+								<stop offset="0%" stop-color="#60a5fa" stop-opacity="0.3" />
+								<stop offset="100%" stop-color="#60a5fa" stop-opacity="0" />
+							</linearGradient>
+						</defs>
 						<polyline
 							fill="none"
-							stroke="var(--gold)"
+							stroke="#60a5fa"
 							stroke-width="1.5"
 							stroke-linejoin="round"
 							points={sparkPoints(dailyStats, 'total', sparkTotalMax)}
 						/>
 						<polygon
-							fill="url(#spark-gold-total)"
+							fill="url(#spark-blue-total)"
 							points={sparkFill(dailyStats, 'total', sparkTotalMax)}
 						/>
 					</svg>
@@ -243,47 +235,37 @@
 			{/if}
 		</div>
 
-		<div
-			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
-		>
+		<!-- Missed Calls -->
+		<div class="group card-gradient p-5">
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Missed Calls</span>
-				<PhoneMissed
-					class="h-4 w-4 text-red-400 opacity-50 group-hover:opacity-100 transition-opacity"
-				/>
+				<span class="text-xs font-medium text-text-tertiary">Missed Calls</span>
+				<div class="icon-box grad-rose">
+					<PhoneMissed class="h-3.5 w-3.5 text-white" />
+				</div>
 			</div>
 			{#if stats}
-				<div
-					class="text-3xl font-light text-text-primary"
-					style="font-family: 'Playfair Display', serif;"
-				>
-					{stats.missed}
-				</div>
-				<!-- Sparkline: daily missed -->
+				<div class="text-3xl font-bold text-text-primary">{stats.missed}</div>
 				{#if dailyStats && dailyStats.length > 0}
 					<svg
-						class="w-full h-8 mt-2 opacity-40 group-hover:opacity-70 transition-opacity"
+						class="w-full h-8 mt-2 opacity-50 group-hover:opacity-80 transition-opacity"
 						viewBox="0 0 {dailyStats.length * 20} 30"
 						preserveAspectRatio="none"
 					>
-						<defs
-							><linearGradient id="spark-red-missed" x1="0" y1="0" x2="0" y2="1"
-								><stop offset="0%" stop-color="#f87171" stop-opacity="0.3" /><stop
-									offset="100%"
-									stop-color="#f87171"
-									stop-opacity="0"
-								/></linearGradient
-							></defs
-						>
+						<defs>
+							<linearGradient id="spark-rose-missed" x1="0" y1="0" x2="0" y2="1">
+								<stop offset="0%" stop-color="#fb7185" stop-opacity="0.3" />
+								<stop offset="100%" stop-color="#fb7185" stop-opacity="0" />
+							</linearGradient>
+						</defs>
 						<polyline
 							fill="none"
-							stroke="#f87171"
+							stroke="#fb7185"
 							stroke-width="1.5"
 							stroke-linejoin="round"
 							points={sparkPoints(dailyStats, 'missed', sparkMissedMax)}
 						/>
 						<polygon
-							fill="url(#spark-red-missed)"
+							fill="url(#spark-rose-missed)"
 							points={sparkFill(dailyStats, 'missed', sparkMissedMax)}
 						/>
 					</svg>
@@ -293,42 +275,32 @@
 			{/if}
 		</div>
 
-		<div
-			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
-		>
+		<!-- Voicemails -->
+		<div class="group card-gradient p-5">
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Voicemails</span>
-				<Voicemail
-					class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity"
-				/>
+				<span class="text-xs font-medium text-text-tertiary">Voicemails</span>
+				<div class="icon-box grad-violet">
+					<Voicemail class="h-3.5 w-3.5 text-white" />
+				</div>
 			</div>
 			{#if stats}
-				<div
-					class="text-3xl font-light text-text-primary"
-					style="font-family: 'Playfair Display', serif;"
-				>
-					{stats.unheardVoicemails}
-				</div>
-				<p class="text-[10px] uppercase tracking-[0.12em] text-gold-dim mt-1">unheard</p>
+				<div class="text-3xl font-bold text-text-primary">{stats.unheardVoicemails}</div>
+				<p class="text-xs text-gold mt-1 font-medium">unheard</p>
 			{:else}
 				<Skeleton class="h-9 w-16" />
 			{/if}
 		</div>
 
-		<div
-			class="group card-elevated rounded border p-5 transition-all duration-200 relative overflow-hidden"
-		>
+		<!-- Avg Duration -->
+		<div class="group card-gradient p-5">
 			<div class="flex items-center justify-between mb-3">
-				<span class="text-xs uppercase tracking-[0.15em] text-text-tertiary">Avg Duration</span>
-				<Clock class="h-4 w-4 text-gold opacity-50 group-hover:opacity-100 transition-opacity" />
+				<span class="text-xs font-medium text-text-tertiary">Avg Duration</span>
+				<div class="icon-box grad-amber">
+					<Clock class="h-3.5 w-3.5 text-white" />
+				</div>
 			</div>
 			{#if stats}
-				<div
-					class="text-3xl font-light text-text-primary"
-					style="font-family: 'Playfair Display', serif;"
-				>
-					{formatDuration(stats.avgDuration)}
-				</div>
+				<div class="text-3xl font-bold text-text-primary">{formatDuration(stats.avgDuration)}</div>
 			{:else}
 				<Skeleton class="h-9 w-16" />
 			{/if}
@@ -338,10 +310,10 @@
 	<!-- Call Volume Chart + Quick Links -->
 	<div class="grid gap-4 lg:grid-cols-3">
 		<!-- Daily call volume chart -->
-		<div class="lg:col-span-2 rounded border border-border overflow-hidden bg-card">
-			<div class="px-5 py-4 border-b border-border">
-				<h2 class="text-base tracking-wide">Call Volume</h2>
-				<p class="text-xs text-muted-foreground mt-0.5">Daily calls over the past week.</p>
+		<div class="lg:col-span-2 rounded-lg border border-border-subtle overflow-hidden bg-card">
+			<div class="px-5 py-4 border-b border-border-subtle">
+				<h2 class="text-base">Call Volume</h2>
+				<p class="text-xs text-text-secondary mt-0.5">Daily calls over the past week</p>
 			</div>
 			<div class="p-5">
 				{#if dailyStats && dailyStats.length > 0}
@@ -353,30 +325,35 @@
 								<div class="w-full flex flex-col items-center relative group">
 									<!-- Tooltip on hover -->
 									<div
-										class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-popover border border-border rounded px-2 py-1 text-xs whitespace-nowrap z-10"
+										class="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-popover border border-border rounded-md px-2 py-1 text-xs whitespace-nowrap z-10"
 									>
 										{day.total} calls
-										{#if day.answered > 0}<span class="text-green-400">
+										{#if day.answered > 0}<span class="text-vivid-emerald">
 												· {day.answered} ans</span
 											>{/if}
-										{#if day.missed > 0}<span class="text-red-400"> · {day.missed} miss</span>{/if}
+										{#if day.missed > 0}<span class="text-vivid-rose">
+												· {day.missed} miss</span
+											>{/if}
 									</div>
-									<!-- Stacked bar -->
+									<!-- Stacked bar with gradient -->
 									<div
-										class="w-full max-w-10 rounded-t transition-all duration-500 relative overflow-hidden"
+										class="w-full max-w-10 rounded-t-md transition-all duration-500 relative overflow-hidden"
 										style="height: {pct}%; min-height: 4px;"
 									>
 										{#if day.total === 0}
-											<div class="absolute inset-0 bg-surface-subtle rounded-t"></div>
+											<div class="absolute inset-0 bg-surface-subtle rounded-t-md"></div>
 										{:else}
 											{@const answeredPct = (day.answered / day.total) * 100}
 											{@const missedPct = (day.missed / day.total) * 100}
 											<div class="absolute inset-0 flex flex-col-reverse">
-												<div class="bg-gold" style="height: {answeredPct}%;"></div>
-												<div class="bg-red-400/70" style="height: {missedPct}%;"></div>
 												<div
-													class="bg-gold-dim"
-													style="height: {100 - answeredPct - missedPct}%;"
+													style="height: {answeredPct}%; background: linear-gradient(180deg, #60a5fa, #818cf8);"
+												></div>
+												<div class="bg-vivid-rose/70" style="height: {missedPct}%;"></div>
+												<div
+													style="height: {100 -
+														answeredPct -
+														missedPct}%; background: rgba(129,140,248,0.3);"
 												></div>
 											</div>
 										{/if}
@@ -389,25 +366,26 @@
 					<!-- Legend -->
 					<div class="flex gap-4 mt-4 justify-center">
 						<div class="flex items-center gap-1.5">
-							<div class="w-2.5 h-2.5 rounded-sm bg-gold"></div>
+							<div
+								class="w-2.5 h-2.5 rounded-sm"
+								style="background: linear-gradient(135deg, #60a5fa, #818cf8);"
+							></div>
 							<span class="text-[10px] text-text-tertiary">Answered</span>
 						</div>
 						<div class="flex items-center gap-1.5">
-							<div class="w-2.5 h-2.5 rounded-sm bg-red-400/70"></div>
+							<div class="w-2.5 h-2.5 rounded-sm bg-vivid-rose/70"></div>
 							<span class="text-[10px] text-text-tertiary">Missed</span>
 						</div>
 						<div class="flex items-center gap-1.5">
-							<div class="w-2.5 h-2.5 rounded-sm bg-gold-dim"></div>
+							<div class="w-2.5 h-2.5 rounded-sm" style="background: rgba(129,140,248,0.3);"></div>
 							<span class="text-[10px] text-text-tertiary">Voicemail</span>
 						</div>
 					</div>
 				{:else}
 					<div class="flex h-48 items-center justify-center">
 						<div class="text-center">
-							<div
-								class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gold-glow border border-border"
-							>
-								<Phone class="h-5 w-5 empty-state-icon" />
+							<div class="mx-auto mb-3 icon-box-xl grad-blue">
+								<Phone class="h-5 w-5 text-white" />
 							</div>
 							<p class="text-sm text-text-tertiary">No call data yet</p>
 							<p class="text-xs text-text-ghost mt-1">
@@ -420,25 +398,26 @@
 		</div>
 
 		<!-- Quick Links panel -->
-		<div class="rounded border border-border overflow-hidden bg-card">
-			<div class="px-5 py-4 border-b border-border">
-				<h2 class="text-base tracking-wide">Quick Access</h2>
+		<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+			<div class="px-5 py-4 border-b border-border-subtle">
+				<h2 class="text-base">Quick Access</h2>
 			</div>
-			<div class="p-3 divide-y divide-border-subtle">
+			<div class="p-2 space-y-0.5">
 				<a
 					href={resolve('/calls?filter=voicemail')}
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
+					class="flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-surface-hover group"
 				>
 					<div class="flex items-center gap-3">
-						<Voicemail class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors" />
+						<span class="icon-box grad-violet">
+							<Voicemail class="h-3.5 w-3.5 text-white" />
+						</span>
 						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Voicemails</span
 						>
 					</div>
 					<div class="flex items-center gap-2">
 						{#if stats?.unheardVoicemails > 0}
-							<span
-								class="px-1.5 py-0.5 rounded-full text-[10px] bg-gold text-primary-foreground font-medium"
+							<span class="px-2 py-0.5 rounded-full text-[10px] font-bold glow-violet"
 								>{stats.unheardVoicemails}</span
 							>
 						{/if}
@@ -450,20 +429,19 @@
 
 				<a
 					href={resolve('/messages')}
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
+					class="flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-surface-hover group"
 				>
 					<div class="flex items-center gap-3">
-						<MessageSquare
-							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
-						/>
+						<span class="icon-box grad-emerald">
+							<MessageSquare class="h-3.5 w-3.5 text-white" />
+						</span>
 						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Messages</span
 						>
 					</div>
 					<div class="flex items-center gap-2">
 						{#if messageStats?.unread > 0}
-							<span
-								class="px-1.5 py-0.5 rounded-full text-[10px] bg-gold text-primary-foreground font-medium"
+							<span class="px-2 py-0.5 rounded-full text-[10px] font-bold glow-emerald"
 								>{messageStats.unread}</span
 							>
 						{/if}
@@ -475,10 +453,12 @@
 
 				<a
 					href={resolve('/calls')}
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
+					class="flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-surface-hover group"
 				>
 					<div class="flex items-center gap-3">
-						<Phone class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors" />
+						<span class="icon-box grad-blue">
+							<Phone class="h-3.5 w-3.5 text-white" />
+						</span>
 						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Call Log</span
 						>
@@ -490,12 +470,12 @@
 
 				<a
 					href={resolve('/softphone')}
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
+					class="flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-surface-hover group"
 				>
 					<div class="flex items-center gap-3">
-						<PhoneOutgoing
-							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
-						/>
+						<span class="icon-box grad-cyan">
+							<PhoneOutgoing class="h-3.5 w-3.5 text-white" />
+						</span>
 						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Softphone</span
 						>
@@ -507,19 +487,21 @@
 
 				<a
 					href={resolve('/settings')}
-					class="flex items-center justify-between px-3 py-3 rounded transition-colors hover:bg-gold-glow group"
+					class="flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors hover:bg-surface-hover group"
 				>
 					<div class="flex items-center gap-3">
-						<svg
-							class="h-4 w-4 text-text-tertiary group-hover:text-gold transition-colors"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							><path
-								d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-							/><circle cx="12" cy="12" r="3" /></svg
-						>
+						<span class="icon-box grad-slate">
+							<svg
+								class="h-3.5 w-3.5 text-white"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								><path
+									d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+								/><circle cx="12" cy="12" r="3" /></svg
+							>
+						</span>
 						<span class="text-sm text-text-secondary group-hover:text-foreground transition-colors"
 							>Settings</span
 						>
@@ -534,17 +516,17 @@
 
 	<!-- Today's Schedule -->
 	{#if upcomingAppointments !== null}
-		<div class="rounded border border-border overflow-hidden bg-card">
-			<div class="px-5 py-4 border-b border-border flex items-center justify-between">
+		<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+			<div class="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
 				<div>
-					<h2 class="text-base tracking-wide">Today's Schedule</h2>
-					<p class="text-xs text-muted-foreground mt-0.5">
+					<h2 class="text-base">Today's Schedule</h2>
+					<p class="text-xs text-text-secondary mt-0.5">
 						{appointmentCount} appointment{appointmentCount !== 1 ? 's' : ''} today
 					</p>
 				</div>
 				<a
 					href={resolve('/appointments')}
-					class="text-xs text-gold hover:text-gold/80 transition-colors flex items-center gap-1"
+					class="text-xs text-gold hover:text-gold/80 transition-colors flex items-center gap-1 font-medium"
 				>
 					View all <ArrowRight class="h-3 w-3" />
 				</a>
@@ -554,7 +536,7 @@
 					{#each upcomingAppointments as appt (appt.id)}
 						<div class="px-5 py-3 flex items-center gap-4">
 							<div class="text-right min-w-[50px]">
-								<span class="text-sm text-gold font-medium">
+								<span class="text-sm text-gold font-semibold">
 									{new Date(appt.start).toLocaleTimeString('en-US', {
 										hour: 'numeric',
 										minute: '2-digit',
@@ -574,10 +556,8 @@
 					{/each}
 				{:else}
 					<div class="px-5 py-6 text-center">
-						<div
-							class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gold-glow border border-border"
-						>
-							<CalendarDays class="h-4 w-4 empty-state-icon" />
+						<div class="mx-auto mb-3 icon-box-lg grad-amber">
+							<CalendarDays class="h-4 w-4 text-white" />
 						</div>
 						<p class="text-sm text-text-tertiary">No more appointments today</p>
 					</div>
@@ -587,14 +567,15 @@
 	{/if}
 
 	<!-- Recent Calls -->
-	<div class="rounded border border-border overflow-hidden bg-card">
-		<div class="px-5 py-4 border-b border-border flex items-center justify-between">
+	<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+		<div class="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
 			<div>
-				<h2 class="text-base tracking-wide">Recent Calls</h2>
-				<p class="text-xs text-muted-foreground mt-0.5">Latest call activity.</p>
+				<h2 class="text-base">Recent Calls</h2>
+				<p class="text-xs text-text-secondary mt-0.5">Latest call activity</p>
 			</div>
-			<a href={resolve('/calls')} class="text-xs text-gold hover:text-gold transition-colors"
-				>View all →</a
+			<a
+				href={resolve('/calls')}
+				class="text-xs text-gold hover:text-gold/80 transition-colors font-medium">View all →</a
 			>
 		</div>
 		<div class="p-5">
@@ -607,17 +588,10 @@
 			{:else if recentCalls.length === 0}
 				<div class="flex h-40 items-center justify-center">
 					<div class="text-center">
-						<div
-							class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-glow border border-border"
-						>
-							<Phone class="h-6 w-6 empty-state-icon" />
+						<div class="mx-auto mb-4 icon-box-xl grad-blue">
+							<Phone class="h-6 w-6 text-white" />
 						</div>
-						<p
-							class="text-sm font-light text-text-tertiary"
-							style="font-family: 'Playfair Display', serif;"
-						>
-							No calls yet
-						</p>
+						<p class="text-sm text-text-tertiary">No calls yet</p>
 						<p class="text-xs text-text-ghost mt-1">
 							Call data will appear once Twilio is connected.
 						</p>
@@ -629,21 +603,21 @@
 						{@const summary = getActionSummary(call)}
 						{@const callPhone = call.direction === 'inbound' ? call.from_number : call.to_number}
 						<div
-							class="group flex items-start gap-3 rounded-md px-3 py-2.5 transition-all duration-200 hover:bg-gold-glow border border-transparent hover:border-border {i >
+							class="group flex items-start gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 hover:bg-surface-hover border border-transparent hover:border-border-subtle {i >
 							0
 								? 'border-t border-t-border-subtle'
 								: ''}"
 						>
 							<div class="mt-0.5 shrink-0">
 								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
-									<PhoneMissed class="h-4 w-4 text-red-400/70" />
+									<PhoneMissed class="h-4 w-4 text-vivid-rose" />
 								{:else if call.direction === 'inbound'}
 									<PhoneIncoming
-										class="h-4 w-4 text-blue-400/70 group-hover:text-blue-400 transition-colors"
+										class="h-4 w-4 text-vivid-blue group-hover:text-vivid-blue transition-colors"
 									/>
 								{:else}
 									<PhoneOutgoing
-										class="h-4 w-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors"
+										class="h-4 w-4 text-vivid-emerald group-hover:text-vivid-emerald transition-colors"
 									/>
 								{/if}
 							</div>
@@ -660,14 +634,13 @@
 												<span class="text-text-primary">{formatPhone(callPhone)}</span>
 											{/if}
 										</p>
-										<!-- Quick actions — right next to name -->
 										{#if callPhone}
 											<div
 												class="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
 											>
 												<a
 													href={resolve(`/softphone?call=${encodeURIComponent(callPhone)}`)}
-													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-emerald-500/30 text-emerald-400/50 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-vivid-emerald/30 text-vivid-emerald/50 hover:bg-vivid-emerald/10 hover:text-vivid-emerald hover:border-vivid-emerald transition-all"
 													title="Call back"
 												>
 													<PhoneOutgoing class="h-3.5 w-3.5" />
@@ -676,7 +649,7 @@
 													href={resolve(
 														`/messages?phone=${encodeURIComponent(callPhone)}${call.caller_name ? '&name=' + encodeURIComponent(call.caller_name) : ''}&new=true`
 													)}
-													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-blue-500/30 text-blue-400/50 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
+													class="inline-flex items-center justify-center h-7 w-7 rounded-md border border-vivid-blue/30 text-vivid-blue/50 hover:bg-vivid-blue/10 hover:text-vivid-blue hover:border-vivid-blue transition-all"
 													title="Send message"
 												>
 													<MessageSquare class="h-3.5 w-3.5" />
@@ -691,12 +664,12 @@
 								<div class="mt-0.5">
 									{#if summary.type === 'voicemail'}
 										<span class="text-xs text-text-tertiary italic flex items-center gap-1.5">
-											<Voicemail class="h-3 w-3 shrink-0 text-gold-dim" />{summary.text}
+											<Voicemail class="h-3 w-3 shrink-0 text-gold" />{summary.text}
 										</span>
 									{:else if summary.type === 'answered'}
-										<span class="text-xs text-emerald-400/60">{summary.text}</span>
+										<span class="text-xs text-vivid-emerald/70">{summary.text}</span>
 									{:else if summary.type === 'missed'}
-										<span class="text-xs text-red-400/70">{summary.text}</span>
+										<span class="text-xs text-vivid-rose/70">{summary.text}</span>
 									{:else if summary.type === 'abandoned'}
 										<span class="text-xs text-text-tertiary">{summary.text}</span>
 									{:else}

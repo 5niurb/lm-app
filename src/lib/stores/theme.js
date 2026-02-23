@@ -3,9 +3,9 @@ import { browser } from '$app/environment';
 
 /**
  * Available themes:
- * - 'midnight' — Dark + gold (signature LM look)
- * - 'dusk'     — Warm twilight (in-between)
- * - 'champagne' — Luxury light (cream + gold)
+ * - 'midnight' — Vivid Dark (near-black + multi-color accents)
+ * - 'dusk'     — Warm Dark (warm-toned dark + violet accents)
+ * - 'champagne' — Light (clean white + colorful accents)
  * - 'auto'     — Follow system preference
  *
  * @typedef {'midnight' | 'dusk' | 'champagne' | 'auto'} ThemeChoice
@@ -18,7 +18,6 @@ const STORAGE_KEY = 'lm-theme';
 const defaultChoice = 'auto';
 
 /**
- * Read stored theme from localStorage
  * @returns {ThemeChoice}
  */
 function getStoredTheme() {
@@ -31,8 +30,6 @@ function getStoredTheme() {
 }
 
 /**
- * Detect system color-scheme preference
- * Maps: dark → midnight, light → champagne
  * @returns {ResolvedTheme}
  */
 function getSystemTheme() {
@@ -41,26 +38,21 @@ function getSystemTheme() {
 	return prefersDark ? 'midnight' : 'champagne';
 }
 
-/** The user's explicit theme choice (may be 'auto') */
 export const themeChoice = writable(getStoredTheme());
 
-// Listen for OS color scheme changes to re-trigger auto mode derivation
 if (browser) {
 	const mq = window.matchMedia('(prefers-color-scheme: dark)');
 	mq.addEventListener('change', () => {
-		// Nudge the store to re-derive when OS preference changes
 		themeChoice.update((c) => c);
 	});
 }
 
-/** The actual resolved theme after resolving 'auto' → system preference */
 export const theme = derived(themeChoice, ($choice) => {
 	if ($choice === 'auto') return getSystemTheme();
 	return /** @type {ResolvedTheme} */ ($choice);
 });
 
 /**
- * Set the theme choice
  * @param {ThemeChoice} choice
  */
 export function setTheme(choice) {
@@ -71,32 +63,25 @@ export function setTheme(choice) {
 }
 
 /**
- * Apply theme class to document.documentElement
- * Called from root layout's $effect
  * @param {ResolvedTheme} resolved
  */
 export function applyTheme(resolved) {
 	if (!browser) return;
 	const html = document.documentElement;
 
-	// Remove all theme classes
 	html.classList.remove('theme-midnight', 'theme-dusk', 'theme-champagne');
-
-	// Add current theme class
 	html.classList.add(`theme-${resolved}`);
 
-	// Update meta theme-color for mobile browsers
 	const meta = document.querySelector('meta[name="theme-color"]');
 	if (meta) {
 		const colors = {
-			midnight: '#000000',
-			dusk: '#141210',
-			champagne: '#fdfcf9'
+			midnight: '#09090b',
+			dusk: '#0c0a09',
+			champagne: '#fafafa'
 		};
 		meta.setAttribute('content', colors[resolved]);
 	}
 
-	// Update color-scheme for native form controls
 	html.style.colorScheme = resolved === 'champagne' ? 'light' : 'dark';
 }
 
@@ -105,19 +90,19 @@ export const themes = [
 	{
 		id: /** @type {const} */ ('midnight'),
 		label: 'Midnight',
-		description: 'Evening ambiance',
-		colors: { bg: '#000000', sidebar: '#0f1e38', accent: '#d8b98f' }
+		description: 'Vivid dark',
+		colors: { bg: '#09090b', sidebar: '#0c0c0e', accent: '#d4a843' }
 	},
 	{
 		id: /** @type {const} */ ('dusk'),
 		label: 'Dusk',
-		description: 'Golden hour',
-		colors: { bg: '#141210', sidebar: '#100e0c', accent: '#c8a87a' }
+		description: 'Warm dark',
+		colors: { bg: '#0c0a09', sidebar: '#0a0908', accent: '#c9a24e' }
 	},
 	{
 		id: /** @type {const} */ ('champagne'),
 		label: 'Champagne',
-		description: 'Morning light',
-		colors: { bg: '#fdfcf9', sidebar: '#fdfcf9', accent: '#b89b76' }
+		description: 'Clean light',
+		colors: { bg: '#fafafa', sidebar: '#ffffff', accent: '#a0882e' }
 	}
 ];

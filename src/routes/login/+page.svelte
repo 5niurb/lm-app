@@ -28,12 +28,7 @@
 				return;
 			}
 
-			// Check for trusted device cookie
-			// TODO: Implement trusted device check via API
 			const _trusted = false;
-
-			// MVP: Skip OTP, go straight to dashboard
-			// TODO: Implement trusted device check + OTP flow
 			goto(resolve('/dashboard'));
 		} finally {
 			submitting = false;
@@ -45,8 +40,6 @@
 		submitting = true;
 
 		try {
-			// TODO: Verify OTP via API and set trust cookie
-			// For now, accept any 6-digit code
 			if (otp.length === 6) {
 				goto(resolve('/dashboard'));
 			} else {
@@ -61,22 +54,31 @@
 <div class="relative flex min-h-screen">
 	<!-- Left panel — Brand / Visual -->
 	<div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-background">
-		<!-- Decorative gradient background -->
-		<div class="absolute inset-0 bg-gradient-to-br from-gold/8 via-transparent to-gold/4"></div>
-		<!-- Subtle noise overlay -->
+		<!-- Gradient mesh background -->
 		<div
-			class="absolute inset-0 opacity-[0.03]"
+			class="absolute inset-0"
+			style="background:
+				radial-gradient(ellipse at 20% 50%, rgba(212,168,67,0.06) 0%, transparent 50%),
+				radial-gradient(ellipse at 80% 20%, rgba(212,168,67,0.04) 0%, transparent 50%),
+				radial-gradient(ellipse at 60% 80%, rgba(212,168,67,0.03) 0%, transparent 50%);"
+		></div>
+		<!-- Noise texture -->
+		<div
+			class="absolute inset-0 opacity-[0.025]"
 			style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E');"
 		></div>
-		<!-- Gold accent lines -->
+		<!-- Accent lines -->
 		<div
-			class="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-gold/20 to-transparent"
+			class="absolute top-0 right-0 w-px h-full"
+			style="background: linear-gradient(180deg, transparent, rgba(212,168,67,0.12), rgba(212,168,67,0.06), transparent);"
 		></div>
 		<div
-			class="absolute top-1/4 left-16 w-24 h-px bg-gradient-to-r from-gold/30 to-transparent"
+			class="absolute top-1/4 left-16 w-24 h-px"
+			style="background: linear-gradient(90deg, rgba(212,168,67,0.15), transparent);"
 		></div>
 		<div
-			class="absolute top-2/3 left-24 w-16 h-px bg-gradient-to-r from-gold/20 to-transparent"
+			class="absolute top-2/3 left-24 w-16 h-px"
+			style="background: linear-gradient(90deg, rgba(212,168,67,0.1), transparent);"
 		></div>
 
 		<!-- Content -->
@@ -85,28 +87,29 @@
 				<!-- Logo mark -->
 				<div class="flex items-center gap-4 mb-20">
 					<div
-						class="flex h-12 w-12 items-center justify-center rounded bg-gold text-primary-foreground text-lg font-semibold tracking-wider"
-						style="font-family: 'Playfair Display', serif;"
+						class="flex h-12 w-12 items-center justify-center rounded-xl grad-gold text-white text-lg font-bold tracking-wider"
+						style="font-family: 'Outfit', sans-serif;"
 					>
 						LM
 					</div>
 					<div class="flex flex-col">
 						<span
-							class="text-base font-medium tracking-wide text-text-primary"
-							style="font-family: 'Playfair Display', serif;">Le Med Spa</span
+							class="text-base font-semibold tracking-wide text-text-primary"
+							style="font-family: 'Outfit', sans-serif;">Le Med Spa</span
 						>
-						<span class="text-[10px] uppercase tracking-[0.25em] text-gold-dim">Operations</span>
+						<span class="text-[10px] uppercase tracking-[0.2em] text-text-tertiary">Operations</span
+						>
 					</div>
 				</div>
 
 				<!-- Tagline -->
 				<div class="max-w-sm">
 					<h1
-						class="text-4xl font-light text-text-primary leading-tight mb-6"
-						style="font-family: 'Playfair Display', serif;"
+						class="text-4xl font-bold text-text-primary leading-tight mb-6"
+						style="font-family: 'Outfit', sans-serif;"
 					>
 						Private. Intimate.<br />
-						<span class="text-gold">Exclusive.</span>
+						<span class="text-gradient-gold">Exclusive.</span>
 					</h1>
 					<p class="text-sm leading-relaxed text-text-tertiary">
 						Your command center for patient communications, scheduling, and clinic management.
@@ -115,17 +118,23 @@
 			</div>
 
 			<div>
-				<!-- Decorative gold ornament -->
+				<!-- Decorative element -->
 				<div class="flex items-center gap-3 mb-6">
-					<div class="h-px flex-1 bg-gradient-to-r from-gold/20 to-transparent"></div>
+					<div
+						class="h-px flex-1"
+						style="background: linear-gradient(90deg, rgba(212,168,67,0.15), transparent);"
+					></div>
 					<div class="h-1.5 w-1.5 rotate-45 bg-gold/30"></div>
-					<div class="h-px w-8 bg-gold/20"></div>
+					<div class="h-px w-8 bg-gold/15"></div>
 					<div class="h-1.5 w-1.5 rotate-45 bg-gold/30"></div>
-					<div class="h-px flex-1 bg-gradient-to-l from-gold/20 to-transparent"></div>
+					<div
+						class="h-px flex-1"
+						style="background: linear-gradient(270deg, rgba(236,72,153,0.12), transparent);"
+					></div>
 				</div>
 
-				<p class="text-[10px] uppercase tracking-[0.2em] text-text-ghost text-center">
-					LEMEDSPA<span class="text-gold-dim">&reg;</span> &middot; 17414 Ventura Blvd &middot; Encino,
+				<p class="text-[10px] uppercase tracking-[0.15em] text-text-ghost text-center">
+					LEMEDSPA<span class="text-text-tertiary">&reg;</span> &middot; 17414 Ventura Blvd &middot; Encino,
 					CA
 				</p>
 			</div>
@@ -134,38 +143,39 @@
 
 	<!-- Right panel — Login form -->
 	<div class="flex-1 flex items-center justify-center bg-card p-6 relative">
-		<!-- Subtle radial glow -->
+		<!-- Radial glow -->
 		<div
-			class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--gold-glow)_0%,_transparent_70%)]"
+			class="absolute inset-0"
+			style="background: radial-gradient(ellipse at center, rgba(99,102,241,0.04) 0%, transparent 70%);"
 		></div>
 		<!-- Noise texture -->
 		<div
-			class="absolute inset-0 opacity-[0.02]"
+			class="absolute inset-0 opacity-[0.015]"
 			style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E');"
 		></div>
 
 		<div class="relative z-10 w-full max-w-sm">
-			<!-- Mobile logo (hidden on lg+) -->
+			<!-- Mobile logo -->
 			<div class="flex items-center justify-center gap-3 mb-10 lg:hidden">
 				<div
-					class="flex h-10 w-10 items-center justify-center rounded bg-gold text-primary-foreground text-base font-semibold tracking-wider"
-					style="font-family: 'Playfair Display', serif;"
+					class="flex h-10 w-10 items-center justify-center rounded-lg grad-gold text-white text-base font-bold tracking-wider"
+					style="font-family: 'Outfit', sans-serif;"
 				>
 					LM
 				</div>
 				<div class="flex flex-col">
 					<span
-						class="text-sm font-medium tracking-wide text-text-primary"
-						style="font-family: 'Playfair Display', serif;">Le Med Spa</span
+						class="text-sm font-semibold tracking-wide text-text-primary"
+						style="font-family: 'Outfit', sans-serif;">Le Med Spa</span
 					>
-					<span class="text-[9px] uppercase tracking-[0.2em] text-gold-dim">Operations</span>
+					<span class="text-[9px] uppercase tracking-[0.15em] text-text-tertiary">Operations</span>
 				</div>
 			</div>
 
 			<div class="mb-8">
 				<h2
-					class="text-2xl font-light text-text-primary mb-1"
-					style="font-family: 'Playfair Display', serif;"
+					class="text-2xl font-bold text-text-primary mb-1"
+					style="font-family: 'Outfit', sans-serif;"
 				>
 					{step === 'credentials' ? 'Welcome back' : 'Verify identity'}
 				</h2>
@@ -178,7 +188,7 @@
 
 			{#if error}
 				<div
-					class="mb-5 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400"
+					class="mb-5 rounded-lg border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3 text-sm text-vivid-rose"
 				>
 					{error}
 				</div>
@@ -193,33 +203,30 @@
 					class="space-y-5"
 				>
 					<div class="space-y-2">
-						<Label for="email" class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
-							>Email</Label
-						>
+						<Label for="email" class="text-xs font-medium text-text-secondary">Email</Label>
 						<Input
 							id="email"
 							type="email"
 							placeholder="you@lemedspa.com"
 							bind:value={email}
 							required
-							class="h-11 bg-surface-subtle border-border focus:border-gold transition-colors"
+							class="h-11 bg-surface-subtle border-border transition-colors"
 						/>
 					</div>
 					<div class="space-y-2">
-						<Label for="password" class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
-							>Password</Label
-						>
+						<Label for="password" class="text-xs font-medium text-text-secondary">Password</Label>
 						<Input
 							id="password"
 							type="password"
 							bind:value={password}
 							required
-							class="h-11 bg-surface-subtle border-border focus:border-gold transition-colors"
+							class="h-11 bg-surface-subtle border-border transition-colors"
 						/>
 					</div>
 					<Button
 						type="submit"
-						class="w-full h-11 bg-gold hover:bg-gold/80 text-primary-foreground font-medium tracking-wide transition-all duration-200 hover:shadow-lg hover:shadow-gold/15"
+						class="w-full h-11 font-semibold tracking-wide transition-all duration-200 hover:shadow-lg"
+						style="background: linear-gradient(135deg, #c49a2d, #d4a843); color: #09090b;"
 						disabled={submitting}
 					>
 						{submitting ? 'Signing in...' : 'Sign in'}
@@ -234,7 +241,7 @@
 					class="space-y-5"
 				>
 					<div class="space-y-2">
-						<Label for="otp" class="text-xs uppercase tracking-[0.1em] text-text-tertiary"
+						<Label for="otp" class="text-xs font-medium text-text-secondary"
 							>Verification code</Label
 						>
 						<Input
@@ -250,7 +257,8 @@
 					</div>
 					<Button
 						type="submit"
-						class="w-full h-11 bg-gold hover:bg-gold/80 text-primary-foreground font-medium tracking-wide"
+						class="w-full h-11 font-semibold tracking-wide"
+						style="background: linear-gradient(135deg, #c49a2d, #d4a843); color: #09090b;"
 						disabled={submitting}
 					>
 						{submitting ? 'Verifying...' : 'Verify'}
@@ -271,11 +279,17 @@
 
 			<!-- Bottom ornament -->
 			<div class="mt-12 flex items-center gap-3">
-				<div class="h-px flex-1 bg-gradient-to-r from-transparent to-gold/12"></div>
-				<div class="h-1 w-1 rotate-45 bg-gold/20"></div>
-				<div class="h-px flex-1 bg-gradient-to-l from-transparent to-gold/12"></div>
+				<div
+					class="h-px flex-1"
+					style="background: linear-gradient(90deg, transparent, rgba(212,168,67,0.08));"
+				></div>
+				<div class="h-1 w-1 rotate-45 bg-vivid-indigo/15"></div>
+				<div
+					class="h-px flex-1"
+					style="background: linear-gradient(270deg, transparent, rgba(212,168,67,0.08));"
+				></div>
 			</div>
-			<p class="mt-4 text-center text-[10px] text-text-ghost uppercase tracking-[0.15em]">
+			<p class="mt-4 text-center text-[10px] text-text-ghost uppercase tracking-[0.12em]">
 				Secure access &middot; Staff only
 			</p>
 		</div>

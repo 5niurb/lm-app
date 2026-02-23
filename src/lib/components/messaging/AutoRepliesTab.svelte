@@ -188,7 +188,7 @@
 					</div>
 					<p
 						class="text-sm font-light text-text-tertiary"
-						style="font-family: 'Playfair Display', serif;"
+						style="font-family: var(--font-display);"
 					>
 						No auto-reply rules
 					</p>
