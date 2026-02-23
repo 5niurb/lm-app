@@ -79,8 +79,29 @@ Contact management (CRM) for all patients, leads, and callers. Supports search, 
 - `PATCH /api/contacts/:id` — Update contact
 - `POST /api/webhooks/contact-form` — Website form submission
 
+## Backlog
+
+### US-BL1: Contact dedup / merge
+**As a** staff member, **I want to** find and merge duplicate contacts, **so that** each person has a single unified record.
+**Priority:** P2
+**Status:** Planned
+
+#### Context
+Production DB has multiple contacts for the same phone number (e.g., 3 records for +13106218356 with varying name/email completeness). This causes tag resolution to pick incomplete records and fragments CRM data.
+
+#### Acceptance Criteria
+- [ ] AC-1: Detect duplicates by normalized phone number (ignoring +1 prefix, formatting)
+- [ ] AC-2: Show duplicate groups in a review UI with side-by-side comparison
+- [ ] AC-3: Merge action: pick primary record, combine non-null fields from others
+- [ ] AC-4: Update all foreign keys (conversations.contact_id, messages, call_log) to point to merged record
+- [ ] AC-5: Delete duplicate records after merge
+- [ ] AC-6: Optional: auto-flag new duplicates on contact creation
+
+---
+
 ## Revision History
 | Date | Change | Prompted By |
 |------|--------|-------------|
 | 2026-02-12 | Initial contacts page with search, tags, quick actions | Phase 1A build |
 | 2026-02-15 | Message link now includes contact name param | Follow-up to message action fix |
+| 2026-02-22 | Added contact dedup/merge to backlog | Tag resolution found 3 dupes for same phone |
