@@ -31,6 +31,17 @@
 			"env": {
 				"FIRECRAWL_API_KEY": "fc-2a428dda412646c99d00cf5915324de6"
 			}
+		},
+		"supabase": {
+			"type": "http",
+			"url": "https://mcp.supabase.com/mcp?project_ref=ohdrhqmfzinizrldoaih"
+		},
+		"render": {
+			"type": "http",
+			"url": "https://mcp.render.com/mcp",
+			"headers": {
+				"Authorization": "Bearer rnd_shx6CiwhNgEa8ZGfzvpdiR23f5zJ"
+			}
 		}
 	}
 }
