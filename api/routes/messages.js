@@ -353,6 +353,53 @@ router.post(
 );
 
 /**
+ * POST /api/messages/note
+ * Create an internal note on a conversation thread.
+ * Notes are staff-only — no SMS is sent.
+ *
+ * Body: { conversationId, body }
+ */
+router.post('/note', logAction('messages.note'), async (req, res) => {
+	const { conversationId, body } = req.body;
+
+	if (!conversationId || !body) {
+		return res.status(400).json({ error: '"conversationId" and "body" are required' });
+	}
+
+	try {
+		// Insert internal note — no Twilio, no SMS
+		const { data: note, error: noteErr } = await supabaseAdmin
+			.from('messages')
+			.insert({
+				conversation_id: conversationId,
+				direction: 'outbound',
+				body,
+				is_internal_note: true,
+				sent_by: req.user?.id || null,
+				status: 'delivered'
+			})
+			.select('id, conversation_id, body, is_internal_note, sent_by, created_at')
+			.single();
+
+		if (noteErr) {
+			console.error('Failed to create internal note:', noteErr.message);
+			return res.status(500).json({ error: 'Failed to create internal note' });
+		}
+
+		// Update conversation last_at but NOT last_message (notes shouldn't show in preview)
+		await supabaseAdmin
+			.from('conversations')
+			.update({ last_at: new Date().toISOString() })
+			.eq('id', conversationId);
+
+		return res.json({ data: note });
+	} catch (err) {
+		console.error('Failed to create internal note:', err.message);
+		return res.status(500).json({ error: 'Failed to create internal note' });
+	}
+});
+
+/**
  * GET /api/messages/log
  * Flat message log (not grouped by conversation).
  * Used for Inbound/Outbound views.
@@ -370,6 +417,9 @@ router.get('/log', logAction('messages.log'), async (req, res) => {
 			'*, conversation:conversations!messages_conversation_id_fkey(id, phone_number, display_name, contact_id), sender:profiles!messages_sent_by_fkey(full_name, email)',
 			{ count: 'exact' }
 		);
+
+	// Exclude internal notes from the flat log view
+	query = query.or('is_internal_note.is.null,is_internal_note.eq.false');
 
 	if (req.query.direction) {
 		query = query.eq('direction', req.query.direction);

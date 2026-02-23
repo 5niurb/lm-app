@@ -391,6 +391,25 @@
 		}
 	}
 
+	/**
+	 * Create an internal note on the current conversation.
+	 * @param {string} noteBody
+	 */
+	async function sendNote(noteBody) {
+		if (!selectedConvo) return;
+		try {
+			await api('/api/messages/note', {
+				method: 'POST',
+				body: JSON.stringify({ conversationId: selectedConvo.id, body: noteBody })
+			});
+			await loadMessages(selectedConvo.id);
+			setTimeout(scrollToBottom, 100);
+		} catch (e) {
+			onError(e.message ?? 'Failed to create note');
+			throw e;
+		}
+	}
+
 	async function syncHistory() {
 		syncing = true;
 		syncResult = null;
@@ -963,6 +982,29 @@
 									</div>
 								</div>
 							</div>
+						{:else if msg.is_internal_note}
+							<!-- Internal note bubble — warm cream, right-aligned -->
+							<div class="flex justify-end">
+								<div
+									class="max-w-full rounded-2xl px-4 py-2.5 rounded-br-md bg-[rgba(255,248,225,0.12)] border border-[rgba(255,248,225,0.2)]"
+								>
+									<p class="text-[10px] font-medium mb-0.5 text-amber-300/80">
+										{msg.sender?.full_name || 'Staff'}
+										<span class="text-amber-300/50">(internal note)</span>
+									</p>
+									{#if msg.body}
+										<p class="text-sm whitespace-pre-wrap break-words text-text-primary">
+											{msg.body}
+										</p>
+									{/if}
+									<p class="text-[10px] mt-1 text-amber-300/40">
+										{new Date(msg.created_at).toLocaleTimeString('en-US', {
+											hour: 'numeric',
+											minute: '2-digit'
+										})}
+									</p>
+								</div>
+							</div>
 						{:else}
 							<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
 								<div class="relative group">
@@ -1090,6 +1132,7 @@
 			<ComposeBar
 				onSend={sendMessage}
 				onSchedule={scheduleMessage}
+				onNote={sendNote}
 				{onError}
 				placeholder="Type a message..."
 			/>

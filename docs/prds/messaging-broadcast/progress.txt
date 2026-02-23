@@ -1,0 +1,15 @@
+# Broadcast — Progress & Learnings
+
+## Codebase Patterns
+- CRUD route pattern: see api/routes/templates.js for list/create/update/delete shape.
+- Messages tab system: src/routes/(auth)/messages/+page.svelte has Chats/Templates/Scheduled tabs. Add Broadcasts as 4th.
+- findConversation() and lookupContactByPhone() are in api/services/phone-lookup.js — reuse for conversation linking.
+- Twilio send pattern: see api/routes/messages.js POST /send handler for client.messages.create() shape.
+- Merge tag resolution: templates use {{first_name}}, {{full_name}}, {{service}} — resolve at send time from contacts table.
+- supabaseAdmin for all API queries. verifyToken middleware on all routes.
+- Tags on contacts are TEXT[] — use Supabase .contains() or .overlaps() for tag filtering.
+
+## UI Notes
+- Match TemplatesTab and ScheduledTab visual style for the Broadcasts tab.
+- Status badges: draft (text-text-tertiary), sending (text-vivid-amber), sent (text-vivid-emerald), failed (text-vivid-rose).
+- Use Vivid Dark design tokens throughout — no raw Tailwind colors.

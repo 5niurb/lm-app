@@ -1,5 +1,5 @@
 <script>
-	import { Send, Paperclip, X } from '@lucide/svelte';
+	import { Send, Paperclip, X, StickyNote } from '@lucide/svelte';
 	import EmojiPicker from './EmojiPicker.svelte';
 	import TagInsert from './TagInsert.svelte';
 	import TemplateInsert from './TemplateInsert.svelte';
@@ -12,6 +12,7 @@
 	 * @type {{
 	 *   onSend: (body: string, file?: File) => Promise<void>,
 	 *   onSchedule?: (body: string, scheduledAt: string) => Promise<void>,
+	 *   onNote?: (body: string) => Promise<void>,
 	 *   onError?: (msg: string) => void,
 	 *   disabled?: boolean,
 	 *   placeholder?: string
@@ -20,10 +21,13 @@
 	let {
 		onSend,
 		onSchedule,
+		onNote,
 		onError,
 		disabled = false,
 		placeholder = 'Type a message...'
 	} = $props();
+
+	let noteMode = $state(false);
 
 	let body = $state('');
 	let sending = $state(false);
@@ -85,7 +89,23 @@
 
 	async function handleSend() {
 		const trimmed = body.trim();
-		if ((!trimmed && !attachment) || sending || disabled) return;
+		if (!trimmed || sending || disabled) return;
+
+		// Route to note handler in note mode
+		if (noteMode && onNote) {
+			sending = true;
+			try {
+				await onNote(trimmed);
+				body = '';
+				if (textareaRef) textareaRef.style.height = 'auto';
+				// Stay in note mode after submission
+			} finally {
+				sending = false;
+			}
+			return;
+		}
+
+		if (!trimmed && !attachment) return;
 		sending = true;
 		try {
 			await onSend(trimmed, attachment ?? undefined);
@@ -139,23 +159,41 @@
 				body = tmplBody;
 			}}
 		/>
-		<button
-			type="button"
-			class="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
-			title="Attach image"
-			onclick={() => fileInputRef?.click()}
-		>
-			<Paperclip class="h-4 w-4" />
-		</button>
-		<input
-			bind:this={fileInputRef}
-			type="file"
-			accept={ACCEPTED_TYPES}
-			class="hidden"
-			onchange={handleFileSelect}
-		/>
-		{#if onSchedule}
-			<SchedulePopover onSchedule={(at) => handleSchedule(at)} />
+		{#if !noteMode}
+			<button
+				type="button"
+				class="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
+				title="Attach image"
+				onclick={() => fileInputRef?.click()}
+			>
+				<Paperclip class="h-4 w-4" />
+			</button>
+			<input
+				bind:this={fileInputRef}
+				type="file"
+				accept={ACCEPTED_TYPES}
+				class="hidden"
+				onchange={handleFileSelect}
+			/>
+			{#if onSchedule}
+				<SchedulePopover onSchedule={(at) => handleSchedule(at)} />
+			{/if}
+		{/if}
+		{#if onNote}
+			<button
+				type="button"
+				class="ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors {noteMode
+					? 'bg-amber-400/15 text-amber-300 border border-amber-400/30'
+					: 'text-text-tertiary hover:bg-surface-hover hover:text-text-secondary'}"
+				title={noteMode ? 'Switch to message mode' : 'Switch to internal note mode'}
+				onclick={() => {
+					noteMode = !noteMode;
+					if (noteMode) removeAttachment();
+				}}
+			>
+				<StickyNote class="h-3.5 w-3.5" />
+				Internal note
+			</button>
 		{/if}
 	</div>
 
@@ -185,22 +223,37 @@
 		<textarea
 			bind:this={textareaRef}
 			bind:value={body}
-			{placeholder}
+			placeholder={noteMode ? 'Type your internal note' : placeholder}
 			disabled={disabled || sending}
 			rows="1"
-			class="flex-1 resize-none rounded-lg border border-border-subtle bg-surface-subtle px-3 py-2 text-sm text-text-primary placeholder:text-text-ghost focus:border-gold focus:outline-none disabled:opacity-50 transition-colors"
+			class="flex-1 resize-none rounded-lg border px-3 py-2 text-sm text-text-primary placeholder:text-text-ghost focus:outline-none disabled:opacity-50 transition-colors {noteMode
+				? 'bg-[rgba(255,248,225,0.08)] border-[rgba(255,248,225,0.2)] focus:border-amber-400/50'
+				: 'border-border-subtle bg-surface-subtle focus:border-gold'}"
 			style="min-height: 40px; max-height: 120px;"
 			onkeydown={handleKeydown}
 			oninput={handleInput}
 		></textarea>
-		<button
-			type="button"
-			class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold text-primary-foreground hover:bg-gold/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-			disabled={(!body.trim() && !attachment) || sending || disabled}
-			onclick={handleSend}
-			title="Send message"
-		>
-			<Send class="h-4 w-4" />
-		</button>
+		{#if noteMode}
+			<button
+				type="button"
+				class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-amber-400/20 px-3 text-sm font-medium text-amber-300 hover:bg-amber-400/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+				disabled={!body.trim() || sending || disabled}
+				onclick={handleSend}
+				title="Add internal note"
+			>
+				<StickyNote class="h-4 w-4" />
+				Add note
+			</button>
+		{:else}
+			<button
+				type="button"
+				class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold text-primary-foreground hover:bg-gold/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+				disabled={(!body.trim() && !attachment) || sending || disabled}
+				onclick={handleSend}
+				title="Send message"
+			>
+				<Send class="h-4 w-4" />
+			</button>
+		{/if}
 	</div>
 </div>

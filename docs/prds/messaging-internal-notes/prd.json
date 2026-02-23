@@ -19,7 +19,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 1,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Follow the same pattern as POST /api/messages/send but skip all Twilio logic. The sent_by comes from req.user.id (set by verifyToken). Update conversation last_at but do NOT update last_message — notes shouldn't appear in the conversation list preview."
 		},
@@ -35,7 +35,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "The conversation list query likely uses a subquery or join to get last_message. Add WHERE is_internal_note = false (or IS NOT TRUE for null safety) to that subquery. The thread endpoint should return ALL messages including notes."
 		},
@@ -58,7 +58,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Add a $state noteMode = false. Conditionally render different button/placeholder/styles based on noteMode. The onNote prop should be optional — if not provided, don't show the toggle."
 		},
@@ -79,7 +79,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "In ChatsTab.svelte where message bubbles are rendered, check msg.is_internal_note. If true, apply different CSS classes for the bubble. Skip the delivery status and reaction handlers."
 		},
@@ -97,7 +97,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Follow the same pattern as sendMessage — call API, then loadMessages + scrollToBottom. The onNote callback in ComposeBar should work identically to onSend from the ComposeBar's perspective (clear input, show loading)."
 		}
