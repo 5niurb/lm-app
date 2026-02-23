@@ -16,6 +16,7 @@
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
 	import { formatPhone, formatDuration, formatRelativeDate } from '$lib/utils/formatters.js';
+	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
 
 	let stats = $state(null);
 	let recentCalls = $state(null);
@@ -544,6 +545,7 @@
 									})}
 								</span>
 							</div>
+							<ContactAvatar name={appt.patient_name || appt.title} size="sm" />
 							<div class="flex-1 min-w-0">
 								<p class="text-sm text-text-primary truncate">
 									{appt.patient_name || appt.title}
@@ -608,18 +610,29 @@
 								? 'border-t border-t-border-subtle'
 								: ''}"
 						>
-							<div class="mt-0.5 shrink-0">
-								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
-									<PhoneMissed class="h-4 w-4 text-vivid-rose" />
-								{:else if call.direction === 'inbound'}
-									<PhoneIncoming
-										class="h-4 w-4 text-vivid-blue group-hover:text-vivid-blue transition-colors"
-									/>
-								{:else}
-									<PhoneOutgoing
-										class="h-4 w-4 text-vivid-emerald group-hover:text-vivid-emerald transition-colors"
-									/>
-								{/if}
+							<div class="relative shrink-0 mt-0.5">
+								<ContactAvatar
+									name={call.caller_name}
+									phone={call.direction === 'inbound' ? call.from_number : call.to_number}
+									source={call.direction === 'inbound' ? 'inbound_call' : null}
+									size="sm"
+								/>
+								<div
+									class="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full {call.disposition ===
+										'missed' || call.disposition === 'abandoned'
+										? 'bg-vivid-rose'
+										: call.direction === 'inbound'
+											? 'bg-vivid-blue'
+											: 'bg-vivid-emerald'}"
+								>
+									{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
+										<PhoneMissed class="h-2 w-2 text-white" />
+									{:else if call.direction === 'inbound'}
+										<PhoneIncoming class="h-2 w-2 text-white" />
+									{:else}
+										<PhoneOutgoing class="h-2 w-2 text-white" />
+									{/if}
+								</div>
 							</div>
 							<div class="min-w-0 flex-1">
 								<div class="flex items-center justify-between gap-2">

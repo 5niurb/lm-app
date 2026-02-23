@@ -20,6 +20,7 @@
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 	import { resolve } from '$app/paths';
+	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
 
 	let search = $state('');
 	let contacts = $state(null);
@@ -343,16 +344,12 @@
 								onclick={() => toggleExpand(contact.id)}
 							>
 								<div class="flex items-center gap-3 min-w-0 flex-1">
-									<div
-										class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-glow text-sm font-medium text-gold"
-										style="font-family: var(--font-display);"
-									>
-										{(
-											contact.first_name?.[0] ||
-											contact.full_name?.[0] ||
-											(contact.phone ? '#' : '?')
-										).toUpperCase()}
-									</div>
+									<ContactAvatar
+										name={contact.full_name}
+										phone={contact.phone}
+										source={contact.source}
+										size="md"
+									/>
 									<p
 										class="font-medium text-text-primary truncate text-sm group-hover:text-base group-hover:tracking-wide transition-all duration-200"
 										style="font-family: var(--font-display);"
@@ -449,20 +446,20 @@
 			<div class="flex items-start justify-between gap-3">
 				<div class="flex items-center gap-4 min-w-0">
 					<!-- Large avatar -->
-					<div
-						class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold-glow text-xl font-medium text-gold border border-border"
-						style="font-family: var(--font-display);"
-					>
-						{#if expandedContact}
-							{(
-								expandedContact.first_name?.[0] ||
-								expandedContact.full_name?.[0] ||
-								(expandedContact.phone ? '#' : '?')
-							).toUpperCase()}
-						{:else}
+					{#if expandedContact}
+						<ContactAvatar
+							name={expandedContact.full_name}
+							phone={expandedContact.phone}
+							source={expandedContact.source}
+							size="lg"
+						/>
+					{:else}
+						<div
+							class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-subtle border border-border text-text-ghost"
+						>
 							&middot;
-						{/if}
-					</div>
+						</div>
+					{/if}
 					<div class="min-w-0">
 						<h2
 							class="text-xl font-medium text-text-primary truncate tracking-wide"

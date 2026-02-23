@@ -24,6 +24,7 @@
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
+	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
 	import ComposeBar from './ComposeBar.svelte';
 	import MessageReactions from './MessageReactions.svelte';
 	import ImageLightbox from './ImageLightbox.svelte';
@@ -701,13 +702,17 @@
 								: ''}"
 						>
 							<button class="w-full text-left px-4 py-3" onclick={() => selectConversation(convo)}>
-								<div class="flex items-start justify-between gap-2">
+								<div class="flex items-start gap-3">
+									<ContactAvatar
+										name={convo.display_name}
+										phone={convo.phone_number}
+										size="md"
+										class="mt-0.5"
+									/>
 									<div class="min-w-0 flex-1">
 										<div class="flex items-center gap-1.5">
 											<p class="text-sm font-medium truncate flex items-center gap-1.5">
 												{#if convo.contact_id && convo.display_name}
-													<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span
-													>
 													<span class="text-text-primary truncate">{convo.display_name}</span>
 												{:else if convo.display_name}
 													<span class="text-text-secondary truncate">{convo.display_name}</span>
@@ -793,16 +798,29 @@
 							class="w-full text-left px-4 py-2.5 border-b border-border-subtle hover:bg-surface-hover transition-colors"
 							onclick={() => openConvoFromLog(msg)}
 						>
-							<div class="flex items-start justify-between gap-2">
+							<div class="flex items-start gap-3">
+								<div class="relative shrink-0 mt-0.5">
+									<ContactAvatar
+										name={msg.conversation?.display_name}
+										phone={msg.direction === 'inbound' ? msg.from_number : msg.to_number}
+										size="sm"
+									/>
+									<div
+										class="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full {msg.direction ===
+										'inbound'
+											? 'bg-vivid-emerald'
+											: 'bg-vivid-blue'}"
+									>
+										{#if msg.direction === 'inbound'}
+											<ArrowDownLeft class="h-1.5 w-1.5 text-white" />
+										{:else}
+											<ArrowUpRight class="h-1.5 w-1.5 text-white" />
+										{/if}
+									</div>
+								</div>
 								<div class="min-w-0 flex-1">
 									<div class="flex items-center gap-1.5">
-										{#if msg.direction === 'inbound'}
-											<ArrowDownLeft class="h-3 w-3 text-vivid-emerald shrink-0" />
-										{:else}
-											<ArrowUpRight class="h-3 w-3 text-vivid-blue shrink-0" />
-										{/if}
 										{#if msg.conversation?.contact_id && msg.conversation?.display_name}
-											<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
 											<span class="text-sm font-medium text-text-primary truncate"
 												>{msg.conversation.display_name}</span
 											>
@@ -844,10 +862,14 @@
 				<button class="sm:hidden" onclick={goBack}>
 					<ArrowLeft class="h-5 w-5 text-text-secondary" />
 				</button>
+				<ContactAvatar
+					name={selectedConvo.display_name}
+					phone={selectedConvo.phone_number}
+					size="md"
+				/>
 				<div class="min-w-0">
 					<p class="text-sm font-medium truncate flex items-center gap-1.5">
 						{#if selectedConvo.contact_id && selectedConvo.display_name}
-							<span class="text-gold text-[10px] shrink-0" title="Contact">&#9670;</span>
 							<span class="text-text-primary truncate">{selectedConvo.display_name}</span>
 						{:else if selectedConvo.display_name}
 							<span class="text-text-secondary truncate">{selectedConvo.display_name}</span>

@@ -15,6 +15,7 @@
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
 	import { formatTime, formatDateHeader, getDurationMinutes } from '$lib/utils/formatters.js';
+	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
 
 	// ─── State ───
 	let selectedDate = $state(todayStr());
@@ -657,12 +658,7 @@
 					class="flex items-center justify-between group"
 				>
 					<div class="flex items-center gap-3">
-						<div
-							class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-glow text-sm font-medium text-gold"
-							style="font-family: var(--font-display);"
-						>
-							{(selectedAppt.patient_name?.[0] || '?').toUpperCase()}
-						</div>
+						<ContactAvatar name={selectedAppt.patient_name} size="md" />
 						<div>
 							<p
 								class="text-sm font-medium text-text-primary group-hover:text-gold transition-colors"

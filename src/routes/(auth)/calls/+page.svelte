@@ -21,6 +21,7 @@
 	import { api } from '$lib/api/client.js';
 	import { resolve } from '$app/paths';
 	import { formatPhone, formatDuration, formatRelativeDate } from '$lib/utils/formatters.js';
+	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
 
 	// ─── State ───
 	let search = $state('');
@@ -425,19 +426,30 @@
 								? 'border-t border-t-border-subtle'
 								: ''}"
 						>
-							<!-- Direction icon -->
-							<div class="mt-0.5 shrink-0">
-								{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
-									<PhoneMissed class="h-4 w-4 text-vivid-rose" />
-								{:else if call.direction === 'inbound'}
-									<PhoneIncoming
-										class="h-4 w-4 text-vivid-blue/70 group-hover:text-vivid-blue transition-colors"
-									/>
-								{:else}
-									<PhoneOutgoing
-										class="h-4 w-4 text-vivid-emerald/70 group-hover:text-vivid-emerald transition-colors"
-									/>
-								{/if}
+							<!-- Contact avatar with direction indicator -->
+							<div class="relative shrink-0">
+								<ContactAvatar
+									name={call.caller_name}
+									phone={callPhone}
+									source={call.direction === 'inbound' ? 'inbound_call' : null}
+									size="sm"
+								/>
+								<div
+									class="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full {call.disposition ===
+										'missed' || call.disposition === 'abandoned'
+										? 'bg-vivid-rose'
+										: call.direction === 'inbound'
+											? 'bg-vivid-blue'
+											: 'bg-vivid-emerald'}"
+								>
+									{#if call.disposition === 'missed' || call.disposition === 'abandoned'}
+										<PhoneMissed class="h-2 w-2 text-white" />
+									{:else if call.direction === 'inbound'}
+										<PhoneIncoming class="h-2 w-2 text-white" />
+									{:else}
+										<PhoneOutgoing class="h-2 w-2 text-white" />
+									{/if}
+								</div>
 							</div>
 
 							<!-- Content: name + action summary -->

@@ -23,6 +23,7 @@
 	import { api } from '$lib/api/client.js';
 	import { isAdmin } from '$lib/stores/auth.js';
 	import { resolve } from '$app/paths';
+	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
 
 	// Tab state
 	let activeTab = $state('sequences');
@@ -1060,10 +1061,22 @@
 									{#each logEntries as entry (entry.id)}
 										<tr class="border-b border-border-subtle hover:bg-gold-glow transition-colors">
 											<td class="px-4 py-2.5">
-												<span class="text-text-secondary">{entry.client?.full_name || '—'}</span>
-												{#if entry.client?.phone}
-													<span class="text-[10px] text-text-ghost ml-1">{entry.client.phone}</span>
-												{/if}
+												<div class="flex items-center gap-2">
+													<ContactAvatar
+														name={entry.client?.full_name}
+														phone={entry.client?.phone}
+														size="sm"
+													/>
+													<div>
+														<span class="text-text-secondary">{entry.client?.full_name || '—'}</span
+														>
+														{#if entry.client?.phone}
+															<span class="text-[10px] text-text-ghost ml-1"
+																>{entry.client.phone}</span
+															>
+														{/if}
+													</div>
+												</div>
 											</td>
 											<td class="px-4 py-2.5 text-text-secondary">
 												{entry.sequence?.name || '—'}
@@ -1197,9 +1210,16 @@
 											onclick={() => openConsentDetail(consent)}
 										>
 											<td class="px-4 py-2.5">
-												<span class="text-text-secondary"
-													>{consent.client?.full_name || 'Walk-in'}</span
-												>
+												<div class="flex items-center gap-2">
+													<ContactAvatar
+														name={consent.client?.full_name}
+														phone={consent.client?.phone}
+														size="sm"
+													/>
+													<span class="text-text-secondary"
+														>{consent.client?.full_name || 'Walk-in'}</span
+													>
+												</div>
 											</td>
 											<td class="px-4 py-2.5 text-text-secondary">
 												{consent.form?.title || '—'}
@@ -1329,8 +1349,15 @@
 								<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary"
 									>Patient</span
 								>
-								<div class="text-sm text-text-primary font-medium">
-									{selectedConsent.client?.full_name || 'Walk-in Patient'}
+								<div class="flex items-center gap-3">
+									<ContactAvatar
+										name={selectedConsent.client?.full_name}
+										phone={selectedConsent.client?.phone}
+										size="md"
+									/>
+									<div class="text-sm text-text-primary font-medium">
+										{selectedConsent.client?.full_name || 'Walk-in Patient'}
+									</div>
 								</div>
 								{#if selectedConsent.client?.phone}
 									<div class="flex items-center gap-2 text-xs text-text-secondary">
@@ -1520,9 +1547,10 @@
 									{#each testClientResults as c (c.id)}
 										<button
 											onclick={() => selectTestClient(c)}
-											class="w-full text-left px-3 py-2 text-sm hover:bg-gold-glow transition-colors flex items-center justify-between"
+											class="w-full text-left px-3 py-2 text-sm hover:bg-gold-glow transition-colors flex items-center gap-2"
 										>
-											<span class="text-text-secondary">{c.full_name || 'Unknown'}</span>
+											<ContactAvatar name={c.full_name} phone={c.phone} size="sm" />
+											<span class="text-text-secondary flex-1">{c.full_name || 'Unknown'}</span>
 											<span class="text-[10px] text-text-ghost">{c.phone || c.email || ''}</span>
 										</button>
 									{/each}
@@ -1534,6 +1562,7 @@
 						{#if testClient}
 							<div class="rounded border border-vivid-emerald/15 bg-vivid-emerald/5 p-3 space-y-1">
 								<div class="flex items-center gap-2">
+									<ContactAvatar name={testClient.full_name} phone={testClient.phone} size="sm" />
 									<span class="text-sm text-vivid-emerald">{testClient.full_name || 'Unknown'}</span
 									>
 								</div>
