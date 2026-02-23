@@ -556,7 +556,7 @@
 		try {
 			await api(`/api/scheduled-messages/${id}`, { method: 'DELETE' });
 			scheduledMsgs = scheduledMsgs.filter((s) => s.id !== id);
-		} catch (e) {
+		} catch (_e) {
 			onError('Failed to cancel scheduled message');
 		}
 	}
@@ -1057,7 +1057,7 @@
 										{/if}
 										{#if msg.media_urls?.length > 0}
 											<div class="flex flex-wrap gap-1.5 {msg.body ? 'mt-1.5' : ''}">
-												{#each msg.media_urls as mediaUrl, idx}
+												{#each msg.media_urls as mediaUrl, idx (idx)}
 													{#await getMediaBlobUrl(msg.id, idx, mediaUrl)}
 														<div
 															class="w-[240px] h-[160px] rounded-lg bg-surface-subtle animate-pulse"
@@ -1114,6 +1114,12 @@
 													class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-white/15 text-primary-foreground/60"
 												>
 													Auto
+												</span>
+											{:else if msg.metadata?.source === 'broadcast'}
+												<span
+													class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-vivid-indigo/20 text-vivid-indigo"
+												>
+													Broadcast
 												</span>
 											{/if}
 										</p>
