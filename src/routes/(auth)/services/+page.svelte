@@ -72,19 +72,19 @@
 		{
 			value: 'pre_instructions',
 			label: 'Pre-Treatment Instructions',
-			color: 'text-blue-400',
+			color: 'text-vivid-blue',
 			shortLabel: 'Pre-Care'
 		},
 		{
 			value: 'post_instructions',
 			label: 'Post-Treatment Instructions',
-			color: 'text-green-400',
+			color: 'text-vivid-emerald',
 			shortLabel: 'Post-Care'
 		},
 		{
 			value: 'consent_form',
 			label: 'Consent Form',
-			color: 'text-yellow-400',
+			color: 'text-vivid-amber',
 			shortLabel: 'Consent'
 		},
 		{
@@ -130,7 +130,7 @@
 			case 'advanced_aesthetics':
 				return 'bg-gold/15 text-gold';
 			case 'regenerative_wellness':
-				return 'bg-emerald-500/10 text-emerald-400';
+				return 'bg-vivid-emerald/10 text-vivid-emerald';
 			case 'bespoke_treatments':
 				return 'bg-purple-500/10 text-purple-400';
 			default:
@@ -379,7 +379,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl tracking-wide">Services</h1>
-			<p class="text-sm text-muted-foreground mt-1">
+			<p class="text-sm text-text-secondary mt-1">
 				Treatment catalog — powers automation, content, and booking.
 			</p>
 		</div>
@@ -394,8 +394,8 @@
 	</div>
 
 	{#if error}
-		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
-			<p class="text-sm text-red-400">{error}</p>
+		<div class="rounded border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3">
+			<p class="text-sm text-vivid-rose">{error}</p>
 		</div>
 	{/if}
 
@@ -403,8 +403,8 @@
 	{#if toast}
 		<div
 			class="fixed top-4 right-4 z-50 px-4 py-3 rounded border text-sm {toastType === 'error'
-				? 'bg-red-500/10 border-red-500/30 text-red-400'
-				: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}"
+				? 'bg-vivid-rose/10 border-vivid-rose/30 text-vivid-rose'
+				: 'bg-vivid-emerald/10 border-vivid-emerald/30 text-vivid-emerald'}"
 		>
 			{toast}
 		</div>
@@ -552,7 +552,7 @@
 											<button
 												onclick={() => removeSection(idx)}
 												disabled={cSections.length <= 1}
-												class="p-1 text-text-ghost hover:text-red-400 disabled:opacity-20 transition-colors"
+												class="p-1 text-text-ghost hover:text-vivid-rose disabled:opacity-20 transition-colors"
 												title="Remove"
 											>
 												<Trash2 class="h-3 w-3" />
@@ -773,9 +773,9 @@
 								<div class="absolute top-3 right-3">
 									{#if service.is_active}
 										<span
-											class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+											class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-vivid-emerald/10 text-vivid-emerald border border-vivid-emerald/20"
 										>
-											<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+											<span class="w-1.5 h-1.5 rounded-full bg-vivid-emerald"></span>
 											Active
 										</span>
 									{:else}
@@ -856,7 +856,7 @@
 												e.stopPropagation();
 												deleteService(service);
 											}}
-											class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
+											class="p-1.5 rounded bg-black/50 text-text-tertiary hover:text-vivid-rose hover:bg-vivid-rose/10 transition-colors"
 											title="Delete service"
 										>
 											<Trash2 class="h-3.5 w-3.5" />
@@ -915,7 +915,7 @@
 																	e.stopPropagation();
 																	deleteContent(content);
 																}}
-																class="p-0.5 opacity-0 group-hover:opacity-100 text-text-ghost hover:text-red-400 transition-all"
+																class="p-0.5 opacity-0 group-hover:opacity-100 text-text-ghost hover:text-vivid-rose transition-all"
 																title="Delete"
 															>
 																<Trash2 class="h-3 w-3" />
@@ -964,7 +964,7 @@
 											)}
 											<button
 												class="px-2 py-0.5 rounded text-[10px] border transition-colors {exists
-													? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'
+													? 'border-vivid-emerald/20 bg-vivid-emerald/5 text-vivid-emerald'
 													: 'border-border-subtle bg-transparent text-text-ghost hover:border-border hover:text-text-tertiary'}"
 												onclick={() => {
 													if (!exists && $isAdmin) {

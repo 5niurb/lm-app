@@ -227,7 +227,7 @@
 	function channelBadgeColor(ch) {
 		switch (ch) {
 			case 'sms':
-				return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+				return 'bg-vivid-blue/10 text-vivid-blue border-vivid-blue/20';
 			case 'email':
 				return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
 			case 'both':
@@ -257,13 +257,13 @@
 	function consentStatusBadge(status) {
 		switch (status) {
 			case 'completed':
-				return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+				return 'bg-vivid-emerald/10 text-vivid-emerald border-vivid-emerald/20';
 			case 'voided':
-				return 'bg-red-500/10 text-red-400 border-red-500/20';
+				return 'bg-vivid-rose/10 text-vivid-rose border-vivid-rose/20';
 			case 'expired':
 				return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
 			case 'pending':
-				return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+				return 'bg-vivid-blue/10 text-vivid-blue border-vivid-blue/20';
 			default:
 				return 'bg-white/5 text-white/50 border-white/10';
 		}
@@ -537,7 +537,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl tracking-wide">Automation</h1>
-			<p class="text-sm text-muted-foreground mt-1">
+			<p class="text-sm text-text-secondary mt-1">
 				Automated message sequences for patient journey.
 			</p>
 		</div>
@@ -555,7 +555,7 @@
 				{/if}
 				<button
 					onclick={() => openTestSend(null)}
-					class="flex items-center gap-2 px-3 py-2 rounded text-sm border border-emerald-500/20 text-emerald-400/70 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
+					class="flex items-center gap-2 px-3 py-2 rounded text-sm border border-vivid-emerald/20 text-vivid-emerald/70 hover:text-vivid-emerald hover:border-vivid-emerald/40 transition-colors"
 				>
 					<Send class="h-3.5 w-3.5" />
 					Test Send
@@ -577,8 +577,8 @@
 	{#if toast}
 		<div
 			class="fixed top-4 right-4 z-50 px-4 py-3 rounded border text-sm {toastType === 'error'
-				? 'bg-red-500/10 border-red-500/30 text-red-400'
-				: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}"
+				? 'bg-vivid-rose/10 border-vivid-rose/30 text-vivid-rose'
+				: 'bg-vivid-emerald/10 border-vivid-emerald/30 text-vivid-emerald'}"
 		>
 			{toast}
 		</div>
@@ -620,7 +620,9 @@
 			<div class="rounded border border-border bg-gold-glow p-4">
 				<span class="text-[10px] uppercase tracking-[0.12em] text-text-tertiary">Failed</span>
 				<div
-					class="text-2xl font-light {stats.failed > 0 ? 'text-red-400' : 'text-text-primary'} mt-1"
+					class="text-2xl font-light {stats.failed > 0
+						? 'text-vivid-rose'
+						: 'text-text-primary'} mt-1"
 					style="font-family: var(--font-display);"
 				>
 					{stats.failed}
@@ -857,7 +859,9 @@
 			<!-- SEQUENCES TAB -->
 			{#if activeTab === 'sequences'}
 				{#if seqError}
-					<div class="rounded border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+					<div
+						class="rounded border border-vivid-rose/20 bg-vivid-rose/5 p-4 text-sm text-vivid-rose"
+					>
 						Failed to load sequences: {seqError}
 					</div>
 				{:else if seqLoading}
@@ -911,7 +915,7 @@
 												title={seq.is_active ? 'Disable' : 'Enable'}
 											>
 												{#if seq.is_active}
-													<div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+													<div class="w-2 h-2 rounded-full bg-vivid-emerald"></div>
 												{:else}
 													<div class="w-2 h-2 rounded-full bg-surface-raised"></div>
 												{/if}
@@ -933,7 +937,7 @@
 													{/if}
 													{#if seq.content}
 														<span
-															class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-emerald-500/15 text-emerald-400/60 bg-emerald-500/5"
+															class="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-vivid-emerald/15 text-vivid-emerald/60 bg-vivid-emerald/5"
 														>
 															<FileText class="h-2.5 w-2.5" />
 															{seq.content.title}
@@ -977,7 +981,7 @@
 												>
 													<button
 														onclick={() => openTestSend(seq)}
-														class="p-1 rounded text-text-ghost hover:text-emerald-400 transition-colors"
+														class="p-1 rounded text-text-ghost hover:text-vivid-emerald transition-colors"
 														title="Test send"
 													>
 														<Send class="h-3.5 w-3.5" />
@@ -991,7 +995,7 @@
 													</button>
 													<button
 														onclick={() => deleteSequence(seq)}
-														class="p-1 rounded text-text-ghost hover:text-red-400 transition-colors"
+														class="p-1 rounded text-text-ghost hover:text-vivid-rose transition-colors"
 														title="Delete"
 													>
 														<Trash2 class="h-3.5 w-3.5" />
@@ -1010,7 +1014,7 @@
 						<span class="text-xs text-text-ghost"
 							>{sequences.length} sequence{sequences.length !== 1 ? 's' : ''}</span
 						>
-						<span class="text-xs text-emerald-400/50"
+						<span class="text-xs text-vivid-emerald/50"
 							>{sequences.filter((s) => s.is_active).length} active</span
 						>
 						<span class="text-xs text-text-ghost"
@@ -1312,7 +1316,7 @@
 								{#if $isAdmin && selectedConsent.status === 'completed'}
 									<button
 										onclick={() => voidConsent(selectedConsent)}
-										class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border border-red-500/20 text-red-400/70 hover:text-red-400 hover:border-red-500/40 transition-colors"
+										class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border border-vivid-rose/20 text-vivid-rose/70 hover:text-vivid-rose hover:border-vivid-rose/40 transition-colors"
 									>
 										<ShieldX class="h-3 w-3" />
 										Void Consent
@@ -1375,7 +1379,7 @@
 											<p class="text-xs text-text-secondary font-medium">{question}</p>
 											<p class="text-xs text-text-tertiary mt-0.5">
 												{#if typeof answer === 'boolean'}
-													<span class={answer ? 'text-emerald-400' : 'text-red-400'}
+													<span class={answer ? 'text-vivid-emerald' : 'text-vivid-rose'}
 														>{answer ? '✓ Yes' : '✗ No'}</span
 													>
 												{:else}
@@ -1460,7 +1464,7 @@
 					>
 						<div class="flex items-center justify-between">
 							<div class="flex items-center gap-2">
-								<Send class="h-4 w-4 text-emerald-400" />
+								<Send class="h-4 w-4 text-vivid-emerald" />
 								<h2 class="text-base tracking-wide text-white">Test Send</h2>
 							</div>
 							<button
@@ -1528,9 +1532,10 @@
 
 						<!-- Selected contact info -->
 						{#if testClient}
-							<div class="rounded border border-emerald-500/15 bg-emerald-500/5 p-3 space-y-1">
+							<div class="rounded border border-vivid-emerald/15 bg-vivid-emerald/5 p-3 space-y-1">
 								<div class="flex items-center gap-2">
-									<span class="text-sm text-emerald-400">{testClient.full_name || 'Unknown'}</span>
+									<span class="text-sm text-vivid-emerald">{testClient.full_name || 'Unknown'}</span
+									>
 								</div>
 								{#if testClient.phone}
 									<div class="flex items-center gap-2 text-[10px]">
@@ -1551,8 +1556,8 @@
 						{#if testResult}
 							<div
 								class="rounded border p-3 text-sm {testResult.error
-									? 'border-red-500/20 bg-red-500/5 text-red-400'
-									: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400'}"
+									? 'border-vivid-rose/20 bg-vivid-rose/5 text-vivid-rose'
+									: 'border-vivid-emerald/20 bg-vivid-emerald/5 text-vivid-emerald'}"
 							>
 								{#if testResult.error}
 									<span>Error: {testResult.error}</span>
@@ -1584,7 +1589,7 @@
 								<button
 									onclick={executeTrigger}
 									disabled={!testSeqId || !testClient || testSending}
-									class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-medium disabled:opacity-30"
+									class="flex items-center gap-2 px-4 py-2 rounded text-sm bg-vivid-emerald text-white hover:bg-vivid-emerald/80 transition-colors font-medium disabled:opacity-30"
 								>
 									{#if testSending}
 										Sending...

@@ -452,11 +452,11 @@
 	function statusColor(status) {
 		switch (status) {
 			case 'registered':
-				return 'bg-emerald-500';
+				return 'bg-vivid-emerald';
 			case 'registering':
-				return 'bg-yellow-500 animate-pulse';
+				return 'bg-vivid-amber animate-pulse';
 			case 'error':
-				return 'bg-red-500';
+				return 'bg-vivid-rose';
 			default:
 				return 'bg-zinc-500';
 		}
@@ -483,7 +483,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl tracking-wide">Softphone</h1>
-			<p class="text-sm text-muted-foreground mt-1">Answer and make calls from your browser.</p>
+			<p class="text-sm text-text-secondary mt-1">Answer and make calls from your browser.</p>
 		</div>
 		<div class="flex items-center gap-3">
 			<span class="flex items-center gap-2 text-sm">
@@ -510,9 +510,9 @@
 
 	{#if errorMessage}
 		<div
-			class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3 flex items-center justify-between"
+			class="rounded-lg border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3 flex items-center justify-between"
 		>
-			<p class="text-sm text-red-400">{errorMessage}</p>
+			<p class="text-sm text-vivid-rose">{errorMessage}</p>
 			<Button
 				variant="outline"
 				size="sm"
@@ -526,8 +526,8 @@
 
 	<div class="grid gap-6 lg:grid-cols-2">
 		<!-- Softphone Panel -->
-		<div class="rounded border border-border overflow-hidden bg-card">
-			<div class="px-5 py-4 border-b border-border">
+		<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+			<div class="px-5 py-4 border-b border-border-subtle">
 				<div class="flex items-center gap-2">
 					<Headset class="h-5 w-5 text-gold" />
 					<h2 class="text-base tracking-wide">Phone</h2>
@@ -539,9 +539,9 @@
 					{#if callState === 'incoming'}
 						<!-- INCOMING CALL — Big, obvious, impossible to miss -->
 						<div
-							class="rounded-xl border-2 border-blue-400/50 bg-gradient-to-b from-blue-500/15 to-blue-500/5 p-6 text-center space-y-4 animate-pulse-slow"
+							class="rounded-xl border-2 border-vivid-blue/50 bg-gradient-to-b from-vivid-blue/15 to-vivid-blue/5 p-6 text-center space-y-4 animate-pulse-slow"
 						>
-							<div class="flex items-center justify-center gap-3 text-blue-400">
+							<div class="flex items-center justify-center gap-3 text-vivid-blue">
 								<PhoneIncoming class="h-8 w-8 animate-bounce" />
 								<span class="text-xl font-semibold tracking-wide">INCOMING CALL</span>
 								<PhoneIncoming class="h-8 w-8 animate-bounce" />
@@ -558,23 +558,23 @@
 							<div class="flex items-center justify-center gap-6 pt-4">
 								<div class="flex flex-col items-center gap-2">
 									<button
-										class="flex items-center justify-center h-20 w-20 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-600/30 transition-all duration-200 hover:scale-105 active:scale-95 ring-4 ring-emerald-500/20"
+										class="flex items-center justify-center h-20 w-20 rounded-full bg-vivid-emerald hover:bg-vivid-emerald/80 text-white shadow-xl shadow-vivid-emerald/30 transition-all duration-200 hover:scale-105 active:scale-95 ring-4 ring-vivid-emerald/20"
 										onclick={answerCall}
 									>
 										<Phone class="h-9 w-9" />
 									</button>
-									<span class="text-sm font-medium text-emerald-400 uppercase tracking-wider"
+									<span class="text-sm font-medium text-vivid-emerald uppercase tracking-wider"
 										>Answer</span
 									>
 								</div>
 								<div class="flex flex-col items-center gap-2">
 									<button
-										class="flex items-center justify-center h-20 w-20 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-600/30 transition-all duration-200 hover:scale-105 active:scale-95 ring-4 ring-red-500/20"
+										class="flex items-center justify-center h-20 w-20 rounded-full bg-vivid-rose hover:bg-vivid-rose/80 text-white shadow-xl shadow-vivid-rose/30 transition-all duration-200 hover:scale-105 active:scale-95 ring-4 ring-vivid-rose/20"
 										onclick={rejectCall}
 									>
 										<PhoneOff class="h-9 w-9" />
 									</button>
-									<span class="text-sm font-medium text-red-400 uppercase tracking-wider"
+									<span class="text-sm font-medium text-vivid-rose uppercase tracking-wider"
 										>Decline</span
 									>
 								</div>
@@ -583,9 +583,9 @@
 					{:else if callState === 'connecting' && activeCall}
 						<!-- Answering / connecting state -->
 						<div
-							class="rounded-xl border-2 border-yellow-400/40 bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 p-6 text-center space-y-3"
+							class="rounded-xl border-2 border-vivid-amber/40 bg-gradient-to-b from-vivid-amber/10 to-vivid-amber/5 p-6 text-center space-y-3"
 						>
-							<div class="flex items-center justify-center gap-2 text-yellow-400">
+							<div class="flex items-center justify-center gap-2 text-vivid-amber">
 								<Phone class="h-6 w-6 animate-pulse" />
 								<span class="text-lg font-medium">Connecting...</span>
 							</div>
@@ -601,12 +601,12 @@
 						<!-- Connecting / Connected state -->
 						<div class="rounded-lg bg-gold-glow border border-border p-5 text-center space-y-3">
 							{#if callState === 'connecting'}
-								<div class="flex items-center justify-center gap-2 text-yellow-400">
+								<div class="flex items-center justify-center gap-2 text-vivid-amber">
 									<PhoneOutgoing class="h-5 w-5 animate-pulse" />
 									<span class="text-sm font-medium">Connecting...</span>
 								</div>
 							{:else if callState === 'connected'}
-								<div class="flex items-center justify-center gap-2 text-emerald-400">
+								<div class="flex items-center justify-center gap-2 text-vivid-emerald">
 									<Phone class="h-5 w-5" />
 									<span class="text-sm font-medium">Connected</span>
 								</div>
@@ -644,7 +644,7 @@
 								<Button
 									variant="destructive"
 									size="lg"
-									class="rounded-full h-14 w-14 shadow-lg shadow-red-600/20"
+									class="rounded-full h-14 w-14 shadow-lg shadow-vivid-rose/20"
 									onclick={hangUp}
 								>
 									<PhoneOff class="h-6 w-6" />
@@ -701,8 +701,8 @@
 		</div>
 
 		<!-- Call History Panel -->
-		<div class="rounded border border-border overflow-hidden bg-card">
-			<div class="px-5 py-4 border-b border-border">
+		<div class="rounded-lg border border-border-subtle overflow-hidden bg-card">
+			<div class="px-5 py-4 border-b border-border-subtle">
 				<div class="flex items-center gap-2">
 					<Clock class="h-5 w-5 text-gold" />
 					<h2 class="text-base tracking-wide">Session Activity</h2>
@@ -731,12 +731,12 @@
 					<div class="space-y-2 max-h-[400px] overflow-y-auto">
 						{#each callHistory as entry, entryIdx (entryIdx)}
 							<div
-								class="flex items-center gap-3 rounded-md border border-border p-3 transition-all duration-200 hover:bg-gold-glow"
+								class="flex items-center gap-3 rounded-md border border-border-subtle p-3 transition-all duration-200 hover:bg-surface-hover"
 							>
 								{#if entry.type === 'incoming'}
-									<PhoneIncoming class="h-4 w-4 shrink-0 text-blue-400" />
+									<PhoneIncoming class="h-4 w-4 shrink-0 text-vivid-blue" />
 								{:else if entry.type === 'outgoing'}
-									<PhoneOutgoing class="h-4 w-4 shrink-0 text-emerald-400" />
+									<PhoneOutgoing class="h-4 w-4 shrink-0 text-vivid-emerald" />
 								{:else if entry.type === 'ended'}
 									<PhoneOff class="h-4 w-4 shrink-0 text-zinc-400" />
 								{:else}

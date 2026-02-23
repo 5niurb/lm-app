@@ -138,7 +138,7 @@
 			case 'tentative':
 				return 'border-l-amber-400 bg-amber-400/5';
 			case 'cancelled':
-				return 'border-l-red-400 bg-red-400/5';
+				return 'border-l-vivid-rose bg-vivid-rose/5';
 			default:
 				return 'border-l-gold bg-gold/5';
 		}
@@ -151,7 +151,7 @@
 			case 'tentative':
 				return 'bg-amber-400/15 text-amber-400 border-amber-400/30';
 			case 'cancelled':
-				return 'bg-red-400/15 text-red-400 border-red-400/30';
+				return 'bg-vivid-rose/15 text-vivid-rose border-vivid-rose/30';
 			default:
 				return 'bg-gold/15 text-gold border-gold/30';
 		}
@@ -291,8 +291,8 @@
 
 	<!-- Error -->
 	{#if error}
-		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
-			<p class="text-sm text-red-400">{error}</p>
+		<div class="rounded border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3">
+			<p class="text-sm text-vivid-rose">{error}</p>
 		</div>
 	{/if}
 
@@ -467,7 +467,7 @@
 										? 'border-l-gold bg-gold/5 hover:bg-gold/10'
 										: appt.status === 'tentative'
 											? 'border-l-amber-400 bg-amber-400/5 hover:bg-amber-400/10'
-											: 'border-l-red-400 bg-red-400/5 hover:bg-red-400/10'}"
+											: 'border-l-vivid-rose bg-vivid-rose/5 hover:bg-vivid-rose/10'}"
 									onclick={() => openDrawer(appt)}
 								>
 									{#if !appt.all_day}
@@ -546,14 +546,14 @@
 			<div class="flex items-center gap-2 mt-3">
 				<a
 					href={resolve(`/softphone?call=${encodeURIComponent(selectedAppt.patient_name)}`)}
-					class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 transition-all text-sm font-medium"
+					class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-vivid-emerald/30 text-vivid-emerald hover:bg-vivid-emerald/10 hover:border-vivid-emerald transition-all text-sm font-medium"
 				>
 					<PhoneOutgoing class="h-4 w-4" />
 					Call
 				</a>
 				<a
 					href={resolve(`/messages?name=${encodeURIComponent(selectedAppt.patient_name)}&new=true`)}
-					class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-blue-500/40 text-blue-400 hover:bg-blue-500/15 hover:border-blue-400 transition-all text-sm font-medium"
+					class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-vivid-blue/30 text-vivid-blue hover:bg-vivid-blue/10 hover:border-vivid-blue transition-all text-sm font-medium"
 				>
 					<MessageSquare class="h-4 w-4" />
 					Message

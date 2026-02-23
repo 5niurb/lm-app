@@ -251,7 +251,7 @@
 			</DropdownMenu.Label>
 			<DropdownMenu.Separator />
 			{#if notifications.length === 0}
-				<div class="py-6 text-center text-xs text-muted-foreground">No new notifications</div>
+				<div class="py-6 text-center text-xs text-text-secondary">No new notifications</div>
 			{:else}
 				{#each notifications as notif (notif.id)}
 					<DropdownMenu.Item
@@ -267,7 +267,7 @@
 							{/if}
 							<span class="text-xs leading-snug">{notif.title}</span>
 						</div>
-						<span class="text-[10px] text-muted-foreground {!notif.read ? 'ml-3.5' : ''}"
+						<span class="text-[10px] text-text-secondary {!notif.read ? 'ml-3.5' : ''}"
 							>{timeAgo(notif.time)}</span
 						>
 					</DropdownMenu.Item>
@@ -301,7 +301,7 @@
 			<DropdownMenu.Label>
 				<div class="flex flex-col">
 					<span class="text-sm font-medium">{$profile?.full_name || 'User'}</span>
-					<span class="text-xs text-muted-foreground">{$profile?.email}</span>
+					<span class="text-xs text-text-secondary">{$profile?.email}</span>
 				</div>
 			</DropdownMenu.Label>
 			<DropdownMenu.Separator />

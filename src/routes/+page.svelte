@@ -18,5 +18,5 @@
 </script>
 
 <div class="flex h-screen items-center justify-center">
-	<div class="animate-pulse text-muted-foreground">Loading...</div>
+	<div class="animate-pulse text-text-secondary">Loading...</div>
 </div>

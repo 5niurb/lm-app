@@ -38,15 +38,27 @@
 	const tagConfig = {
 		patient: {
 			label: 'Patient',
-			color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+			color: 'bg-vivid-emerald/15 text-vivid-emerald border-vivid-emerald/30'
 		},
-		lead: { label: 'Lead', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
-		partner: { label: 'Partner', color: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
-		employee: { label: 'Employee', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
+		lead: { label: 'Lead', color: 'bg-vivid-blue/15 text-vivid-blue border-vivid-blue/30' },
+		partner: {
+			label: 'Partner',
+			color: 'bg-vivid-violet/15 text-vivid-violet border-vivid-violet/30'
+		},
+		employee: {
+			label: 'Employee',
+			color: 'bg-vivid-amber/15 text-vivid-amber border-vivid-amber/30'
+		},
 		unknown: { label: 'Unknown', color: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30' },
-		vip: { label: 'VIP', color: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' },
-		friendfam: { label: 'FriendFam', color: 'bg-pink-500/15 text-pink-400 border-pink-500/30' },
-		vendor: { label: 'Vendor', color: 'bg-orange-500/15 text-orange-400 border-orange-500/30' }
+		vip: { label: 'VIP', color: 'bg-vivid-amber/15 text-vivid-amber border-vivid-amber/30' },
+		friendfam: {
+			label: 'FriendFam',
+			color: 'bg-vivid-pink/15 text-vivid-pink border-vivid-pink/30'
+		},
+		vendor: {
+			label: 'Vendor',
+			color: 'bg-vivid-orange/15 text-vivid-orange border-vivid-orange/30'
+		}
 	};
 
 	const sourceLabels = {
@@ -210,14 +222,14 @@
 <div class="space-y-8">
 	<div>
 		<h1 class="text-2xl tracking-wide">Contacts</h1>
-		<p class="text-sm text-muted-foreground mt-1">
+		<p class="text-sm text-text-secondary mt-1">
 			CRM directory — {stats?.total || '...'} contacts across all sources.
 		</p>
 	</div>
 
 	{#if error}
-		<div class="rounded border border-red-500/30 bg-red-500/5 px-4 py-3">
-			<p class="text-sm text-red-400">{error}</p>
+		<div class="rounded border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3">
+			<p class="text-sm text-vivid-rose">{error}</p>
 		</div>
 	{/if}
 
@@ -278,7 +290,7 @@
 						handleSearch();
 					}}
 				>
-					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+					<Search class="absolute left-2.5 top-2.5 h-4 w-4 text-text-secondary" />
 					<Input
 						placeholder="Search by name, phone, or email..."
 						class="pl-8"
@@ -354,7 +366,7 @@
 										>
 											<a
 												href={resolve(`/softphone?call=${encodeURIComponent(contact.phone)}`)}
-												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-emerald-500/40 text-emerald-400/60 hover:bg-emerald-500/15 hover:text-emerald-400 hover:border-emerald-400 transition-all"
+												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-vivid-emerald/30 text-vivid-emerald/50 hover:bg-vivid-emerald/10 hover:text-vivid-emerald hover:border-vivid-emerald transition-all"
 												title="Call {contact.full_name || 'contact'}"
 												onclick={(e) => e.stopPropagation()}
 											>
@@ -364,7 +376,7 @@
 												href={resolve(
 													`/messages?phone=${encodeURIComponent(contact.phone)}${contact.full_name ? '&name=' + encodeURIComponent(contact.full_name) : ''}&new=true`
 												)}
-												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-blue-500/40 text-blue-400/60 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-400 transition-all"
+												class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-vivid-blue/30 text-vivid-blue/50 hover:bg-vivid-blue/10 hover:text-vivid-blue hover:border-vivid-blue transition-all"
 												title="Message {contact.full_name || 'contact'}"
 												onclick={(e) => e.stopPropagation()}
 											>
@@ -393,14 +405,14 @@
 
 				{#if totalCount > pageSize}
 					<div class="flex items-center justify-between pt-4">
-						<p class="text-sm text-muted-foreground">
+						<p class="text-sm text-text-secondary">
 							Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
 						</p>
 						<div class="flex gap-1">
 							<Button variant="outline" size="sm" onclick={prevPage} disabled={page <= 1}>
 								<ChevronLeft class="h-4 w-4" />
 							</Button>
-							<span class="flex items-center px-2 text-sm text-muted-foreground"
+							<span class="flex items-center px-2 text-sm text-text-secondary"
 								>{page} / {totalPages}</span
 							>
 							<Button variant="outline" size="sm" onclick={nextPage} disabled={page >= totalPages}>
@@ -482,7 +494,7 @@
 				<div class="flex items-center gap-2 mt-3">
 					<a
 						href={resolve(`/softphone?call=${encodeURIComponent(expandedContact.phone)}`)}
-						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 transition-all text-sm font-medium"
+						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-vivid-emerald/30 text-vivid-emerald hover:bg-vivid-emerald/10 hover:border-vivid-emerald transition-all text-sm font-medium"
 					>
 						<PhoneOutgoing class="h-4 w-4" />
 						Call
@@ -491,7 +503,7 @@
 						href={resolve(
 							`/messages?phone=${encodeURIComponent(expandedContact.phone)}${expandedContact.full_name ? '&name=' + encodeURIComponent(expandedContact.full_name) : ''}&new=true`
 						)}
-						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-blue-500/40 text-blue-400 hover:bg-blue-500/15 hover:border-blue-400 transition-all text-sm font-medium"
+						class="flex-1 inline-flex items-center justify-center gap-2 h-9 rounded-lg border border-vivid-blue/30 text-vivid-blue hover:bg-vivid-blue/10 hover:border-vivid-blue transition-all text-sm font-medium"
 					>
 						<MessageSquare class="h-4 w-4" />
 						Message
@@ -545,7 +557,7 @@
 								<button type="submit" class="text-xs text-gold hover:underline">Add</button>
 								<button
 									type="button"
-									class="text-xs text-muted-foreground hover:underline"
+									class="text-xs text-text-secondary hover:underline"
 									onclick={() => {
 										addingTag = null;
 										newTagInput = '';
