@@ -53,6 +53,10 @@ services:
         sync: false
       - key: FRONTEND_URL_PUBLIC
         sync: false
+      - key: SYNC_SECRET
+        sync: false
+      - key: GOOGLE_SHEET_CSV_URL
+        sync: false
 
   # ── Staging API ──────────────────────────────────────────────
   # Deploys from the `staging` branch. Uses Supabase project #2
@@ -113,4 +117,8 @@ services:
       - key: FRONTEND_URL_LOCAL
         sync: false
       - key: FRONTEND_URL_PUBLIC
+        sync: false
+      - key: SYNC_SECRET
+        sync: false
+      - key: GOOGLE_SHEET_CSV_URL
         sync: false
