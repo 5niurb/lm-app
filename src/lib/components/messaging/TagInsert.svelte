@@ -1,5 +1,5 @@
 <script>
-	import { Hash } from '@lucide/svelte';
+	import { Braces } from '@lucide/svelte';
 
 	/** @type {{ onInsert: (tag: string) => void }} */
 	let { onInsert } = $props();
@@ -52,7 +52,7 @@
 			open = !open;
 		}}
 	>
-		<Hash class="h-4 w-4" />
+		<Braces class="h-4 w-4" />
 	</button>
 
 	{#if open}
