@@ -64,6 +64,10 @@
 	let logMessages = $state(null);
 	let loadingLog = $state(false);
 
+	// Scheduled messages shown inline in thread
+	/** @type {any[]} */
+	let scheduledMsgs = $state([]);
+
 	// Schedule success banner
 	let scheduleBanner = $state('');
 
@@ -220,7 +224,10 @@
 			}
 			if (selectedConvo) {
 				const prevCount = messages.length;
-				await loadMessages(selectedConvo.id);
+				await Promise.all([
+					loadMessages(selectedConvo.id),
+					loadScheduledForConvo(selectedConvo.id)
+				]);
 				if (messages.length > prevCount) {
 					setTimeout(scrollToBottom, 100);
 				}
@@ -263,6 +270,7 @@
 		} finally {
 			loadingMessages = false;
 		}
+		loadScheduledForConvo(convo.id);
 		setTimeout(scrollToBottom, 100);
 	}
 
@@ -361,6 +369,10 @@
 				body: JSON.stringify({ to, body, scheduledAt, from, conversationId })
 			});
 
+			if (selectedConvo) {
+				loadScheduledForConvo(selectedConvo.id);
+			}
+
 			const dt = new Date(scheduledAt);
 			const timeStr = dt.toLocaleString('en-US', {
 				month: 'short',
@@ -404,6 +416,7 @@
 	function goBack() {
 		selectedConvo = null;
 		messages = [];
+		scheduledMsgs = [];
 	}
 
 	/**
@@ -467,6 +480,40 @@
 		if (longPressTimer) {
 			clearTimeout(longPressTimer);
 			longPressTimer = null;
+		}
+	}
+
+	// Merge real messages + pending scheduled into one timeline
+	let combinedThread = $derived.by(() => {
+		const real = messages.map((m) => ({ ...m, __scheduled: false }));
+		const sched = scheduledMsgs.map((s) => ({
+			...s,
+			__scheduled: true,
+			id: `sched-${s.id}`,
+			_realId: s.id,
+			direction: 'outbound',
+			body: s.body,
+			created_at: s.scheduled_at
+		}));
+		return [...real, ...sched];
+	});
+
+	async function loadScheduledForConvo(convId) {
+		try {
+			const res = await api(`/api/scheduled-messages?conversationId=${convId}&status=pending`);
+			scheduledMsgs = res.data || [];
+		} catch (e) {
+			console.error('Failed to load scheduled messages:', e);
+			scheduledMsgs = [];
+		}
+	}
+
+	async function cancelScheduled(id) {
+		try {
+			await api(`/api/scheduled-messages/${id}`, { method: 'DELETE' });
+			scheduledMsgs = scheduledMsgs.filter((s) => s.id !== id);
+		} catch (e) {
+			onError('Failed to cancel scheduled message');
 		}
 	}
 

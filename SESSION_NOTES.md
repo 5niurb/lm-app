@@ -1,3 +1,88 @@
+## Session — 2026-02-22 (Session 55)
+**Focus:** PRDs for messaging composer enhancements — internal notes, AI suggest, more menu
+
+**Accomplished:**
+- Created PRD: `messaging-internal-notes` — 5 user stories (IN-001 through IN-005) covering database column, API endpoint, compose toggle, inline thread rendering, and wiring
+- Created PRD: `messaging-ai-suggest` — 5 user stories (AI-001 through AI-005) covering Claude Haiku endpoint, suggestion panel component, more menu, wiring, and feature flag
+- Updated `docs/requirements/messages.md` with US-007 (internal notes), US-008 (AI suggest), US-009 (schedule menu move)
+- Created `docs/designref/messaging-composer/README.md` with naming guide for 4 TextMagic reference screenshots
+- All PRDs are Ralph Loop-ready with `prd.json` + `progress.txt`
+
+**Diagram:**
+```
+ComposeBar enhancements:
+┌──────────────────────────────────────────────────┐
+│ Toolbar: [😀] [📎] [📋] [⋮ More] │ [Internal note] │
+│                    ┌──────────┐                  │
+│                    │ Schedule │                  │
+│                    │ AI Gen   │                  │
+│                    └──────────┘                  │
+├──────────────────────────────────────────────────┤
+│ [AI Suggest Panel — summary + 3 draft cards]     │
+├──────────────────────────────────────────────────┤
+│ Textarea (yellow tint when note mode ON)         │
+│                              [Send] / [Add note] │
+└──────────────────────────────────────────────────┘
+
+Thread: normal bubbles + yellow note bubbles inline
+```
+
+**Current State:**
+- Commit `386274b` pushed to GitHub, 129+66 tests passing
+- PRDs ready for `/ralph-loop` orchestration on separate branches
+- Reference images directory created — user needs to manually save 4 TextMagic screenshots
+
+**Issues:**
+- None — documentation-only session
+
+**Next Steps:**
+- Run Ralph Loop: `ralph/internal-notes` branch first (P1), then `ralph/ai-suggest` (P2)
+- Save TextMagic screenshots to `docs/designref/messaging-composer/`
+- Install `@anthropic-ai/sdk` when implementing AI suggest
+- Set `ANTHROPIC_API_KEY` env var on Render for production AI features
+
+---
+
+## Session — 2026-02-22 (Session 54)
+**Focus:** Fix 3 messaging bugs from user testing + deploy
+
+**Accomplished:**
+- Fixed tag resolver: picks most complete contact when duplicates exist (scored by last_name > full_name > email), derives missing name fields (splits full_name → first/last, combines first+last → full_name)
+- Fixed schedule popover UTC bug: toISOString() returns UTC but datetime-local expects local time — caused 8-hour offset. Now uses manual local time formatting. Min set to 5 min, default to 15 min from now
+- Fixed invisible delivery status icons: `text-gold` on `bg-gold` was invisible (gold on gold), `opacity-50` too faint. Now uses `text-emerald-300` (delivered), `text-white/60` (queued), `text-red-300` (failed). Also handles `accepted`, `sending`, `read` statuses
+- Added contact dedup/merge to backlog (US-BL1 in contacts requirements)
+- Deployed frontend to CF Pages (973deffc) + API pushed to Render
+
+**Diagram:**
+```
+Tag Resolver Fix:
+Phone: +13106218356 → matches 3 contacts
+  ┌ "mike" (no last_name) ─── score 0
+  ├ "Mikey Culver" (+last) ─── score 3 ← WINNER
+  └ "Mike Culver" (no phone) ── not matched
+                                    ↓
+            derive: full_name="Mikey Culver", last_name="Culver"
+
+Schedule Fix: toISOString()→UTC ✗ → toLocalDateTime()→local ✓
+Status Fix:  text-gold on bg-gold (invisible) → text-emerald-300 (visible)
+```
+
+**Current State:**
+- All changes live on production (lemedspa.app)
+- 129 vitest + 66 node:test passing, build clean
+- DB has duplicate contacts — dedup feature in backlog (P2)
+
+**Issues:**
+- 3 duplicate contacts for +13106218356 in production DB (workaround in place, dedup needed)
+- Pre-existing: 12 ESLint warnings, 3 Dependabot alerts
+
+**Next Steps:**
+- Test all 3 fixes on production: send message with {{full_name}} tag, try scheduling 10 min out, check delivery status icon progression
+- Contact dedup/merge feature (US-BL1)
+- Continue messaging features: internal notes PRD, AI suggest PRD
+
+---
+
 ## Session — 2026-02-22 (Session 53)
 **Focus:** Fix scheduling, dynamic tag resolution, delivery status indicators
 
