@@ -1,11 +1,11 @@
 /**
- * Contact sync endpoints — TextMagic → contacts table
+ * Contact sync endpoints
  *
- * POST /api/sync/textmagic   — Run full TextMagic contact sync
- *   Requires: x-sync-key header matching SYNC_SECRET env var
- *   Called by pg_cron every 15 minutes
- *
+ * POST /api/sync/textmagic   — Full TextMagic → contacts table sync
+ * POST /api/sync/sheet        — Google Sheet (AR patients) → contacts + TextMagic
  * GET  /api/sync/status       — Last sync timestamp (no auth)
+ *
+ * All POST endpoints require: x-sync-key header matching SYNC_SECRET env var
  */
 import { Router } from 'express';
 import { supabaseAdmin } from '../services/supabase.js';
@@ -16,6 +16,7 @@ const TM_API_KEY = process.env.TEXTMAGIC_API_KEY;
 const TM_USERNAME = process.env.TEXTMAGIC_USERNAME;
 const SYNC_SECRET = process.env.SYNC_SECRET;
 const BASE_URL = 'https://rest.textmagic.com/api/v2';
+const SHEET_CSV_URL = process.env.GOOGLE_SHEET_CSV_URL;
 
 /**
  * Authenticated TextMagic API request
@@ -286,6 +287,526 @@ router.post('/textmagic', async (req, res) => {
 		});
 	} catch (err) {
 		console.error('[sync] TextMagic error:', err.message);
+		res.status(500).json({ error: err.message });
+	}
+});
+
+// ─────────────────────────────────────────────────────────────
+// CSV parsing utilities (ported from api/scripts/sync-contacts.js)
+// ─────────────────────────────────────────────────────────────
+
+function parseCsvLine(line) {
+	const values = [];
+	let current = '';
+	let inQuotes = false;
+	for (let i = 0; i < line.length; i++) {
+		const ch = line[i];
+		if (ch === '"') {
+			if (inQuotes && line[i + 1] === '"') {
+				current += '"';
+				i++;
+			} else {
+				inQuotes = !inQuotes;
+			}
+		} else if (ch === ',' && !inQuotes) {
+			values.push(current);
+			current = '';
+		} else {
+			current += ch;
+		}
+	}
+	values.push(current);
+	return values;
+}
+
+function parseCsv(content) {
+	// Normalize CRLF/CR line endings (Google Sheets exports CRLF)
+	const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+	if (lines.length < 2) return [];
+
+	// Clean headers: lowercase + strip trailing numbers ("First Name 2" → "first name")
+	const rawHeaders = parseCsvLine(lines[0]);
+	const headers = rawHeaders.map((h) =>
+		h
+			.trim()
+			.toLowerCase()
+			.replace(/\s+\d+\s*$/, '')
+	);
+
+	const records = [];
+	for (let i = 1; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (!line) continue;
+		const values = parseCsvLine(line);
+		const record = {};
+		for (let j = 0; j < headers.length; j++) {
+			record[headers[j]] = (values[j] || '').trim();
+		}
+		records.push(record);
+	}
+	return records;
+}
+
+/**
+ * Map a Google Sheet row to a contacts table record.
+ * The sheet has AR + GHL + TextMagic columns in a unified format.
+ */
+function mapSheetRow(raw) {
+	const firstName = raw['first name'] || raw['first_name'] || '';
+	const lastName = raw['last name'] || raw['last_name'] || '';
+	const fullName =
+		raw['full name'] ||
+		(firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName || '');
+	const phone = raw['phone'] || raw['phone number'] || '';
+	const email = raw['email'] || '';
+	const arId = raw['ar id'] || '';
+	const status = raw['contact type'] || raw['status'] || '';
+
+	// Metadata from extra columns
+	const metadata = {};
+	const metaMap = {
+		'total sales rel': 'total_sales',
+		visited: 'last_visited',
+		'nick name': 'nickname',
+		'referral source': 'referral_source',
+		dob: 'dob',
+		'address line 1': 'address_line1',
+		'address line 2': 'address_line2',
+		city: 'city',
+		state: 'state',
+		zip: 'zip',
+		country: 'country',
+		'membership type': 'membership_type',
+		'patient created date': 'patient_created_date',
+		lists: 'lists',
+		tags: 'tags',
+		'ghl contact id': 'ghl_contact_id',
+		'textmagic phone': 'textmagic_phone',
+		'textmagic contact id': 'textmagic_contact_id'
+	};
+	for (const [csvKey, metaKey] of Object.entries(metaMap)) {
+		if (raw[csvKey]?.trim()) metadata[metaKey] = raw[csvKey].trim();
+	}
+	// Store AR ID in metadata too for cross-reference
+	if (arId) metadata.ar_id = arId;
+
+	// Tags from sheet data
+	const tags = ['patient']; // All AR contacts are patients
+	const sheetTags = (raw['tags'] || '').toLowerCase();
+	const sheetLists = (raw['lists'] || '').toLowerCase();
+	if (sheetTags.includes('vip')) tags.push('vip');
+	if (sheetTags.includes('friendfam')) tags.push('friendfam');
+	if (sheetTags.includes('vendor')) tags.push('vendor');
+	if (sheetLists.includes('partner')) tags.push('partner');
+	if (sheetLists.includes('lm team')) tags.push('employee');
+
+	// Lists from sheet data
+	const lists = [];
+	if (sheetLists.includes('patient')) lists.push('patients');
+	if (sheetLists.includes('diamond')) lists.push('diamond');
+	if (sheetLists.includes('partner')) lists.push('partners');
+	if (sheetLists.includes('lm team')) lists.push('lm-team');
+	if (sheetLists.includes('to book')) lists.push('to-book');
+	if (sheetLists.includes('lead')) lists.push('leads');
+
+	return {
+		first_name: firstName || null,
+		last_name: lastName || null,
+		full_name: fullName || null,
+		phone: phone || null,
+		phone_normalized: normalizePhone(phone),
+		email: email || null,
+		source: 'aesthetic_record',
+		source_id: arId || null,
+		patient_status: status ? status.toLowerCase() : null,
+		tags,
+		lists: lists.length > 0 ? lists : [],
+		metadata: Object.keys(metadata).length > 0 ? metadata : {},
+		last_synced_at: new Date().toISOString()
+	};
+}
+
+/**
+ * TextMagic write helper — POST uses JSON, PUT uses form-encoded (TM API quirk)
+ */
+async function tmWrite(method, path, body = {}) {
+	const isForm = method === 'PUT';
+	const resp = await fetch(`${BASE_URL}${path}`, {
+		method,
+		headers: {
+			'X-TM-Username': TM_USERNAME,
+			'X-TM-Key': TM_API_KEY,
+			'Content-Type': isForm ? 'application/x-www-form-urlencoded' : 'application/json',
+			Accept: 'application/json'
+		},
+		body: isForm ? new URLSearchParams(body).toString() : JSON.stringify(body)
+	});
+	if (!resp.ok) {
+		const text = await resp.text();
+		throw new Error(`TextMagic ${method} ${path} ${resp.status}: ${text}`);
+	}
+	return resp.json();
+}
+
+/**
+ * Look up the TextMagic "Patients" list ID. Cached for 1 hour.
+ */
+let cachedPatientsListId = null;
+let cachedPatientsListAt = 0;
+const TM_LIST_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+async function getTmPatientsListId() {
+	if (cachedPatientsListId && Date.now() - cachedPatientsListAt < TM_LIST_CACHE_TTL) {
+		return cachedPatientsListId;
+	}
+	const data = await tmFetch('/lists', { search: 'Patients', limit: 10 });
+	const list = (data.resources || []).find((l) => l.name.toLowerCase() === 'patients');
+	if (list) {
+		cachedPatientsListId = list.id;
+		cachedPatientsListAt = Date.now();
+		return list.id;
+	}
+	cachedPatientsListId = null;
+	return null;
+}
+
+/**
+ * Search TextMagic for a contact by phone, create or update as needed.
+ * Returns { action: 'created'|'updated'|'exists'|'skipped', tmId? }
+ */
+async function syncContactToTextMagic(contact, listId) {
+	if (!contact.phone_normalized || !TM_API_KEY || !TM_USERNAME) {
+		return { action: 'skipped' };
+	}
+
+	// Ensure phone has country code for TM (assume US +1 if 10 digits)
+	let tmPhone = contact.phone_normalized;
+	if (tmPhone.length === 10) tmPhone = '1' + tmPhone;
+
+	try {
+		// Try exact phone lookup
+		const existing = await tmFetch(`/contacts/phone/${tmPhone}`);
+
+		// Contact exists in TM — update if we have richer data
+		const updates = {};
+		if (contact.first_name && contact.first_name !== existing.firstName)
+			updates.firstName = contact.first_name;
+		if (contact.last_name && contact.last_name !== existing.lastName)
+			updates.lastName = contact.last_name;
+		if (contact.email && !existing.email) updates.email = contact.email;
+
+		if (Object.keys(updates).length > 0) {
+			await tmWrite('PUT', `/contacts/${existing.id}`, updates);
+			return { action: 'updated', tmId: existing.id };
+		}
+		return { action: 'exists', tmId: existing.id };
+	} catch (err) {
+		// 404 = not found in TM → create new contact
+		if (err.message.includes('404')) {
+			if (!listId) return { action: 'skipped' };
+			try {
+				const result = await tmWrite('POST', '/contacts/normalized', {
+					phone: tmPhone,
+					firstName: contact.first_name || '',
+					lastName: contact.last_name || '',
+					email: contact.email || '',
+					lists: listId.toString()
+				});
+				return { action: 'created', tmId: result.id };
+			} catch (createErr) {
+				console.error(`[sync-sheet] TM create error for ${tmPhone}:`, createErr.message);
+				return { action: 'error' };
+			}
+		}
+		console.error(`[sync-sheet] TM lookup error for ${tmPhone}:`, err.message);
+		return { action: 'error' };
+	}
+}
+
+/**
+ * POST /api/sync/sheet
+ * Fetch AR patients from Google Sheet, insert/enrich in contacts DB,
+ * then sync each new/updated contact to TextMagic.
+ *
+ * Query params:
+ *   ?dry_run=true — log actions without writing to DB or TM
+ */
+router.post('/sheet', async (req, res) => {
+	// Auth
+	if (!SYNC_SECRET) {
+		return res.status(503).json({ error: 'SYNC_SECRET not configured' });
+	}
+	const key = req.headers['x-sync-key'] || req.query.key;
+	if (key !== SYNC_SECRET) {
+		return res.status(401).json({ error: 'Invalid sync key' });
+	}
+
+	if (!SHEET_CSV_URL) {
+		return res.status(500).json({ error: 'GOOGLE_SHEET_CSV_URL not configured' });
+	}
+
+	const dryRun = req.query.dry_run === 'true';
+	const startTime = Date.now();
+
+	try {
+		// 1. Fetch Google Sheet CSV (follows redirects)
+		console.log(`[sync-sheet] Fetching Google Sheet CSV${dryRun ? ' (dry run)' : ''}...`);
+		const csvResp = await fetch(SHEET_CSV_URL, { redirect: 'follow' });
+		if (!csvResp.ok) {
+			throw new Error(`Google Sheet fetch failed: ${csvResp.status}`);
+		}
+		const csvText = await csvResp.text();
+		const rows = parseCsv(csvText);
+		console.log(`[sync-sheet] Parsed ${rows.length} rows from sheet`);
+
+		// 2. Filter valid rows (AR ID must be a positive number)
+		const validRows = rows.filter((r) => {
+			const arId = r['ar id'];
+			return arId && !isNaN(arId) && parseInt(arId, 10) > 0;
+		});
+		console.log(
+			`[sync-sheet] ${validRows.length} valid AR contacts (skipped ${rows.length - validRows.length} junk rows)`
+		);
+
+		// 3. Get existing contacts for diffing
+		const { data: existingByAr, error: arFetchErr } = await supabaseAdmin
+			.from('contacts')
+			.select('id, source_id, phone_normalized, tags, lists, metadata')
+			.eq('source', 'aesthetic_record')
+			.not('source_id', 'is', null);
+
+		if (arFetchErr) {
+			throw new Error(`Failed to fetch existing AR contacts: ${arFetchErr.message}`);
+		}
+
+		const arIdSet = new Set((existingByAr || []).map((c) => String(c.source_id)));
+
+		// Also get all contacts indexed by phone for TM lead enrichment
+		const { data: allContacts, error: allFetchErr } = await supabaseAdmin
+			.from('contacts')
+			.select(
+				'id, source, source_id, phone_normalized, email, tags, lists, metadata, first_name, last_name, full_name'
+			);
+
+		if (allFetchErr) {
+			throw new Error(`Failed to fetch contacts index: ${allFetchErr.message}`);
+		}
+
+		// Index contacts by phone/email — prefer aesthetic_record source on collision
+		const phoneIndex = new Map();
+		const emailIndex = new Map();
+		for (const c of allContacts || []) {
+			if (c.phone_normalized) {
+				const existing = phoneIndex.get(c.phone_normalized);
+				if (!existing || c.source === 'aesthetic_record') {
+					phoneIndex.set(c.phone_normalized, c);
+				}
+			}
+			if (c.email) {
+				const existing = emailIndex.get(c.email.toLowerCase());
+				if (!existing || c.source === 'aesthetic_record') {
+					emailIndex.set(c.email.toLowerCase(), c);
+				}
+			}
+		}
+
+		// 4. Process each sheet row
+		let inserted = 0;
+		let enriched = 0;
+		let unchanged = 0;
+		let tmCreated = 0;
+		let tmUpdated = 0;
+		let tmExists = 0;
+		let tmErrors = 0;
+		let errors = 0;
+
+		// Resolve TM "Patients" list ID once
+		let tmListId = null;
+		if (TM_API_KEY && TM_USERNAME && !dryRun) {
+			try {
+				tmListId = await getTmPatientsListId();
+				if (!tmListId)
+					console.warn(
+						'[sync-sheet] TextMagic "Patients" list not found — new contacts will not be added to TM'
+					);
+			} catch (err) {
+				console.warn('[sync-sheet] Could not fetch TM lists:', err.message);
+			}
+		}
+
+		// Contacts that need TM sync (new or enriched)
+		const tmSyncQueue = [];
+
+		for (const row of validRows) {
+			const mapped = mapSheetRow(row);
+			const arId = mapped.source_id;
+
+			// Already synced by AR ID?
+			if (arIdSet.has(arId)) {
+				unchanged++;
+				continue;
+			}
+
+			// Match by phone (TM lead enrichment case)
+			let existingContact = mapped.phone_normalized
+				? phoneIndex.get(mapped.phone_normalized)
+				: null;
+
+			// Match by email fallback
+			if (!existingContact && mapped.email) {
+				existingContact = emailIndex.get(mapped.email.toLowerCase());
+			}
+
+			if (existingContact) {
+				// Enrich existing contact with AR data
+				if (dryRun) {
+					console.log(
+						`[sync-sheet] [dry-run] Would enrich ${mapped.full_name} (${existingContact.source} → AR ID ${arId})`
+					);
+					enriched++;
+					continue;
+				}
+
+				const mergedTags = [
+					...new Set([...(existingContact.tags || []).filter((t) => t !== 'lead'), ...mapped.tags])
+				];
+				const mergedLists = [...new Set([...(existingContact.lists || []), ...mapped.lists])];
+				const mergedMeta = { ...(existingContact.metadata || {}), ...mapped.metadata };
+
+				const update = {
+					source: 'aesthetic_record',
+					source_id: arId,
+					tags: mergedTags,
+					lists: mergedLists,
+					metadata: mergedMeta,
+					patient_status: mapped.patient_status || existingContact.patient_status,
+					last_synced_at: new Date().toISOString(),
+					updated_at: new Date().toISOString()
+				};
+
+				// Fill empty fields from sheet
+				if (!existingContact.first_name && mapped.first_name) update.first_name = mapped.first_name;
+				if (!existingContact.last_name && mapped.last_name) update.last_name = mapped.last_name;
+				if (!existingContact.full_name && mapped.full_name) update.full_name = mapped.full_name;
+				if (!existingContact.email && mapped.email) update.email = mapped.email;
+
+				const { error } = await supabaseAdmin
+					.from('contacts')
+					.update(update)
+					.eq('id', existingContact.id);
+
+				if (error) {
+					console.error(`[sync-sheet] Enrich error for ${mapped.full_name}:`, error.message);
+					errors++;
+				} else {
+					enriched++;
+					tmSyncQueue.push({ ...mapped, ...update, _dbId: existingContact.id });
+				}
+			} else {
+				// New contact — insert
+				if (dryRun) {
+					console.log(`[sync-sheet] [dry-run] Would insert ${mapped.full_name} (AR ID ${arId})`);
+					inserted++;
+					continue;
+				}
+
+				const { data: insertedRow, error } = await supabaseAdmin
+					.from('contacts')
+					.insert(mapped)
+					.select('id')
+					.single();
+				if (error) {
+					console.error(`[sync-sheet] Insert error for ${mapped.full_name}:`, error.message);
+					errors++;
+				} else {
+					inserted++;
+					tmSyncQueue.push({ ...mapped, _dbId: insertedRow.id });
+				}
+			}
+		}
+
+		// 5. Sync new/enriched contacts to TextMagic
+		if (!dryRun && tmSyncQueue.length > 0 && TM_API_KEY && TM_USERNAME) {
+			console.log(`[sync-sheet] Syncing ${tmSyncQueue.length} contacts to TextMagic...`);
+			for (const contact of tmSyncQueue) {
+				const result = await syncContactToTextMagic(contact, tmListId);
+				if (result.action === 'created') tmCreated++;
+				else if (result.action === 'updated') tmUpdated++;
+				else if (result.action === 'exists') tmExists++;
+				else if (result.action === 'error') tmErrors++;
+
+				// Store TM contact ID in metadata if we got one
+				if (result.tmId && contact._dbId) {
+					await supabaseAdmin
+						.from('contacts')
+						.update({
+							metadata: {
+								...(contact.metadata || {}),
+								textmagic_contact_id: result.tmId.toString()
+							}
+						})
+						.eq('id', contact._dbId);
+				}
+
+				// Rate limit: 100ms between TM API calls
+				await new Promise((r) => setTimeout(r, 100));
+			}
+		}
+
+		// 6. Refresh conversation display_names for affected contacts
+		let namesRefreshed = 0;
+		if (!dryRun && (inserted > 0 || enriched > 0)) {
+			const { data: convos } = await supabaseAdmin
+				.from('conversations')
+				.select('id, phone_number, display_name, contact_id');
+
+			if (convos) {
+				for (const convo of convos) {
+					const phoneDigits = convo.phone_number?.replace(/\D/g, '');
+					if (!phoneDigits) continue;
+
+					const { data: contact } = await supabaseAdmin
+						.from('contacts')
+						.select('id, full_name')
+						.eq('phone_normalized', phoneDigits)
+						.limit(1)
+						.maybeSingle();
+
+					if (contact && contact.full_name && contact.full_name !== convo.display_name) {
+						await supabaseAdmin
+							.from('conversations')
+							.update({ display_name: contact.full_name, contact_id: contact.id })
+							.eq('id', convo.id);
+						namesRefreshed++;
+					} else if (contact && !convo.contact_id) {
+						await supabaseAdmin
+							.from('conversations')
+							.update({ contact_id: contact.id })
+							.eq('id', convo.id);
+					}
+				}
+			}
+		}
+
+		const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+		console.log(
+			`[sync-sheet] Done: ${validRows.length} sheet rows — ${inserted} new, ${enriched} enriched, ${unchanged} unchanged, ${errors} errors | TM: ${tmCreated} created, ${tmUpdated} updated, ${tmExists} existing, ${tmErrors} errors | ${namesRefreshed} names refreshed (${duration}s)${dryRun ? ' [DRY RUN]' : ''}`
+		);
+
+		res.json({
+			ok: true,
+			dryRun,
+			sheetRows: validRows.length,
+			inserted,
+			enriched,
+			unchanged,
+			errors,
+			textmagic: { created: tmCreated, updated: tmUpdated, existing: tmExists, errors: tmErrors },
+			namesRefreshed,
+			duration: `${duration}s`
+		});
+	} catch (err) {
+		console.error('[sync-sheet] Error:', err.message);
 		res.status(500).json({ error: err.message });
 	}
 });
