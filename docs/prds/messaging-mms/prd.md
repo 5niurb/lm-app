@@ -15,7 +15,7 @@ Inbound MMS media URLs are already stored in the `messages.media_urls` JSONB col
   - `src/lib/components/messaging/ChatsTab.svelte` — add image thumbnails to message bubbles
   - `src/lib/components/messaging/ComposeBar.svelte` — add file picker button
   - Create new: `src/lib/components/messaging/ImageLightbox.svelte`
-- **Design system:** Dark bg #0a0a0c, gold accent #C5A55A, Playfair Display headings
+- **Design system:** Vivid Dark — near-black bg #09090b, gold accent #d4a843, Outfit headings, DM Sans body. Multi-color vivid accents (indigo, blue, violet, emerald, cyan, amber, orange, rose) for icons and badges. Use semantic CSS tokens (text-text-secondary, bg-surface-hover, border-border-subtle, etc.) — see src/app.css for full design system.
 - **API base:** http://localhost:3001 (dev) / https://api.lemedspa.app (prod)
 
 ## Technical Context

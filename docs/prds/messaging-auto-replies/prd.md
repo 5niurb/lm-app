@@ -18,7 +18,7 @@ Automatic responses to common inbound SMS messages (hours, address, booking link
   - `src/routes/(auth)/settings/+page.svelte` — or new settings sub-section (existing file or new component)
   - `src/lib/components/messaging/ChatsTab.svelte` — auto-reply badge on bubbles (existing file)
   - `api/db/seed-auto-replies.sql` — default rules (new file)
-- **Design system:** Dark bg #0a0a0c, gold accent #C5A55A, Playfair Display headings
+- **Design system:** Vivid Dark — near-black bg #09090b, gold accent #d4a843, Outfit headings, DM Sans body. Multi-color vivid accents (indigo, blue, violet, emerald, cyan, amber, orange, rose) for icons and badges. Use semantic CSS tokens (text-text-secondary, bg-surface-hover, border-border-subtle, etc.) — see src/app.css for full design system.
 - **API base:** http://localhost:3001 (dev) / https://api.lemedspa.app (prod)
 
 ## Technical Context

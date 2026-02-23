@@ -8,13 +8,14 @@
 - File pattern: src/routes/(auth)/[page]/+page.svelte for frontend pages
 - API pattern: api/routes/[feature].js, mounted in api/server.js
 
-## Design Tokens
-- Dark bg: #0a0a0c
-- Gold accent: #C5A55A
-- Card border: rgba(197,165,90,0.12)
-- Hover bg: rgba(197,165,90,0.04)
-- Headings: Playfair Display (serif)
-- Body: Inter (sans-serif)
+## Design Tokens (Vivid Dark)
+- Background: #09090b
+- Gold accent: #d4a843
+- Card bg: #111113, border: rgba(255,255,255,0.06)
+- Hover bg: rgba(255,255,255,0.06)
+- Headings: Outfit (geometric sans)
+- Body: DM Sans
+- Use semantic CSS tokens — see src/app.css
 
 ## Critical Gotchas
 - JS not TS — use JSDoc annotations with @type comments, NO .ts files

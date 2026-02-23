@@ -11,7 +11,7 @@ The scheduled_messages table, API (CRUD), and UI (ScheduledTab + SchedulePopover
   - `api/routes/scheduled-messages.js` — existing CRUD (don't rewrite, extend)
   - `api/db/migration-scheduled-delivery.sql` — new column(s)
   - `src/lib/components/messaging/ScheduledTab.svelte` — display enhancements
-- **Design system:** Dark bg #0a0a0c, gold accent #C5A55A, Playfair Display headings
+- **Design system:** Vivid Dark — near-black bg #09090b, gold accent #d4a843, Outfit headings, DM Sans body. Multi-color vivid accents (indigo, blue, violet, emerald, cyan, amber, orange, rose) for icons and badges. Use semantic CSS tokens (text-text-secondary, bg-surface-hover, border-border-subtle, etc.) — see src/app.css for full design system.
 - **API base:** http://localhost:3001 (dev) / https://api.lemedspa.app (prod)
 
 ## Technical Context

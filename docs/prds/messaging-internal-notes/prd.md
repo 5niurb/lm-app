@@ -25,7 +25,7 @@ Staff-only notes that appear inline within conversation threads but are never se
   - `api/routes/messages.js` — add note creation endpoint, filter notes from SMS-only queries (existing file)
   - `src/lib/components/messaging/ComposeBar.svelte` — add internal note toggle + mode switching (existing file)
   - `src/lib/components/messaging/ChatsTab.svelte` — render internal note bubbles with distinct style (existing file)
-- **Design system:** Dark bg #0a0a0c, gold accent #C5A55A, Playfair Display headings
+- **Design system:** Vivid Dark — near-black bg #09090b, gold accent #d4a843, Outfit headings, DM Sans body. Multi-color vivid accents (indigo, blue, violet, emerald, cyan, amber, orange, rose) for icons and badges. Use semantic CSS tokens (text-text-secondary, bg-surface-hover, border-border-subtle, etc.) — see src/app.css for full design system. Note: Internal note mode uses warm cream tones (#FFF8E1, rgba(255,248,225,0.08)) intentionally for visual contrast against the dark base theme.
 - **API base:** http://localhost:3001 (dev) / https://api.lemedspa.app (prod)
 
 ## Technical Context

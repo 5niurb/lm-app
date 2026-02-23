@@ -32,13 +32,18 @@ Custom management platform for Le Med Spa. Replaces HighLevel, TextMagic, and (e
 
 ## Design Direction
 
-All Le Med Spa properties use the **dark + gold** aesthetic:
-- **Background:** Dark (#0a0a0c)
-- **Accents:** Gold (#d4af37, #c5a24d)
-- **Typography:** Playfair Display (headings) + Inter (body)
-- **Style:** Luxurious, intimate, high-end
+The lm-app internal dashboard uses the **Vivid Dark** design system:
+- **Background:** Near-black (#09090b)
+- **Primary accent:** Gold (#d4a843) — for text, headers, links, borders, focus rings
+- **Multi-color accents:** Vivid indigo, blue, violet, emerald, cyan, amber, orange, rose — for icon boxes, badges, and decorative elements
+- **Typography:** Outfit (headings) + DM Sans (body)
+- **Style:** Modern fintech-inspired dashboard (Mercury, LaunchDarkly), dark + colorful
 
-The lm-app dashboard should follow this same design language where possible — dark sidebar, gold accents, clean typography. shadcn-svelte components can be themed to match.
+**Three themes:** Midnight (dark, default), Dusk (warm dark), Champagne (light) — all share the same gold primary and vivid accent palette.
+
+**Patient-facing pages** (care/, consent/) intentionally use Playfair Display + the luxury spa aesthetic. These do NOT follow the Vivid Dark dashboard theme.
+
+The full design system (tokens, utilities, gradients) is defined in `src/app.css`. Use semantic CSS classes (`text-text-secondary`, `bg-surface-hover`, `border-border-subtle`, `icon-box grad-blue`, etc.) rather than raw Tailwind colors.
 
 ### Design References — Copy From the Best
 

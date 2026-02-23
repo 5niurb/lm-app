@@ -13,7 +13,7 @@ Send one message to multiple contacts at once using templates with merge tags. U
   - `src/routes/(auth)/messages/+page.svelte` — add Broadcasts tab (4th tab)
   - New: `src/lib/components/messaging/BroadcastsTab.svelte`
   - New: `src/lib/components/messaging/BroadcastCompose.svelte`
-- **Design system:** Dark bg #0a0a0c, gold accent #C5A55A, Playfair Display headings
+- **Design system:** Vivid Dark — near-black bg #09090b, gold accent #d4a843, Outfit headings, DM Sans body. Multi-color vivid accents (indigo, blue, violet, emerald, cyan, amber, orange, rose) for icons and badges. Use semantic CSS tokens (text-text-secondary, bg-surface-hover, border-border-subtle, etc.) — see src/app.css for full design system.
 - **API base:** http://localhost:3001 (dev) / https://api.lemedspa.app (prod)
 
 ## Technical Context
