@@ -1,0 +1,20 @@
+# Internal Notes — Progress & Learnings
+
+## Codebase Patterns
+- ComposeBar.svelte uses $props() for onSend, onSchedule callbacks. Add onNote the same way.
+- Messages are rendered in ChatsTab.svelte in the `{#each messages as msg}` block around line 853.
+- Delivery status icons are rendered conditionally on msg.direction === 'outbound' around line 935.
+- Reactions are handled via oncontextmenu/ontouchstart on the bubble div.
+- API routes use verifyToken middleware. req.user.id gives the authenticated user's UUID.
+- POST /api/messages/send in api/routes/messages.js has the Twilio send pattern — DO NOT call Twilio for notes.
+- Conversation list preview uses last_message column — updated by trigger or in the send handler.
+- The messages query in GET /conversations/:id already joins sender info (profiles table) for msg.sender.full_name.
+
+## Migration Notes
+- Use IF NOT EXISTS for column add to be idempotent.
+- Partial index (WHERE is_internal_note = true) keeps the index small since most messages are not notes.
+
+## UI Notes
+- Toggle should use a simple switch — not a shadcn Switch component (those require ui/ modifications which are forbidden).
+- Use a <button> that toggles a class. CSS custom switch with checkbox + label is fine.
+- Warm yellow on dark theme: rgba(255,248,225,0.08) for bg, rgba(255,248,225,0.2) for border.

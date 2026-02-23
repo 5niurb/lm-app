@@ -933,16 +933,16 @@
 											})}
 										</span>
 										{#if msg.direction === 'outbound'}
-											{#if msg.status === 'queued'}
-												<Clock class="h-3 w-3 opacity-50" />
-											{:else if msg.status === 'sent'}
-												<Check class="h-3 w-3 opacity-60" />
-											{:else if msg.status === 'delivered'}
-												<CheckCheck class="h-3 w-3 text-gold" />
+											{#if msg.status === 'queued' || msg.status === 'accepted'}
+												<Clock class="h-3 w-3 text-white/60" />
+											{:else if msg.status === 'sending' || msg.status === 'sent'}
+												<Check class="h-3 w-3 text-white/80" />
+											{:else if msg.status === 'delivered' || msg.status === 'read'}
+												<CheckCheck class="h-3 w-3 text-emerald-300" />
 											{:else if msg.status === 'failed'}
-												<X class="h-3 w-3 text-red-400" />
+												<X class="h-3 w-3 text-red-300" />
 											{:else if msg.status === 'undelivered'}
-												<AlertTriangle class="h-3 w-3 text-orange-400" />
+												<AlertTriangle class="h-3 w-3 text-orange-300" />
 											{/if}
 										{/if}
 										{#if msg.metadata?.source === 'auto_reply'}

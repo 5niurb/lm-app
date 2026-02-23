@@ -1,0 +1,111 @@
+{
+	"project": "lm-app",
+	"branchName": "ralph/ai-suggest",
+	"description": "AI-powered response suggestions with thread summary and clickable draft responses in the compose bar",
+	"userStories": [
+		{
+			"id": "AI-001",
+			"title": "AI suggest API endpoint and prompt logic",
+			"description": "As the system, I want to generate contextual response suggestions by sending conversation history to Claude Haiku, so that staff can quickly draft replies.",
+			"acceptanceCriteria": [
+				"New file: api/services/ai-suggest.js with generateSuggestions(conversationId) function",
+				"Function fetches last 15 messages from the conversation (excluding internal notes)",
+				"Function strips phone numbers from message bodies before sending to AI",
+				"Function constructs prompt with Le Med Spa business context + conversation history",
+				"Function calls Anthropic Claude API (claude-haiku-4-5-20251001 model) with the prompt",
+				"Function parses JSON response into { summary: string, suggestions: Array<{label, icon, text}> }",
+				"POST /api/messages/ai-suggest endpoint accepts { conversationId } and returns suggestions",
+				"Endpoint requires verifyToken middleware",
+				"If ANTHROPIC_API_KEY env var is not set, endpoint returns 503 with { error: 'AI features not configured' }",
+				"Simple in-memory rate limit: max 10 requests per conversation per hour (returns 429 if exceeded)",
+				"Graceful error handling: if Claude API fails, return 500 with { error: 'Failed to generate suggestions' }",
+				"Build passes: npx vite build"
+			],
+			"priority": 1,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Install @anthropic-ai/sdk if not already in package.json. Use dynamic import or conditional require so the server doesn't crash if the package is missing. The prompt should ask for JSON output. Parse with JSON.parse inside a try/catch — LLM output can be unpredictable."
+		},
+		{
+			"id": "AI-002",
+			"title": "AiSuggestPanel component",
+			"description": "As a staff member, I want to see AI-generated response suggestions in a panel above the compose bar, so that I can quickly pick a relevant reply.",
+			"acceptanceCriteria": [
+				"New file: src/lib/components/messaging/AiSuggestPanel.svelte",
+				"Component accepts props: conversationId (string), onInsert (text: string) => void, onClose () => void, onError (msg: string) => void",
+				"On mount, calls POST /api/messages/ai-suggest with conversationId",
+				"Loading state: shows skeleton pulse (3 card-shaped skeletons + 2-line text skeleton for summary)",
+				"Success state: displays thread summary paragraph + 3 clickable suggestion cards",
+				"Each card shows: Lucide icon (mapped from suggestion.icon), bold label, body text",
+				"Clicking a card calls onInsert(suggestion.text) and onClose()",
+				"Error state: shows error message + 'Try again' button that re-fetches",
+				"Close button (X) in top-right calls onClose()",
+				"Panel has border-t border-border and bg-surface-raised background",
+				"Build passes: npx vite build"
+			],
+			"priority": 2,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Use $state for loading/error/data. Fetch on mount with $effect or onMount. Map icon strings to Lucide components: phone→Phone, sparkles→Sparkles, message-circle→MessageCircle, lightbulb→Lightbulb, heart→Heart. Default to MessageCircle for unknown icons."
+		},
+		{
+			"id": "AI-003",
+			"title": "More menu in ComposeBar with Generate with AI option",
+			"description": "As a staff member, I want a three-dot more menu in the compose toolbar that includes 'Generate with AI', so that I can access AI suggestions from within the compose flow.",
+			"acceptanceCriteria": [
+				"Three-dot vertical icon button (MoreVertical from Lucide) added to ComposeBar toolbar after existing icons",
+				"Clicking opens a dropdown menu with: 'Schedule' and 'Generate with AI' items",
+				"Schedule item opens the existing SchedulePopover (move from toolbar into menu)",
+				"Generate with AI item calls a new onAiSuggest callback prop",
+				"Menu closes after selecting any item",
+				"Menu closes on click outside",
+				"If onAiSuggest prop is not provided, the 'Generate with AI' item is hidden",
+				"If onSchedule prop is not provided, the 'Schedule' item is hidden",
+				"Menu positioned above the button (opens upward since it's at bottom of screen)",
+				"Build passes: npx vite build"
+			],
+			"priority": 3,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Use a simple $state isMenuOpen boolean + absolute positioned div. No need for a shadcn dropdown — keep it simple with a custom div. The SchedulePopover can be rendered inside the menu item or triggered by the menu click."
+		},
+		{
+			"id": "AI-004",
+			"title": "Wire AI suggest panel into ChatsTab",
+			"description": "As a staff member, I want the AI suggest panel to appear above the compose bar when triggered, and insert the selected draft into the compose textarea.",
+			"acceptanceCriteria": [
+				"ChatsTab manages showAiPanel boolean state",
+				"When ComposeBar's onAiSuggest fires, showAiPanel toggles to true",
+				"AiSuggestPanel renders between the message scroll area and the ComposeBar",
+				"Panel receives the selected conversation's ID",
+				"When a suggestion is selected (onInsert), the draft text is set as ComposeBar's body value",
+				"ComposeBar needs to expose a way to set body externally (bindable prop or insertText callback)",
+				"After insertion, the panel closes and the textarea is focused",
+				"Panel only available when a conversation is selected (not in new compose view)",
+				"If ANTHROPIC_API_KEY is not configured (API returns 503), the more menu hides the AI option entirely",
+				"Build passes: npx vite build"
+			],
+			"priority": 4,
+			"passes": false,
+			"inProgress": false,
+			"notes": "ComposeBar currently manages body as internal $state. To set it externally, either: (a) make body a bindable prop, or (b) add an insertText prop callback that ChatsTab can call. Option (b) is simpler — reuse the existing insertAtCursor pattern. Pass a setBody function via props."
+		},
+		{
+			"id": "AI-005",
+			"title": "Feature flag — hide AI suggest when API key is missing",
+			"description": "As the system, I want AI suggest to gracefully degrade when the API key is not configured, so that the feature doesn't break the messaging experience.",
+			"acceptanceCriteria": [
+				"New endpoint: GET /api/features — returns { aiSuggest: boolean } based on whether ANTHROPIC_API_KEY is set",
+				"ChatsTab fetches /api/features on mount to check if AI suggest is available",
+				"If aiSuggest is false, ComposeBar does not receive onAiSuggest prop (hides menu item)",
+				"If the AI suggest endpoint returns 503 at runtime, show error in panel (not a crash)",
+				"No console errors or warnings when ANTHROPIC_API_KEY is not set",
+				"Build passes: npx vite build"
+			],
+			"priority": 5,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Keep it simple — a single GET endpoint that checks process.env.ANTHROPIC_API_KEY. Could be a general feature flags endpoint for future features too. Mount in server.js at /api/features."
+		}
+	]
+}

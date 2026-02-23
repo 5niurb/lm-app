@@ -2,7 +2,7 @@
 
 **Route:** `/messages`
 **Status:** Active
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-02-22
 
 ## Overview
 
@@ -96,6 +96,75 @@
 
 ---
 
+### US-007: Internal notes
+**As a** staff member, **I want to** add internal notes inline in a conversation thread, **so that** I can track context, handoff info, and patient notes without texting the patient.
+**Priority:** P1
+**Status:** PRD Written — `docs/prds/messaging-internal-notes/`
+
+#### Acceptance Criteria
+- [ ] AC-1: Toggle switch in compose bar to switch between "message" and "internal note" mode
+- [ ] AC-2: Note mode changes compose area appearance (warm yellow tint, "Type your internal note" placeholder)
+- [ ] AC-3: Send button changes to "Add note" with warm styling when note mode is active
+- [ ] AC-4: Notes saved to database with `is_internal_note=true` — NOT sent via SMS/Twilio
+- [ ] AC-5: Notes render inline in thread with distinct warm yellow/cream bubble styling
+- [ ] AC-6: Note bubble shows "Staff Name (internal note)" header
+- [ ] AC-7: No delivery status icons on note bubbles
+- [ ] AC-8: Notes excluded from conversation list preview (last_message) and log view
+- [ ] AC-9: Attachment and schedule options hidden in note mode
+
+#### User's Original Words
+> "ability to add an internal note that will be saved in line of the chat in a different color"
+
+#### Design Reference
+See `docs/designref/messaging-composer/` for TextMagic reference screenshots showing:
+- Note toggle in compose toolbar
+- Yellow/cream compose area when note mode is ON
+- Inline note display in thread with yellow bubble and "(internal note)" label
+
+---
+
+### US-008: AI response suggestions (Generate with AI)
+**As a** staff member, **I want to** generate AI-powered draft responses based on conversation context, **so that** I can reply faster and more consistently to common inquiries.
+**Priority:** P2
+**Status:** PRD Written — `docs/prds/messaging-ai-suggest/`
+
+#### Acceptance Criteria
+- [ ] AC-1: Three-dot more menu in compose toolbar with "Generate with AI" option
+- [ ] AC-2: AI panel appears above compose bar with thread summary and 2-3 draft responses
+- [ ] AC-3: Clicking a suggestion inserts the draft text into the compose textarea (not auto-sent)
+- [ ] AC-4: Thread summary provides brief context of the conversation
+- [ ] AC-5: Each suggestion card shows an action label (e.g., Recommend, Suggest, Encourage) and full text
+- [ ] AC-6: Loading state with skeleton animation while AI generates
+- [ ] AC-7: Error handling with retry option
+- [ ] AC-8: Feature gracefully hidden when ANTHROPIC_API_KEY is not configured
+- [ ] AC-9: Rate limited to prevent abuse (10 requests/conversation/hour)
+
+#### User's Original Words
+> "an 'AI' icon that will suggest a few responses based on message context"
+
+#### Design Reference
+See `docs/designref/messaging-composer/` for TextMagic reference screenshots showing:
+- "Generate with AI" in more menu dropdown
+- AI panel with thread summary and clickable draft response cards
+- Each card has icon + bold verb label + suggestion text
+
+---
+
+### US-009: Schedule message from more menu
+**As a** staff member, **I want to** access message scheduling from a more menu, **so that** the compose toolbar stays clean and organized.
+**Priority:** P2
+**Status:** PRD Written (part of AI suggest PRD, story AI-003)
+
+#### Acceptance Criteria
+- [ ] AC-1: Schedule option moved from standalone toolbar icon into three-dot more menu
+- [ ] AC-2: Clicking "Schedule" in the menu opens the existing SchedulePopover
+- [ ] AC-3: All existing scheduling functionality preserved
+
+#### Design Reference
+See `docs/designref/messaging-composer/` — TextMagic more menu shows Schedule as a menu item alongside other options.
+
+---
+
 ## Design Specifications
 
 ### Layout
@@ -109,6 +178,9 @@
 - **Outbound bubbles:** `#C5A55A` bg, `#1A1A1A` text, rounded-br-md
 - **Inbound bubbles:** `rgba(255,255,255,0.08)` bg + gold border, rounded-bl-md
 - **Send button:** Gold `#C5A55A` bg
+- **Internal note bubbles:** `rgba(255,248,225,0.12)` bg + `rgba(255,248,225,0.2)` border, right-aligned
+- **Note mode compose:** Warm yellow tint on textarea, "Add note" button replaces send icon
+- **AI suggest panel:** `bg-surface-raised` above compose bar, clickable suggestion cards
 - **Unread badge:** Gold circle with dark text, min-width 20px
 - **New compose contact name:** Playfair Display heading, gold-tinted
 
@@ -132,6 +204,9 @@
 - `GET /api/messages/lookup?phone=` — Find existing conversation/contact by phone
 - `GET /api/messages/stats` — Unread count for sidebar badge
 - `POST /api/messages/send` — Send outbound SMS
+- `POST /api/messages/note` — Create internal note (no SMS sent)
+- `POST /api/messages/ai-suggest` — Generate AI response suggestions
+- `GET /api/features` — Feature flags (checks if AI suggest is available)
 
 ## Revision History
 | Date | Change | Prompted By |
@@ -140,3 +215,4 @@
 | 2026-02-14 | Added quick call icon to conversation list and thread header | User request: quick action icons |
 | 2026-02-14 | Repositioned call icon inline next to name (not far right) | User feedback with screenshot |
 | 2026-02-15 | Smart routing: lookup API, auto-select existing conversation, show contact name | User request: fix message action navigation |
+| 2026-02-22 | PRDs written for internal notes (US-007), AI suggest (US-008), more menu schedule (US-009) | User request: TextMagic reference features |

@@ -9,6 +9,21 @@
 	/** @type {HTMLElement|null} */
 	let menuRef = $state(null);
 
+	/**
+	 * Format a Date as a datetime-local string in LOCAL time (not UTC).
+	 * datetime-local inputs interpret values as local time, so toISOString() is wrong.
+	 * @param {Date} d
+	 * @returns {string}
+	 */
+	function toLocalDateTime(d) {
+		const y = d.getFullYear();
+		const m = String(d.getMonth() + 1).padStart(2, '0');
+		const day = String(d.getDate()).padStart(2, '0');
+		const h = String(d.getHours()).padStart(2, '0');
+		const min = String(d.getMinutes()).padStart(2, '0');
+		return `${y}-${m}-${day}T${h}:${min}`;
+	}
+
 	function handleClickOutside(e) {
 		if (menuRef && !menuRef.contains(e.target)) {
 			open = false;
@@ -17,10 +32,10 @@
 
 	$effect(() => {
 		if (open) {
-			// Default to 1 hour from now
-			const d = new Date(Date.now() + 3600000);
-			d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
-			dateTime = d.toISOString().slice(0, 16);
+			// Default to 15 minutes from now, rounded to next 5-min mark
+			const d = new Date(Date.now() + 15 * 60 * 1000);
+			d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
+			dateTime = toLocalDateTime(d);
 			document.addEventListener('mousedown', handleClickOutside);
 			return () => document.removeEventListener('mousedown', handleClickOutside);
 		}
@@ -35,9 +50,9 @@
 		dateTime = '';
 	}
 
-	/** @returns {string} */
+	/** @returns {string} Minimum datetime — 5 minutes from now in local time */
 	function getMinDateTime() {
-		return new Date().toISOString().slice(0, 16);
+		return toLocalDateTime(new Date(Date.now() + 5 * 60 * 1000));
 	}
 </script>
 

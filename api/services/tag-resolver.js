@@ -30,13 +30,20 @@ async function lookupContact({ phoneNumber, contactId }) {
 		if (digits.length === 10) variants.push('+1' + digits, '1' + digits);
 
 		const orFilter = variants.map((v) => `phone_normalized.eq.${v},phone.eq.${v}`).join(',');
+		// Fetch all matches and pick the most complete record (prefer one with last_name)
 		const { data } = await supabaseAdmin
 			.from('contacts')
 			.select('id, first_name, last_name, full_name, phone, email')
 			.or(orFilter)
-			.limit(1)
-			.maybeSingle();
-		if (data) return data;
+			.limit(10);
+		if (data?.length) {
+			return data.reduce((best, c) => {
+				const score = (c.last_name ? 2 : 0) + (c.full_name ? 1 : 0) + (c.email ? 1 : 0);
+				const bestScore =
+					(best.last_name ? 2 : 0) + (best.full_name ? 1 : 0) + (best.email ? 1 : 0);
+				return score > bestScore ? c : best;
+			});
+		}
 	}
 
 	return null;
@@ -87,9 +94,23 @@ export async function resolveTags(body, context = {}) {
 	const values = { ...STATIC_TAGS };
 
 	if (contact) {
-		if (contact.first_name) values.first_name = contact.first_name;
-		if (contact.last_name) values.last_name = contact.last_name;
-		if (contact.full_name) values.full_name = contact.full_name;
+		let firstName = contact.first_name || '';
+		let lastName = contact.last_name || '';
+		let fullName = contact.full_name || '';
+
+		// Derive missing name fields from what's available
+		if (fullName && (!firstName || !lastName)) {
+			const parts = fullName.trim().split(/\s+/);
+			if (!firstName && parts.length >= 1) firstName = parts[0];
+			if (!lastName && parts.length >= 2) lastName = parts.slice(1).join(' ');
+		}
+		if (!fullName && (firstName || lastName)) {
+			fullName = [firstName, lastName].filter(Boolean).join(' ');
+		}
+
+		if (firstName) values.first_name = firstName;
+		if (lastName) values.last_name = lastName;
+		if (fullName) values.full_name = fullName;
 		if (contact.phone) values.phone = contact.phone;
 		if (contact.email) values.email = contact.email;
 	}

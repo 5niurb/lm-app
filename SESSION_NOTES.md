@@ -1,3 +1,43 @@
+## Session — 2026-02-22 (Session 53)
+**Focus:** Fix scheduling, dynamic tag resolution, delivery status indicators
+
+**Accomplished:**
+- Wired `onSchedule` prop to both ComposeBar instances in ChatsTab — schedule popover now appears
+- Created `api/services/tag-resolver.js` — resolves `{{first_name}}`, `{{clinic_name}}`, etc. from contacts table + static values
+- Integrated tag resolution into 3 send paths: manual send, scheduled sender, auto-reply
+- Replaced text-based "Delivered"/"Failed" with icon indicators (clock, check, double-check, X, alert triangle)
+- Unresolved tags (appointment data, custom tags) silently stripped so customers never see `{{raw}}`
+
+**Diagram:**
+```
+ComposeBar ──onSchedule──► scheduleMessage() ──POST──► /api/scheduled-messages
+                                                              ↓ (60s poll)
+                                                       scheduled-sender.js
+                                                              ↓
+TagInsert ──{{tag}}──► compose body ──► resolveTags() ──► Twilio API
+                                              ↑
+                                     contacts table + static values
+
+Status webhook ──► messages.status ──► DB ──► UI icons
+  queued→🕐  sent→✓  delivered→✓✓(gold)  failed→✗(red)  undelivered→⚠(orange)
+```
+
+**Current State:**
+- All changes committed (`ee06213`) and pushed — CI green (195 tests pass)
+- Frontend deployed to CF Pages, API auto-deploying on Render
+- Build passes cleanly
+
+**Issues:**
+- None from this session
+- Pre-existing: a11y label warnings in services/auto-replies pages (not related)
+
+**Next Steps:**
+- Test scheduling end-to-end on production (compose → schedule → verify in Scheduled tab)
+- Test tag resolution: send a message with `{{first_name}}` to a known contact
+- Test delivery status: send message, watch icon transition from clock → check → double-check
+
+---
+
 ## Session — 2026-02-22 (Session 52)
 **Focus:** ECC-inspired Claude Code automation upgrade — new agents, skills, enhanced verify
 

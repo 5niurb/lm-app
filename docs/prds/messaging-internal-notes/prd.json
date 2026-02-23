@@ -1,0 +1,105 @@
+{
+	"project": "lm-app",
+	"branchName": "ralph/internal-notes",
+	"description": "Staff-only internal notes inline in conversation threads with compose bar toggle and distinct visual styling",
+	"userStories": [
+		{
+			"id": "IN-001",
+			"title": "Internal notes database column and API endpoint",
+			"description": "As a staff member, I want to save internal notes to a conversation thread, so that I can track context and handoff info without texting the patient.",
+			"acceptanceCriteria": [
+				"Migration adds is_internal_note BOOLEAN DEFAULT false to messages table",
+				"Partial index on is_internal_note WHERE true for efficient queries",
+				"POST /api/messages/note endpoint accepts { conversationId, body }",
+				"Endpoint inserts message with direction='outbound', is_internal_note=true, sent_by from JWT",
+				"Endpoint does NOT call Twilio — no SMS is sent",
+				"Endpoint updates conversation last_at timestamp (but NOT last_message — notes shouldn't show in preview)",
+				"Endpoint requires verifyToken middleware",
+				"Returns { data: { id, conversation_id, body, is_internal_note, sent_by, created_at } }",
+				"Build passes: npx vite build"
+			],
+			"priority": 1,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Follow the same pattern as POST /api/messages/send but skip all Twilio logic. The sent_by comes from req.user.id (set by verifyToken). Update conversation last_at but do NOT update last_message — notes shouldn't appear in the conversation list preview."
+		},
+		{
+			"id": "IN-002",
+			"title": "Exclude internal notes from conversation list previews and log view",
+			"description": "As a staff member, I want conversation list previews to show the last real message (not notes), so that the list accurately reflects patient communication.",
+			"acceptanceCriteria": [
+				"GET /api/messages/conversations excludes is_internal_note=true from last_message subquery",
+				"GET /api/messages/log excludes is_internal_note=true from results",
+				"GET /api/messages/conversations/:id INCLUDES internal notes (they show inline in the thread)",
+				"Conversation list preview never shows note content as the last message",
+				"Build passes: npx vite build"
+			],
+			"priority": 2,
+			"passes": false,
+			"inProgress": false,
+			"notes": "The conversation list query likely uses a subquery or join to get last_message. Add WHERE is_internal_note = false (or IS NOT TRUE for null safety) to that subquery. The thread endpoint should return ALL messages including notes."
+		},
+		{
+			"id": "IN-003",
+			"title": "Internal note toggle and compose mode in ComposeBar",
+			"description": "As a staff member, I want to toggle 'Internal note' mode in the compose bar, so that I can switch between texting and note-taking without leaving the thread.",
+			"acceptanceCriteria": [
+				"ComposeBar accepts new prop: onNote: (body: string) => Promise<void>",
+				"Toggle switch appears in toolbar row between existing icons and send button area",
+				"Toggle label: 'Internal note' with a small switch/toggle component",
+				"When toggled ON: textarea background changes to subtle warm tint (bg-amber-50/10 or rgba(255,248,225,0.08) on dark theme)",
+				"When toggled ON: placeholder changes to 'Type your internal note'",
+				"When toggled ON: send button text changes from Send icon to 'Add note' text with warm gold styling",
+				"When toggled OFF: everything reverts to standard compose appearance",
+				"Pressing Enter (no Shift) in note mode calls onNote instead of onSend",
+				"After successful note submission, textarea clears and note mode stays ON (don't auto-toggle off)",
+				"Schedule popover is hidden when note mode is active (can't schedule a note)",
+				"Attachment button is hidden when note mode is active (notes are text-only)",
+				"Build passes: npx vite build"
+			],
+			"priority": 3,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Add a $state noteMode = false. Conditionally render different button/placeholder/styles based on noteMode. The onNote prop should be optional — if not provided, don't show the toggle."
+		},
+		{
+			"id": "IN-004",
+			"title": "Render internal notes inline in message thread",
+			"description": "As a staff member, I want to see internal notes inline in the conversation thread with distinct styling, so that I can quickly distinguish notes from real messages.",
+			"acceptanceCriteria": [
+				"Messages with is_internal_note=true render with distinct warm yellow/cream bubble",
+				"Note bubble background: rgba(255,248,225,0.12) with border rgba(255,248,225,0.2)",
+				"Note bubble is right-aligned (same as outbound — it's from staff)",
+				"Note header shows 'Staff Name (internal note)' in amber-tinted text",
+				"Staff name comes from msg.sender.full_name (already joined in API)",
+				"No delivery status icons on note bubbles (no clock/check/double-check)",
+				"Timestamp still displays in same format as regular messages",
+				"Notes participate in day separator logic (same as regular messages)",
+				"Notes do NOT show reaction bar on right-click/long-press (no reactions on notes)",
+				"Build passes: npx vite build"
+			],
+			"priority": 4,
+			"passes": false,
+			"inProgress": false,
+			"notes": "In ChatsTab.svelte where message bubbles are rendered, check msg.is_internal_note. If true, apply different CSS classes for the bubble. Skip the delivery status and reaction handlers."
+		},
+		{
+			"id": "IN-005",
+			"title": "Wire internal notes into ChatsTab",
+			"description": "As a staff member, I want the note toggle to work end-to-end in the conversation view, so that I can create notes seamlessly while chatting.",
+			"acceptanceCriteria": [
+				"ChatsTab passes an onNote handler to ComposeBar",
+				"onNote handler calls POST /api/messages/note with conversationId and body",
+				"After creating a note, the thread refreshes to show the new note inline",
+				"Thread auto-scrolls to the new note after creation",
+				"Note toggle only appears when a conversation is selected (not in new compose view)",
+				"Error handling: if note creation fails, show toast error via onError callback",
+				"Build passes: npx vite build"
+			],
+			"priority": 5,
+			"passes": false,
+			"inProgress": false,
+			"notes": "Follow the same pattern as sendMessage — call API, then loadMessages + scrollToBottom. The onNote callback in ComposeBar should work identically to onSend from the ComposeBar's perspective (clear input, show loading)."
+		}
+	]
+}

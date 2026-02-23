@@ -1,0 +1,22 @@
+# AI Suggest — Progress & Learnings
+
+## Codebase Patterns
+- ComposeBar.svelte uses $props() for callbacks: onSend, onSchedule, onError. Add onAiSuggest the same way.
+- EmojiPicker, TagInsert, TemplateInsert all render as toolbar buttons — the more menu (MoreVertical) follows this pattern.
+- SchedulePopover is currently rendered inline in the toolbar. Moving it into a more menu means the popover trigger changes.
+- Messages API routes are in api/routes/messages.js. Endpoint handlers use supabaseAdmin for all queries.
+- The session/auth token is available via req.user after verifyToken middleware.
+- API client on frontend: `import { api } from '$lib/api/client.js'` — handles auth headers automatically.
+
+## AI Integration Notes
+- Anthropic SDK: `import Anthropic from '@anthropic-ai/sdk'` — initialize with `new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })`.
+- Use claude-haiku-4-5-20251001 for cost efficiency. Max tokens: 1024 (suggestions don't need to be long).
+- JSON mode: Include "Respond in valid JSON" in the prompt. Parse with try/catch.
+- Phone stripping: Use regex /\+?\d{10,15}/g to remove phone numbers from message bodies before sending to AI.
+- Rate limiting: Simple Map<conversationId, { count, resetAt }> in memory. Resets hourly.
+
+## UI Notes
+- More menu: Use absolute positioning with bottom-full (opens upward). Include click-outside listener to close.
+- AiSuggestPanel: Position between #message-scroll and ComposeBar. Use max-height with overflow-y-auto.
+- Suggestion card icons: Map string names to Lucide components in a simple object lookup.
+- Loading skeleton: 3 rounded rectangles (cards) + 2 text lines (summary).
