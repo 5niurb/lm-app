@@ -37,13 +37,16 @@ Token migration: text-muted-foreground → text-text-secondary
 ```
 
 **Current State:**
-- All changes live on production (lemedspa.app) — deployed via CF Pages
-- 3 commits: 02ebc49 (UI phase 1-2), d498c50 (PRDs/docs), a04a3c0 (remaining pages)
+- All changes live on production (lemedspa.app) — deployed via CF Pages (531e5120)
+- 4 commits: 02ebc49 (UI phase 1-2), d498c50 (PRDs/docs), a04a3c0 (remaining pages), 496fd8b (session notes)
 - Zero old Tailwind color tokens remain in any route or app component
 - Only `text-muted-foreground` left is in shadcn ui/ components (off-limits)
+- 195 tests passing (129 vitest + 66 node:test), 0 errors, 15 pre-existing warnings
+- `.mcp.json` has uncommitted Render/Supabase MCP additions (contains API key — don't commit as-is)
 
 **Issues:**
 - Pre-existing: 15 ESLint warnings, 3 Dependabot alerts (unchanged)
+- `.mcp.json` contains a Render bearer token — needs to be moved to env or .gitignored before committing
 
 **Next Steps:**
 - Internal notes feature (PRD ready: docs/prds/messaging-internal-notes/)
