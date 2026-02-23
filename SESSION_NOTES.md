@@ -1,3 +1,106 @@
+## Session — 2026-02-23 (Session 57)
+**Focus:** Full app design overhaul — Vivid Dark theme with colorful icons and gold accents
+
+**Accomplished:**
+- Rewrote `src/app.css` theme foundation: multi-color accent system with 11 gradient utilities (grad-gold, grad-indigo, grad-blue, grad-violet, grad-emerald, grad-cyan, grad-amber, grad-orange, grad-rose, grad-pink, grad-slate)
+- Added glow utilities, icon-box sizing (sm/lg/xl), card-gradient hover effects
+- Three themes updated: Midnight, Dusk, Champagne — all with gold (#d4a843) as primary accent
+- Redesigned `AppSidebar.svelte` — each nav item has a unique colorful gradient icon box
+- Updated `AppHeader.svelte` — vivid emerald clinic status, gradient rose notification badge
+- Redesigned `dashboard/+page.svelte` — color-coded stat cards with matching icon gradients
+- Redesigned `login/+page.svelte` — gradient mesh background, gold accents, modern layout
+- Updated `ThemeSwitcher.svelte` — gold accents for checkmarks and active borders
+- Typography shift: Playfair Display → Outfit (headings), Inter → DM Sans (body) via `var(--font-display)`
+- Updated 8 internal app files to use `var(--font-display)` instead of hardcoded serif font
+- Patient-facing pages (care/consent) intentionally unchanged — keep Playfair Display branding
+- User feedback: "rainbow for icons/badges only, keep gold for text/headers" — applied
+- Deployed to production: CF Pages (03f12f69) + GitHub (ec5bfc8)
+
+**Diagram:**
+```
+Theme Architecture:
+┌──────────────────────────────────────────────┐
+│ app.css (Vivid Dark)                         │
+│ ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│ │ Midnight │  │  Dusk    │  │Champagne │    │
+│ │ #09090b  │  │ #0c0a09  │  │ #fafafa  │    │
+│ │ gold pri │  │ gold pri │  │ gold pri │    │
+│ └──────────┘  └──────────┘  └──────────┘   │
+│                                              │
+│ Gold (#d4a843) → text, headers, links, focus │
+│ Rainbow grads  → icons, badges, decorative   │
+│ grad-blue, grad-rose, grad-violet, etc.      │
+└──────────────────────────────────────────────┘
+
+Sidebar Nav (colorful icons):
+  🟡 Dashboard (grad-gold)
+  🔵 Softphone (grad-cyan)    Messages (grad-emerald)
+  🟣 Phone Log (grad-blue)    Schedule (grad-amber)
+  🔴 Contacts (grad-rose)     Services (grad-violet)
+```
+
+**Current State:**
+- All changes live on production (lemedspa.app)
+- 129 vitest + 66 node:test passing, build clean
+- Design approved by user: "looks great!"
+
+**Issues:**
+- Pre-existing: 15 ESLint warnings, 3 Dependabot alerts
+
+**Next Steps:**
+- Internal notes feature (PRD ready: docs/prds/messaging-internal-notes/)
+- AI suggest feature (PRD ready: docs/prds/messaging-ai-suggest/)
+- Contact dedup/merge (US-BL1)
+- Apply new design language to remaining pages (calls, voicemails, services, contacts, etc.)
+
+---
+
+## Session — 2026-02-23 (Session 56)
+**Focus:** Inline scheduled messages in conversation thread
+
+**Accomplished:**
+- API: Added `conversationId` query filter to GET `/api/scheduled-messages` endpoint
+- Frontend: Created `combinedThread` derived that merges real messages + pending scheduled messages
+- Scheduled bubbles render inline with translucent gold bg, dashed border, clock icon, formatted time, and Cancel button
+- Wired loading into selectConversation, 5s poll refresh (parallel), and post-schedule callback
+- Deployed to production: CF Pages (d870db1b) + Render API (83ef037)
+- User-verified on lemedspa.app — working correctly
+
+**Diagram:**
+```
+Conversation Thread:
+┌─────────────────────────────────────────┐
+│ [normal bubble — solid bg-gold]         │
+│ "Thanks for coming in!"                 │
+│ 8:15 PM  ✓✓                            │
+└─────────────────────────────────────────┘
+┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+│ [scheduled — bg-gold/25 border-dashed]  │
+│ "Follow-up is next Tuesday..."          │
+│ 🕐 Scheduled for Feb 23, 9:30 PM       │
+│ ✗ Cancel                                │
+└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘
+
+Data flow:
+messages[] + scheduledMsgs[] → $derived combinedThread[]
+  (real msgs by created_at)    (pending by scheduled_at)
+```
+
+**Current State:**
+- All changes live on production (lemedspa.app)
+- 129 vitest + 66 node:test passing, build clean
+- Scheduled messages visible inline + in Scheduled tab
+
+**Issues:**
+- Pre-existing: 13 ESLint warnings, 3 Dependabot alerts
+
+**Next Steps:**
+- Internal notes feature (PRD ready: docs/prds/messaging-internal-notes/)
+- AI suggest feature (PRD ready: docs/prds/messaging-ai-suggest/)
+- Contact dedup/merge (US-BL1)
+
+---
+
 ## Session — 2026-02-22 (Session 55)
 **Focus:** PRDs for messaging composer enhancements — internal notes, AI suggest, more menu
 
