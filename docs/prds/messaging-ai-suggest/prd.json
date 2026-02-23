@@ -22,7 +22,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 1,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Install @anthropic-ai/sdk if not already in package.json. Use dynamic import or conditional require so the server doesn't crash if the package is missing. The prompt should ask for JSON output. Parse with JSON.parse inside a try/catch — LLM output can be unpredictable."
 		},
@@ -44,7 +44,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 2,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Use $state for loading/error/data. Fetch on mount with $effect or onMount. Map icon strings to Lucide components: phone→Phone, sparkles→Sparkles, message-circle→MessageCircle, lightbulb→Lightbulb, heart→Heart. Default to MessageCircle for unknown icons."
 		},
@@ -65,7 +65,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 3,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Use a simple $state isMenuOpen boolean + absolute positioned div. No need for a shadcn dropdown — keep it simple with a custom div. The SchedulePopover can be rendered inside the menu item or triggered by the menu click."
 		},
@@ -86,7 +86,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 4,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "ComposeBar currently manages body as internal $state. To set it externally, either: (a) make body a bindable prop, or (b) add an insertText prop callback that ChatsTab can call. Option (b) is simpler — reuse the existing insertAtCursor pattern. Pass a setBody function via props."
 		},
@@ -103,7 +103,7 @@
 				"Build passes: npx vite build"
 			],
 			"priority": 5,
-			"passes": false,
+			"passes": true,
 			"inProgress": false,
 			"notes": "Keep it simple — a single GET endpoint that checks process.env.ANTHROPIC_API_KEY. Could be a general feature flags endpoint for future features too. Mount in server.js at /api/features."
 		}

@@ -26,6 +26,7 @@
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
 	import ComposeBar from './ComposeBar.svelte';
+	import AiSuggestPanel from './AiSuggestPanel.svelte';
 	import MessageReactions from './MessageReactions.svelte';
 	import ImageLightbox from './ImageLightbox.svelte';
 
@@ -71,6 +72,13 @@
 
 	// Schedule success banner
 	let scheduleBanner = $state('');
+
+	// AI suggest panel
+	let showAiPanel = $state(false);
+	let aiEnabled = $state(false);
+
+	/** @type {ComposeBar|null} */
+	let composeBarRef = $state(null);
 
 	// Lightbox
 	/** @type {string|null} */
@@ -126,6 +134,22 @@
 	let reactionTarget = $state(null);
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let longPressTimer = null;
+
+	// Check if AI suggest is available
+	onMount(async () => {
+		try {
+			const res = await api('/api/features');
+			aiEnabled = res.aiSuggest === true;
+		} catch {
+			aiEnabled = false;
+		}
+	});
+
+	/** Handle AI suggestion insert — set compose body and close panel */
+	function handleAiInsert(text) {
+		composeBarRef?.setBody(text);
+		showAiPanel = false;
+	}
 
 	// Check URL params for ?phone=xxx from contacts page
 	onMount(async () => {
@@ -1128,11 +1152,29 @@
 				</div>
 			{/if}
 
+			<!-- AI Suggest Panel -->
+			{#if showAiPanel && selectedConvo}
+				<AiSuggestPanel
+					conversationId={selectedConvo.id}
+					onInsert={handleAiInsert}
+					onClose={() => {
+						showAiPanel = false;
+					}}
+					{onError}
+				/>
+			{/if}
+
 			<!-- Compose -->
 			<ComposeBar
+				bind:this={composeBarRef}
 				onSend={sendMessage}
 				onSchedule={scheduleMessage}
 				onNote={sendNote}
+				onAiSuggest={aiEnabled
+					? () => {
+							showAiPanel = !showAiPanel;
+						}
+					: undefined}
 				{onError}
 				placeholder="Type a message..."
 			/>

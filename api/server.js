@@ -81,6 +81,13 @@ app.use('/api/public/consent', publicConsentRoutes);
 import cronRoutes from './routes/cron-process.js';
 app.use('/api/cron', cronRoutes);
 
+// Feature flags — lightweight endpoint, no auth needed
+app.get('/api/features', (req, res) => {
+	res.json({
+		aiSuggest: !!process.env.ANTHROPIC_API_KEY
+	});
+});
+
 // API routes
 import authRoutes from './routes/auth.js';
 import callRoutes from './routes/calls.js';

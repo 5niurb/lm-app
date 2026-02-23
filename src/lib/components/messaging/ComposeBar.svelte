@@ -1,5 +1,13 @@
 <script>
-	import { Send, Paperclip, X, StickyNote } from '@lucide/svelte';
+	import {
+		Send,
+		Paperclip,
+		X,
+		StickyNote,
+		MoreVertical,
+		Sparkles,
+		CalendarClock
+	} from '@lucide/svelte';
 	import EmojiPicker from './EmojiPicker.svelte';
 	import TagInsert from './TagInsert.svelte';
 	import TemplateInsert from './TemplateInsert.svelte';
@@ -13,6 +21,8 @@
 	 *   onSend: (body: string, file?: File) => Promise<void>,
 	 *   onSchedule?: (body: string, scheduledAt: string) => Promise<void>,
 	 *   onNote?: (body: string) => Promise<void>,
+	 *   onAiSuggest?: () => void,
+	 *   setBody?: (text: string) => void,
 	 *   onError?: (msg: string) => void,
 	 *   disabled?: boolean,
 	 *   placeholder?: string
@@ -22,10 +32,13 @@
 		onSend,
 		onSchedule,
 		onNote,
+		onAiSuggest,
 		onError,
 		disabled = false,
 		placeholder = 'Type a message...'
 	} = $props();
+
+	let moreMenuOpen = $state(false);
 
 	let noteMode = $state(false);
 
@@ -147,6 +160,21 @@
 		textareaRef.style.height = 'auto';
 		textareaRef.style.height = Math.min(textareaRef.scrollHeight, 120) + 'px';
 	}
+
+	/**
+	 * Set the compose body from outside (e.g. AI suggestion insert).
+	 * @param {string} text
+	 */
+	export function setBody(text) {
+		body = text;
+		requestAnimationFrame(() => {
+			if (textareaRef) {
+				textareaRef.style.height = 'auto';
+				textareaRef.style.height = Math.min(textareaRef.scrollHeight, 120) + 'px';
+				textareaRef.focus();
+			}
+		});
+	}
 </script>
 
 <div class="border-t border-border bg-card">
@@ -177,6 +205,44 @@
 			/>
 			{#if onSchedule}
 				<SchedulePopover onSchedule={(at) => handleSchedule(at)} />
+			{/if}
+			{#if onAiSuggest}
+				<div class="relative">
+					<button
+						type="button"
+						class="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
+						title="More options"
+						onclick={() => {
+							moreMenuOpen = !moreMenuOpen;
+						}}
+					>
+						<MoreVertical class="h-4 w-4" />
+					</button>
+					{#if moreMenuOpen}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="fixed inset-0 z-40"
+							onclick={() => {
+								moreMenuOpen = false;
+							}}
+						></div>
+						<div
+							class="absolute bottom-full left-0 mb-1 z-50 w-48 rounded-lg border border-border bg-card shadow-lg py-1"
+						>
+							<button
+								type="button"
+								class="flex w-full items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:bg-surface-hover transition-colors"
+								onclick={() => {
+									moreMenuOpen = false;
+									onAiSuggest?.();
+								}}
+							>
+								<Sparkles class="h-3.5 w-3.5 text-vivid-violet" />
+								Generate with AI
+							</button>
+						</div>
+					{/if}
+				</div>
 			{/if}
 		{/if}
 		{#if onNote}

@@ -7,6 +7,7 @@ import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { findConversation, normalizePhone } from '../services/phone-lookup.js';
 import { resolveTags } from '../services/tag-resolver.js';
+import { generateSuggestions } from '../services/ai-suggest.js';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MIME_TO_EXT = {
@@ -351,6 +352,35 @@ router.post(
 		}
 	}
 );
+
+/**
+ * POST /api/messages/ai-suggest
+ * Generate AI response suggestions for a conversation.
+ *
+ * Body: { conversationId }
+ */
+router.post('/ai-suggest', logAction('messages.ai-suggest'), async (req, res) => {
+	const { conversationId } = req.body;
+
+	if (!conversationId) {
+		return res.status(400).json({ error: '"conversationId" is required' });
+	}
+
+	if (!process.env.ANTHROPIC_API_KEY) {
+		return res.status(503).json({ error: 'AI features not configured' });
+	}
+
+	try {
+		const result = await generateSuggestions(conversationId);
+		return res.json({ data: result });
+	} catch (err) {
+		if (err.status === 429) {
+			return res.status(429).json({ error: err.message });
+		}
+		console.error('AI suggest failed:', err.message);
+		return res.status(500).json({ error: 'Failed to generate suggestions' });
+	}
+});
 
 /**
  * POST /api/messages/note
