@@ -1,3 +1,64 @@
+## Session — 2026-02-23 (Session 60)
+**Focus:** Implement all 16 remaining messaging stories across 3 PRDs (Internal Notes, AI Suggest, Broadcast)
+
+**Accomplished:**
+- **Internal Notes (5/5 stories):** Migration adds `is_internal_note` column, POST /api/messages/note endpoint, ComposeBar note mode toggle with warm cream UI, amber note bubbles in ChatsTab, notes excluded from /log endpoint
+- **AI Suggest (5/5 stories):** `api/services/ai-suggest.js` with Claude Haiku, POST /api/messages/ai-suggest endpoint with rate limiting (10/hr per conversation), AiSuggestPanel.svelte with suggestion cards, MoreVertical menu in ComposeBar, GET /api/features flag endpoint
+- **Broadcast (6/6 stories):** Migration creates broadcasts table (draft→sending→sent→failed), full CRUD + recipient resolution + send with 100ms rate limiting, BroadcastsTab.svelte with compose form + recipient preview + progress bar + stats grid, broadcast messages linked into conversations, indigo "Broadcast" badge on message bubbles
+- All 3 features committed and pushed: dd2d482 (notes), 4312d71 (AI suggest), f83621e (broadcast)
+- All 195 tests pass, build clean, CI checks pass
+- Changed TagInsert icon from Hash (#) to Braces ({...}) — commit 1e546f3
+- Both migrations applied to production Supabase, frontend deployed to CF Pages, API auto-deployed on Render
+
+**Diagram:**
+```
+Messages Page (5 tabs):
+┌─────────────────────────────────────────────────┐
+│ Chats │ Templates │ Scheduled │ Auto-Replies │ Broadcasts │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  ChatsTab                    BroadcastsTab      │
+│  ├── Internal notes (amber)  ├── List/compose   │
+│  ├── Broadcast badge (indigo)├── Tag filters    │
+│  └── AI suggest panel        ├── Preview count  │
+│      └── Claude Haiku        ├── Progress bar   │
+│          suggestions         └── Stats grid     │
+│                                                 │
+│  ComposeBar                                     │
+│  ├── Note mode toggle (warm cream)              │
+│  └── More menu → AI suggest                     │
+└─────────────────────────────────────────────────┘
+
+API flow (Broadcast send):
+POST /send → status:sending → background loop
+  → resolveRecipients(filter) → Twilio send (100ms delay)
+  → findConversation → insert message → update progress
+  → status:sent + completed_at
+```
+
+**Current State:**
+- All 16 messaging stories complete (3 PRDs × 5-6 stories each)
+- 5 commits pushed to main on GitHub: dd2d482, 4312d71, f83621e, 1e546f3, 33c6e1e
+- Build passes, 195 tests pass
+- Both migrations applied to production Supabase
+- Frontend deployed to CF Pages, API deployed to Render
+- Fixed Render deploy failure: @anthropic-ai/sdk added to api/package.json (was only in root)
+- Added ANTHROPIC_API_KEY to Render env vars via MCP, loaded $5 API credits on console.anthropic.com
+- **All 3 features verified working on production (lemedspa.app):**
+  - Broadcasts tab: empty state renders, "+New" button, all 5 tabs visible
+  - Internal Notes toggle: switches compose bar between message/note mode, placeholder + send button update
+  - Braces {…} icon: opens merge tags dropdown with all 13 tags
+  - AI Suggest: generates 3 contextual reply suggestions using Claude Haiku (~$0.001/request)
+  - Tested on Nina's real conversation — AI read full context (Botox appt, Zelle deposit) and generated relevant confirm/follow-up/suggest responses
+
+**Issues:**
+- Pre-existing: 15 ESLint warnings (unchanged)
+
+**Next Steps:**
+- Contact dedup/merge (US-BL1)
+
+---
+
 ## Session — 2026-02-23 (Session 59)
 **Focus:** Colorful ContactAvatar component — replace uniform gold circles with vivid, contextual avatars
 

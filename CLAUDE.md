@@ -280,6 +280,11 @@ SMS notifications are configured **globally** — see workspace `lmdev/CLAUDE.md
 The Stop hook fires for ALL projects, not just lm-app.
 Script: `C:/Users/LMOperations/.claude/scripts/textme.mjs`
 
+## CI & Deploy Check
+
+After `git push`: polls GitHub Actions (up to 3min), reports pass/fail with failure logs so Claude can fix immediately. After `wrangler pages deploy`: verifies deployment URL returns HTTP 200. Non-blocking.
+Script: `.claude/scripts/post-push-ci-check.mjs` (project-level, portable). Also configured globally as fallback.
+
 ## Requirements Capture
 
 When implementing features or design changes based on user instructions, **always update the relevant requirement file** in `docs/requirements/`. See `docs/requirements/README.md` for the format.
