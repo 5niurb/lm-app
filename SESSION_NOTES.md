@@ -1,3 +1,57 @@
+## Session — 2026-02-23 (Session 58)
+**Focus:** Vivid Dark theme rollout — apply new design tokens to every remaining page/component
+
+**Accomplished:**
+- Completed full Vivid Dark rollout across ALL remaining pages and components
+- **Phase 1 — Page components:** calls, settings, messages, voicemails (text-muted-foreground, raw Tailwind colors → vivid tokens, border-border → border-border-subtle on cards)
+- **Phase 2 — Messaging components:** ChatsTab, ScheduledTab, AutoRepliesTab, TemplatesTab, TemplateInsert, ComposeBar, ImageLightbox, MessageReactions (status badges, hover states, action buttons)
+- **Phase 3 — Additional pages found via grep:** softphone (incoming/connecting/connected call states, status indicators, call history), appointments (status colors, error blocks, drawer action buttons), contacts (tag config colors, drawer quick actions), services (toast colors, status badges, content type buttons), automation (active dots, test trigger, consent badges)
+- **Phase 4 — Shared components:** AppHeader, auth +layout, root +page (text-muted-foreground cleanup)
+- **Phase 5 — PRDs:** Updated all 6 messaging PRDs with new design system description + added internal notes warm cream tone note
+- **Phase 6 — Docs:** Updated CLAUDE.md Design Direction section, updated 4 progress.txt files with new tokens
+- Build passes with zero errors, 195 tests green, deployed to production
+
+**Diagram:**
+```
+Vivid Dark Rollout Coverage:
+┌─────────────────────────────────────────────┐
+│ DONE (Session 57): app.css, sidebar, header,│
+│   dashboard, login, ThemeSwitcher           │
+├─────────────────────────────────────────────┤
+│ DONE (Session 58 — this session):           │
+│   calls, settings, messages, voicemails,    │
+│   softphone, appointments, contacts,        │
+│   services, automation, 8 messaging comps,  │
+│   AppHeader, auth layout, root page,        │
+│   6 PRDs, CLAUDE.md, progress.txt files     │
+├─────────────────────────────────────────────┤
+│ OFF-LIMITS: src/lib/components/ui/ (shadcn) │
+│ INTENTIONAL: care/, consent/ (Playfair)     │
+└─────────────────────────────────────────────┘
+
+Token migration: text-muted-foreground → text-text-secondary
+  red-400/500 → vivid-rose    blue-400/500 → vivid-blue
+  emerald-400/500 → vivid-emerald    yellow-400 → vivid-amber
+  green-400 → vivid-emerald   border-border → border-border-subtle
+  hover:bg-gold-glow → hover:bg-surface-hover
+```
+
+**Current State:**
+- All changes live on production (lemedspa.app) — deployed via CF Pages
+- 3 commits: 02ebc49 (UI phase 1-2), d498c50 (PRDs/docs), a04a3c0 (remaining pages)
+- Zero old Tailwind color tokens remain in any route or app component
+- Only `text-muted-foreground` left is in shadcn ui/ components (off-limits)
+
+**Issues:**
+- Pre-existing: 15 ESLint warnings, 3 Dependabot alerts (unchanged)
+
+**Next Steps:**
+- Internal notes feature (PRD ready: docs/prds/messaging-internal-notes/)
+- AI suggest feature (PRD ready: docs/prds/messaging-ai-suggest/)
+- Contact dedup/merge (US-BL1)
+
+---
+
 ## Session — 2026-02-23 (Session 57)
 **Focus:** Full app design overhaul — Vivid Dark theme with colorful icons and gold accents
 
