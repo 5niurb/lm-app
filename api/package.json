@@ -17,8 +17,5 @@
 		"googleapis": "^171.4.0",
 		"multer": "^2.0.2",
 		"twilio": "^5.12.1"
-	},
-	"devDependencies": {
-		"xlsx": "^0.18.5"
 	}
 }
