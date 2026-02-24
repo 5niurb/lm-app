@@ -1,14 +1,5 @@
 <script>
-	import {
-		Send,
-		Paperclip,
-		X,
-		StickyNote,
-		Sparkles,
-		CalendarClock,
-		Mail,
-		MessageSquare
-	} from '@lucide/svelte';
+	import { Send, Paperclip, X, StickyNote, Sparkles, Mail } from '@lucide/svelte';
 	import EmojiPicker from './EmojiPicker.svelte';
 	import TemplateInsert from './TemplateInsert.svelte';
 	import SchedulePopover from './SchedulePopover.svelte';

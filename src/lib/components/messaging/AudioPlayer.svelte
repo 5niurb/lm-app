@@ -1,5 +1,5 @@
 <script>
-	import { Play, Pause, Square, Download } from '@lucide/svelte';
+	import { Play, Pause, Download } from '@lucide/svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { get } from 'svelte/store';
 	import { session } from '$lib/stores/auth.js';

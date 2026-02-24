@@ -1,5 +1,5 @@
 <script>
-	import { Send, ChevronDown, ChevronUp, X } from '@lucide/svelte';
+	import { Send, ChevronUp } from '@lucide/svelte';
 
 	/**
 	 * @type {{

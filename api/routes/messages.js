@@ -46,7 +46,9 @@ router.get('/conversations', logAction('messages.list'), async (req, res) => {
 	const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
 	const offset = (page - 1) * pageSize;
 
-	let query = supabaseAdmin.from('conversations').select('*', { count: 'exact' });
+	let query = supabaseAdmin
+		.from('conversations')
+		.select('*, contact:contacts!conversations_contact_id_fkey(email)', { count: 'exact' });
 
 	if (req.query.status && req.query.status !== 'all') {
 		query = query.eq('status', req.query.status);
@@ -75,7 +77,13 @@ router.get('/conversations', logAction('messages.list'), async (req, res) => {
 		return apiError(res, 500, 'server_error', 'Failed to fetch conversations');
 	}
 
-	return res.json({ data: data || [], count: count || 0, page, pageSize });
+	// Flatten joined contact email into top-level field
+	const rows = (data || []).map(({ contact, ...rest }) => ({
+		...rest,
+		contact_email: contact?.email || null
+	}));
+
+	return res.json({ data: rows, count: count || 0, page, pageSize });
 });
 
 /**
