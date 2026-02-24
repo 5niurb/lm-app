@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
+import { computeMerge } from '../services/contact-merge.js';
 
 const router = Router();
 
@@ -223,6 +224,145 @@ router.get('/search', logAction('contacts.search'), async (req, res) => {
 	}
 
 	return res.json({ data: data || [] });
+});
+
+/**
+ * GET /api/contacts/duplicates
+ * Find contacts that share the same phone_normalized.
+ * Returns groups with 2+ members, each with a suggested merge preview.
+ */
+router.get('/duplicates', logAction('contacts.duplicates'), async (req, res) => {
+	// Paginate to fetch ALL contacts with a phone
+	let all = [];
+	let from = 0;
+	const batchSize = 1000;
+	while (true) {
+		const { data, error } = await supabaseAdmin
+			.from('contacts')
+			.select('*')
+			.not('phone_normalized', 'is', null)
+			.range(from, from + batchSize - 1);
+
+		if (error) {
+			console.error('Failed to fetch contacts for dedup:', error.message);
+			return res.status(500).json({ error: 'Failed to fetch contacts' });
+		}
+		if (!data || data.length === 0) break;
+		all = all.concat(data);
+		if (data.length < batchSize) break;
+		from += batchSize;
+	}
+
+	// Group by phone_normalized
+	const phoneGroups = {};
+	for (const c of all) {
+		if (!phoneGroups[c.phone_normalized]) phoneGroups[c.phone_normalized] = [];
+		phoneGroups[c.phone_normalized].push(c);
+	}
+
+	// Filter to groups with duplicates, compute merge preview for each
+	const groups = [];
+	for (const [phone, contacts] of Object.entries(phoneGroups)) {
+		if (contacts.length < 2) continue;
+		const merge = computeMerge(contacts);
+		groups.push({
+			phone,
+			contacts,
+			suggestedWinnerId: merge.winnerId,
+			preview: merge.update
+		});
+	}
+
+	return res.json({
+		groups,
+		totalGroups: groups.length,
+		totalDuplicates: groups.reduce((n, g) => n + g.contacts.length - 1, 0)
+	});
+});
+
+/**
+ * POST /api/contacts/merge
+ * Merge a group of duplicate contacts.
+ * Body: { winnerId, loserIds }
+ */
+router.post('/merge', logAction('contacts.merge'), async (req, res) => {
+	const { winnerId, loserIds } = req.body;
+
+	if (!winnerId || !Array.isArray(loserIds) || loserIds.length === 0) {
+		return res.status(400).json({ error: 'winnerId and loserIds[] are required' });
+	}
+
+	// Fetch all involved contacts
+	const allIds = [winnerId, ...loserIds];
+	const { data: contacts, error: fetchErr } = await supabaseAdmin
+		.from('contacts')
+		.select('*')
+		.in('id', allIds);
+
+	if (fetchErr || !contacts || contacts.length !== allIds.length) {
+		return res.status(404).json({ error: 'One or more contacts not found' });
+	}
+
+	// Compute merge using the shared logic
+	const merge = computeMerge(contacts);
+
+	// Update winner with merged data
+	const { error: updateErr } = await supabaseAdmin
+		.from('contacts')
+		.update(merge.update)
+		.eq('id', merge.winnerId);
+
+	if (updateErr) {
+		console.error('Failed to update winner contact:', updateErr.message);
+		return res.status(500).json({ error: 'Failed to update winner contact' });
+	}
+
+	// Repoint foreign keys from losers to winner
+	let fkUpdates = 0;
+
+	const { count: callCount } = await supabaseAdmin
+		.from('call_logs')
+		.update({ contact_id: merge.winnerId })
+		.in('contact_id', merge.loserIds)
+		.select('*', { count: 'exact', head: true });
+
+	const { count: convoCount } = await supabaseAdmin
+		.from('conversations')
+		.update({ contact_id: merge.winnerId })
+		.in('contact_id', merge.loserIds)
+		.select('*', { count: 'exact', head: true });
+
+	fkUpdates = (callCount || 0) + (convoCount || 0);
+
+	// Delete losers
+	const { error: delErr } = await supabaseAdmin.from('contacts').delete().in('id', merge.loserIds);
+
+	if (delErr) {
+		console.error('Failed to delete merged contacts:', delErr.message);
+		return res.status(500).json({ error: 'Winner updated but failed to delete duplicates' });
+	}
+
+	// Fetch updated winner
+	const { data: updated } = await supabaseAdmin
+		.from('contacts')
+		.select('*')
+		.eq('id', merge.winnerId)
+		.single();
+
+	// Fire-and-forget audit log
+	supabaseAdmin.from('audit_log').insert({
+		action: 'contacts.merge',
+		user_id: req.user?.id || null,
+		resource_type: 'contact',
+		resource_id: merge.winnerId,
+		details: { loserIds: merge.loserIds, fkUpdates, merged: merge.loserIds.length }
+	});
+
+	return res.json({
+		data: updated,
+		merged: merge.loserIds.length,
+		fkUpdates
+	});
 });
 
 /**

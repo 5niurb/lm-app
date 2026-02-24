@@ -19,6 +19,7 @@ import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { computeMerge, sourcePriority } from '../services/contact-merge.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, '..', '.env') });
@@ -27,20 +28,6 @@ const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_R
 const dryRun = !process.argv.includes('--apply');
 
 if (dryRun) console.log('=== DRY RUN (pass --apply to execute) ===\n');
-
-// ── Source priority (lower = higher priority) ────────────────────────────────
-const SOURCE_PRIORITY = {
-	aesthetic_record: 0,
-	textmagic: 1,
-	website_form: 2,
-	google_sheet: 3,
-	inbound_call: 4,
-	manual: 5
-};
-
-function sourcePriority(source) {
-	return SOURCE_PRIORITY[source] ?? 99;
-}
 
 // ── Fetch all contacts ───────────────────────────────────────────────────────
 let all = [];
@@ -73,53 +60,16 @@ const dupeGroups = Object.entries(phoneGroups).filter(([, v]) => v.length > 1);
 console.log(`Phone groups with duplicates: ${dupeGroups.length}`);
 console.log(`Contacts without phone (untouched): ${noPhone.length}\n`);
 
-// ── Merge logic ──────────────────────────────────────────────────────────────
+// ── Merge logic (uses shared computeMerge) ───────────────────────────────────
 let mergedCount = 0;
 let deletedCount = 0;
 let fkUpdates = 0;
 let tagFixes = 0;
 
 for (const [phone, contacts] of dupeGroups) {
-	// Sort by source priority (best first)
-	contacts.sort((a, b) => sourcePriority(a.source) - sourcePriority(b.source));
-
-	const winner = contacts[0];
-	const losers = contacts.slice(1);
-
-	// Merge metadata from losers into winner (winner takes precedence)
-	let mergedMeta = { ...(winner.metadata || {}) };
-	for (const loser of losers) {
-		if (loser.metadata) {
-			// Merge address if winner doesn't have one
-			if (loser.metadata.address && !mergedMeta.address) {
-				mergedMeta.address = loser.metadata.address;
-			}
-			// Merge other fields that winner is missing
-			for (const [k, v] of Object.entries(loser.metadata)) {
-				if (k !== 'address' && mergedMeta[k] === undefined) {
-					mergedMeta[k] = v;
-				}
-			}
-		}
-		// Track absorbed source_ids
-		if (loser.source && loser.source_id) {
-			if (!mergedMeta.absorbed_sources) mergedMeta.absorbed_sources = {};
-			mergedMeta.absorbed_sources[loser.source] = loser.source_id;
-		}
-	}
-
-	// Merge tags (union), then enforce lead/patient exclusivity
-	const allTags = new Set(contacts.flatMap((c) => c.tags || []));
-	if (allTags.has('patient')) allTags.delete('lead');
-	const mergedTags = [...allTags];
-
-	// Pick best values: prefer non-null, prefer winner's
-	const mergedEmail = winner.email || losers.find((l) => l.email)?.email || null;
-	const mergedFullName = winner.full_name || losers.find((l) => l.full_name)?.full_name || null;
-	const mergedFirstName = winner.first_name || losers.find((l) => l.first_name)?.first_name || null;
-	const mergedLastName = winner.last_name || losers.find((l) => l.last_name)?.last_name || null;
-	const mergedNotes =
-		[winner.notes, ...losers.map((l) => l.notes)].filter(Boolean).join('\n---\n') || null;
+	const merge = computeMerge(contacts);
+	const winner = contacts.find((c) => c.id === merge.winnerId);
+	const losers = contacts.filter((c) => merge.loserIds.includes(c.id));
 
 	if (dryRun) {
 		console.log(
@@ -129,42 +79,31 @@ for (const [phone, contacts] of dupeGroups) {
 		// Update winner with merged data
 		const { error: updateErr } = await sb
 			.from('contacts')
-			.update({
-				email: mergedEmail,
-				full_name: mergedFullName,
-				first_name: mergedFirstName,
-				last_name: mergedLastName,
-				tags: mergedTags,
-				metadata: mergedMeta,
-				notes: mergedNotes,
-				updated_at: new Date().toISOString()
-			})
-			.eq('id', winner.id);
+			.update(merge.update)
+			.eq('id', merge.winnerId);
 
 		if (updateErr) {
-			console.error(`  ERROR updating winner ${winner.id}: ${updateErr.message}`);
+			console.error(`  ERROR updating winner ${merge.winnerId}: ${updateErr.message}`);
 			continue;
 		}
 
 		// Repoint foreign keys from losers to winner
-		const loserIds = losers.map((l) => l.id);
-
 		const { count: callCount } = await sb
 			.from('call_logs')
-			.update({ contact_id: winner.id })
-			.in('contact_id', loserIds)
+			.update({ contact_id: merge.winnerId })
+			.in('contact_id', merge.loserIds)
 			.select('*', { count: 'exact', head: true });
 
 		const { count: convoCount } = await sb
 			.from('conversations')
-			.update({ contact_id: winner.id })
-			.in('contact_id', loserIds)
+			.update({ contact_id: merge.winnerId })
+			.in('contact_id', merge.loserIds)
 			.select('*', { count: 'exact', head: true });
 
 		fkUpdates += (callCount || 0) + (convoCount || 0);
 
 		// Delete losers
-		const { error: delErr } = await sb.from('contacts').delete().in('id', loserIds);
+		const { error: delErr } = await sb.from('contacts').delete().in('id', merge.loserIds);
 
 		if (delErr) {
 			console.error(`  ERROR deleting losers for +${phone}: ${delErr.message}`);

@@ -14,13 +14,16 @@
 		Plus,
 		MessageSquare,
 		PhoneOutgoing,
-		FileText
+		FileText,
+		GitMerge
 	} from '@lucide/svelte';
 	import { untrack } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import { api } from '$lib/api/client.js';
 	import { formatPhone, formatRelativeDate } from '$lib/utils/formatters.js';
 	import { resolve } from '$app/paths';
 	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
+	import DedupReviewSheet from '$lib/components/DedupReviewSheet.svelte';
 
 	let search = $state('');
 	let contacts = $state(null);
@@ -35,6 +38,13 @@
 	let addingTag = $state(null); // contact id currently adding tag to
 	let newTagInput = $state('');
 	let drawerOpen = $state(false);
+	let dedupOpen = $state(false);
+
+	function handleMerged(count) {
+		loadContacts();
+		loadStats();
+		toast.success(`Merged ${count} duplicate group${count !== 1 ? 's' : ''}`);
+	}
 
 	const tagConfig = {
 		patient: {
@@ -221,11 +231,17 @@
 </script>
 
 <div class="space-y-8">
-	<div>
-		<h1 class="text-2xl tracking-wide">Contacts</h1>
-		<p class="text-sm text-text-secondary mt-1">
-			CRM directory — {stats?.total || '...'} contacts across all sources.
-		</p>
+	<div class="flex items-start justify-between">
+		<div>
+			<h1 class="text-2xl tracking-wide">Contacts</h1>
+			<p class="text-sm text-text-secondary mt-1">
+				CRM directory — {stats?.total || '...'} contacts across all sources.
+			</p>
+		</div>
+		<Button variant="outline" size="sm" onclick={() => (dedupOpen = true)}>
+			<GitMerge class="h-4 w-4 mr-1.5" />
+			Review Duplicates
+		</Button>
 	</div>
 
 	{#if error}
@@ -801,3 +817,5 @@
 		{/if}
 	</div>
 {/if}
+
+<DedupReviewSheet bind:open={dedupOpen} onMerged={handleMerged} />
