@@ -58,7 +58,7 @@
 
 <div class="h-[calc(100vh-4rem)] -m-6 flex flex-col bg-card">
 	<Tabs value="chats" class="flex flex-col h-full">
-		<div class="border-b border-[#080809] px-4">
+		<div class="border-b-[3px] border-[#080809] px-4">
 			<TabsList class="bg-transparent h-auto gap-0 p-0">
 				<TabsTrigger
 					value="chats"

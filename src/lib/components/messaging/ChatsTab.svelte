@@ -592,11 +592,11 @@
 <div class="flex h-full overflow-hidden bg-card">
 	<!-- Conversation List / Log (left panel) -->
 	<div
-		class="w-full sm:w-80 lg:w-96 border-r border-[#080809] flex flex-col shrink-0 {selectedConvo
+		class="w-full sm:w-80 lg:w-96 border-r-[3px] border-[#080809] flex flex-col shrink-0 {selectedConvo
 			? 'hidden sm:flex'
 			: 'flex'}"
 	>
-		<div class="p-4 border-b border-[#080809] space-y-3">
+		<div class="p-4 border-b-[3px] border-[#080809] space-y-3">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-1.5">
 					<Button
@@ -901,7 +901,7 @@
 	<div class="flex-1 flex flex-col {selectedConvo || showNewConvo ? 'flex' : 'hidden sm:flex'}">
 		{#if selectedConvo}
 			<!-- Thread header -->
-			<div class="px-4 py-3 border-b border-[#080809] flex items-center gap-3">
+			<div class="px-4 py-3 border-b-[3px] border-[#080809] flex items-center gap-3">
 				<button class="sm:hidden" onclick={goBack}>
 					<ArrowLeft class="h-5 w-5 text-text-secondary" />
 				</button>
