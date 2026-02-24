@@ -1,3 +1,48 @@
+## Session — 2026-02-23 (Session 63)
+**Focus:** Fix 3 production issues — wrong Twilio from number, message sync gaps, TextMagic reverse sync
+
+**Accomplished:**
+- **Issue 3 (wrong from number):** Removed `TWILIO_TEST1_PHONE_NUMBER` from SMS send fallback chain in 3 files (`messages.js`, `automation.js`, `scheduled-sender.js`). New chain: `from_number || TWILIO_SMS_FROM_NUMBER || TWILIO_PHONE_NUMBER || TWILIO_MAIN_PHONE_NUMBER`
+- **Issue 1 (message sync gaps):** Found 17 phone numbers with duplicate conversations (16 with `twilio_number IS NULL`). Repointed messages to winners, deleted 16 empty dupes. Added unique index: `conversations_phone_twilio_unique ON conversations (phone_number, COALESCE(twilio_number, ''))`. Bumped Twilio sync limit from 1000 → 5000 per direction.
+- **Issue 2 (TextMagic reverse sync):** Built `api/scripts/sync-patients-to-textmagic.js` — pushes AR patient data to TextMagic (create/update). Results: **407 updated, 0 created, 11 skipped (no phone), 4 errors** (3 TM internal errors, 1 invalid phone). Email uniqueness conflicts handled by retry-without-email logic. Custom fields synced: AR ID, AR Created Date, DOB, Last Visited, Referral Source.
+- Updated 4 docs/PRD files with corrected fallback chain
+
+**Diagram:**
+```
+AR Patients (Supabase)                   TextMagic Contacts
+┌──────────────────────┐    sync →    ┌──────────────────────┐
+│ 422 patients         │─────────────►│ 407 updated          │
+│ full_name, email,    │              │ 0 created            │
+│ dob, ar_id, phone    │              │ Custom fields:       │
+│ referral_source      │              │   AR ID, DOB, etc.   │
+└──────────────────────┘              └──────────────────────┘
+
+SMS From Number Fix:
+  Before: TWILIO_TEST1_PHONE_NUMBER → 2134442242 (test!)
+  After:  TWILIO_PHONE_NUMBER       → 8184633772 (main)
+
+Conversation Dedup:
+  17 duplicate phone#s → 16 empties deleted → unique index added
+```
+
+**Current State:**
+- All 3 issues resolved. All code committed and pushed to `main`.
+- 195 tests pass, CI green
+- TextMagic sync script available at `api/scripts/sync-patients-to-textmagic.js` for re-runs
+- 4 remaining TM errors are upstream issues (TM 500s + invalid phone record "2 3")
+
+**Issues:**
+- User should verify `TWILIO_PHONE_NUMBER` on Render dashboard = `+18184633772`
+- 3 TM contacts hit internal server errors (Anastasia Ayzenberg, Jennifer Tran, Ryan Soloman) — retry later
+- Frontend still reads `response.error` as string (from Session 62 — deferred)
+
+**Next Steps:**
+- Verify outbound SMS now sends from main number (send a test)
+- Re-run TextMagic sync for the 3 TM 500 errors if needed
+- Migrate SvelteKit frontend to handle new error envelope format
+
+---
+
 ## Session — 2026-02-23 (Session 62)
 **Focus:** API standardization — error format, pagination, auth, security hardening
 
