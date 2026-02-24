@@ -1,3 +1,37 @@
+## Session — 2026-02-24 (Session 64)
+**Focus:** Google Sheets API deploy + production verification
+
+**Accomplished:**
+- Committed and pushed `api/services/google-sheets.js` with `GOOGLE_SERVICE_ACCOUNT_JSON` env var support (was edited but not committed last session)
+- Added `/api/health/sheets` diagnostic endpoint — reads 1 cell to verify service account auth
+- Verified Render deploy: `curl api.lemedspa.app/api/health/sheets` returns `{"status":"ok","cell":"AR ID 1"}`
+- Google Sheets API fully working from production Render via env var auth
+- All CI checks pass (129 vitest + 66 node:test), 3 commits pushed
+
+**Diagram:**
+```
+Google Sheets Auth (production — verified ✓):
+  Render env var: GOOGLE_SERVICE_ACCOUNT_JSON ─► JSON.parse() ─► GoogleAuth({ credentials })
+  GET /api/health/sheets ─► reads A1 ─► {"status":"ok","cell":"AR ID 1"}
+
+Google Sheets Auth (local dev):
+  Key file on disk ─► resolveKeyFile() ─► GoogleAuth({ keyFile })
+```
+
+**Current State:**
+- `main` branch, clean working tree, all pushed (commit 9e827ea)
+- Production Render deployed and verified with Sheets API connectivity
+- Google Sheets bidirectional sync fully operational (491 rows synced last session)
+- Staging intentionally NOT wired to Sheets (fake contacts only in staging DB)
+
+**Next Steps:**
+- Consider scheduling the writeback sync as a cron job or API endpoint
+- Frontend migration to `{ error: { code, message } }` format (from Session 63)
+- Add `express-rate-limit` to login endpoint
+- 3 GitHub Dependabot vulnerabilities (2 high, 1 low) to address
+
+---
+
 ## Session — 2026-02-23 (Session 63, continued)
 **Focus:** API standardization wrap-up, merge to main, cleanup
 
