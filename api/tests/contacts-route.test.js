@@ -176,7 +176,9 @@ describe('contacts route handlers', () => {
 
 			expect(res.status).toHaveBeenCalledWith(400);
 			expect(getJson()).toEqual(
-				expect.objectContaining({ error: expect.stringContaining('required') })
+				expect.objectContaining({
+					error: expect.objectContaining({ message: expect.stringContaining('required') })
+				})
 			);
 		});
 
@@ -216,7 +218,9 @@ describe('contacts route handlers', () => {
 
 			expect(res.status).toHaveBeenCalledWith(400);
 			expect(getJson()).toEqual(
-				expect.objectContaining({ error: expect.stringContaining('No fields') })
+				expect.objectContaining({
+					error: expect.objectContaining({ message: expect.stringContaining('No fields') })
+				})
 			);
 		});
 
@@ -257,7 +261,7 @@ describe('contacts route handlers', () => {
 			await handler(req, res);
 
 			expect(res.status).toHaveBeenCalledWith(400);
-			expect(getJson().error).toContain('non-empty array');
+			expect(getJson().error.message).toContain('non-empty array');
 		});
 
 		it('returns 400 when tags array is empty', async () => {
