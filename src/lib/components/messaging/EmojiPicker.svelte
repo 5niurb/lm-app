@@ -248,7 +248,7 @@
 <div class="relative" bind:this={pickerRef}>
 	<button
 		type="button"
-		class="inline-flex items-center justify-center h-8 w-8 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-surface-subtle transition-colors"
+		class="inline-flex items-center justify-center h-8 w-8 rounded-md text-vivid-amber/70 hover:text-vivid-amber hover:bg-surface-subtle transition-colors"
 		title="Insert emoji"
 		onclick={() => {
 			open = !open;

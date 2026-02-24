@@ -59,7 +59,7 @@
 <div class="relative" bind:this={menuRef}>
 	<button
 		type="button"
-		class="inline-flex items-center justify-center h-8 w-8 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-surface-subtle transition-colors"
+		class="inline-flex items-center justify-center h-8 w-8 rounded-md text-vivid-orange/70 hover:text-vivid-orange hover:bg-surface-subtle transition-colors"
 		title="Schedule message"
 		onclick={() => {
 			open = !open;

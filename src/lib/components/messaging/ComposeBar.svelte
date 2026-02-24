@@ -1,15 +1,6 @@
 <script>
-	import {
-		Send,
-		Paperclip,
-		X,
-		StickyNote,
-		MoreVertical,
-		Sparkles,
-		CalendarClock
-	} from '@lucide/svelte';
+	import { Send, Paperclip, X, StickyNote, Sparkles, CalendarClock } from '@lucide/svelte';
 	import EmojiPicker from './EmojiPicker.svelte';
-	import TagInsert from './TagInsert.svelte';
 	import TemplateInsert from './TemplateInsert.svelte';
 	import SchedulePopover from './SchedulePopover.svelte';
 
@@ -37,8 +28,6 @@
 		disabled = false,
 		placeholder = 'Type a message...'
 	} = $props();
-
-	let moreMenuOpen = $state(false);
 
 	let noteMode = $state(false);
 
@@ -177,11 +166,10 @@
 	}
 </script>
 
-<div class="border-t border-border bg-card">
+<div class="border-t section-border-gold bg-card">
 	<!-- Toolbar -->
 	<div class="flex items-center gap-0.5 px-3 pt-2 pb-1">
 		<EmojiPicker onSelect={(emoji) => insertAtCursor(emoji)} />
-		<TagInsert onInsert={(tag) => insertAtCursor(tag)} />
 		<TemplateInsert
 			onInsert={(tmplBody) => {
 				body = tmplBody;
@@ -190,7 +178,7 @@
 		{#if !noteMode}
 			<button
 				type="button"
-				class="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
+				class="flex h-8 w-8 items-center justify-center rounded-md text-vivid-emerald/70 hover:bg-surface-hover hover:text-vivid-emerald transition-colors"
 				title="Attach image"
 				onclick={() => fileInputRef?.click()}
 			>
@@ -207,42 +195,14 @@
 				<SchedulePopover onSchedule={(at) => handleSchedule(at)} />
 			{/if}
 			{#if onAiSuggest}
-				<div class="relative">
-					<button
-						type="button"
-						class="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
-						title="More options"
-						onclick={() => {
-							moreMenuOpen = !moreMenuOpen;
-						}}
-					>
-						<MoreVertical class="h-4 w-4" />
-					</button>
-					{#if moreMenuOpen}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="fixed inset-0 z-40"
-							onclick={() => {
-								moreMenuOpen = false;
-							}}
-						></div>
-						<div
-							class="absolute bottom-full left-0 mb-1 z-50 w-48 rounded-lg border border-border bg-card shadow-lg py-1"
-						>
-							<button
-								type="button"
-								class="flex w-full items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:bg-surface-hover transition-colors"
-								onclick={() => {
-									moreMenuOpen = false;
-									onAiSuggest?.();
-								}}
-							>
-								<Sparkles class="h-3.5 w-3.5 text-vivid-violet" />
-								Generate with AI
-							</button>
-						</div>
-					{/if}
-				</div>
+				<button
+					type="button"
+					class="flex h-8 w-8 items-center justify-center rounded-md text-vivid-violet/70 hover:bg-surface-hover hover:text-vivid-violet transition-colors"
+					title="Generate with AI"
+					onclick={() => onAiSuggest?.()}
+				>
+					<Sparkles class="h-4 w-4" />
+				</button>
 			{/if}
 		{/if}
 		{#if onNote}

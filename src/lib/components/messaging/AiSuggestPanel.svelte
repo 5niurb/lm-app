@@ -70,7 +70,7 @@
 	onMount(fetchSuggestions);
 </script>
 
-<div class="border-t border-border bg-surface-raised px-4 py-3">
+<div class="border-t section-border-gold bg-surface-raised px-4 py-3">
 	<div class="flex items-center justify-between mb-2">
 		<span class="flex items-center gap-1.5 text-xs font-medium text-vivid-violet">
 			<Sparkles class="h-3.5 w-3.5" />

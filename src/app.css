@@ -743,6 +743,42 @@ h3 {
 }
 
 /* ═══════════════════════════════════════════
+   MESSAGE BUBBLES — Glass-panel style
+   ═══════════════════════════════════════════ */
+.msg-bubble-in {
+	background: linear-gradient(135deg, #0e0e14, #16161e 50%, #111118);
+	border: 2px solid rgba(212, 168, 67, 0.5);
+	box-shadow:
+		0 0 12px rgba(212, 168, 67, 0.06),
+		inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.msg-bubble-out {
+	background: linear-gradient(135deg, #0d1018, #141a25 50%, #0f1420);
+	border: 2px solid rgba(120, 155, 210, 0.4);
+	box-shadow:
+		0 0 12px rgba(120, 155, 210, 0.06),
+		inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* ═══════════════════════════════════════════
+   SECTION BORDERS — Gold shimmer
+   ═══════════════════════════════════════════ */
+@keyframes gold-shimmer-border {
+	0%,
+	85%,
+	100% {
+		border-color: rgba(212, 168, 67, 0.1);
+	}
+	92% {
+		border-color: rgba(212, 168, 67, 0.35);
+	}
+}
+.section-border-gold {
+	border-color: rgba(212, 168, 67, 0.1);
+	animation: gold-shimmer-border 12s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════
    THEME TRANSITIONS
    ═══════════════════════════════════════════ */
 html {

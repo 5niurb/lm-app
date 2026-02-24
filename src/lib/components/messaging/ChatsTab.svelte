@@ -592,11 +592,11 @@
 <div class="flex h-full overflow-hidden bg-card">
 	<!-- Conversation List / Log (left panel) -->
 	<div
-		class="w-full sm:w-80 lg:w-96 border-r border-border flex flex-col shrink-0 {selectedConvo
+		class="w-full sm:w-80 lg:w-96 border-r border-[#080809] flex flex-col shrink-0 {selectedConvo
 			? 'hidden sm:flex'
 			: 'flex'}"
 	>
-		<div class="p-4 border-b border-border space-y-3">
+		<div class="p-4 border-b border-[#080809] space-y-3">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-1.5">
 					<Button
@@ -901,7 +901,7 @@
 	<div class="flex-1 flex flex-col {selectedConvo || showNewConvo ? 'flex' : 'hidden sm:flex'}">
 		{#if selectedConvo}
 			<!-- Thread header -->
-			<div class="px-4 py-3 border-b border-border flex items-center gap-3">
+			<div class="px-4 py-3 border-b border-[#080809] flex items-center gap-3">
 				<button class="sm:hidden" onclick={goBack}>
 					<ArrowLeft class="h-5 w-5 text-text-secondary" />
 				</button>
@@ -969,20 +969,20 @@
 						{@const showDaySep = !prevDate || msgDate.toDateString() !== prevDate.toDateString()}
 						{#if showDaySep}
 							<div class="flex items-center gap-3 py-1">
-								<div class="flex-1 h-px bg-border"></div>
+								<div class="flex-1 h-px bg-gold/15"></div>
 								<span
 									class="text-[10px] text-text-tertiary font-medium uppercase tracking-wider shrink-0"
 								>
 									{formatDayLabel(msgDate)}
 								</span>
-								<div class="flex-1 h-px bg-border"></div>
+								<div class="flex-1 h-px bg-gold/15"></div>
 							</div>
 						{/if}
 						{#if msg.__scheduled}
 							<!-- Scheduled message bubble — translucent gold, dashed border -->
 							<div class="flex justify-end">
 								<div
-									class="max-w-full rounded-2xl px-4 py-2.5 rounded-br-md border border-dashed border-gold/50 bg-gold/25"
+									class="max-w-[75%] rounded-2xl px-4 py-2.5 rounded-br-md border-2 border-dashed border-gold/40 bg-[#0e0e14]"
 								>
 									<p class="text-sm whitespace-pre-wrap break-words text-text-primary">
 										{msg.body}
@@ -1010,7 +1010,7 @@
 							<!-- Internal note bubble — warm cream, right-aligned -->
 							<div class="flex justify-end">
 								<div
-									class="max-w-full rounded-2xl px-4 py-2.5 rounded-br-md bg-[rgba(255,248,225,0.12)] border border-[rgba(255,248,225,0.2)]"
+									class="max-w-[75%] rounded-2xl px-4 py-2.5 rounded-br-md bg-[rgba(255,248,225,0.12)] border border-[rgba(255,248,225,0.2)]"
 								>
 									<p class="text-[10px] font-medium mb-0.5 text-amber-300/80">
 										{msg.sender?.full_name || 'Staff'}
@@ -1034,10 +1034,10 @@
 								<div class="relative group">
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
-										class="max-w-full rounded-2xl px-4 py-2.5 select-none {msg.direction ===
+										class="max-w-[75%] rounded-2xl px-4 py-2.5 select-none {msg.direction ===
 										'outbound'
-											? 'bg-gold text-primary-foreground rounded-br-md'
-											: 'bg-surface-raised border border-border text-text-primary rounded-bl-md'}"
+											? 'msg-bubble-out text-text-primary rounded-br-md'
+											: 'msg-bubble-in text-text-primary rounded-bl-md'}"
 										oncontextmenu={(e) => openReactionBar(e, msg, i)}
 										ontouchstart={(e) => startLongPress(e, msg, i)}
 										ontouchend={cancelLongPress}
@@ -1046,7 +1046,7 @@
 										{#if senderName}
 											<p
 												class="text-[10px] font-medium mb-0.5 {msg.direction === 'outbound'
-													? 'text-primary-foreground/60'
+													? 'text-[#7ba3d0]'
 													: 'text-gold-dim'}"
 											>
 												{senderName}
@@ -1087,8 +1087,8 @@
 										{/if}
 										<p
 											class="text-[10px] mt-1 flex items-center gap-1 {msg.direction === 'outbound'
-												? 'text-primary-foreground/50'
-												: 'text-text-ghost'}"
+												? 'text-white/30'
+												: 'text-white/25'}"
 										>
 											<span>
 												{new Date(msg.created_at).toLocaleTimeString('en-US', {
@@ -1111,7 +1111,7 @@
 											{/if}
 											{#if msg.metadata?.source === 'auto_reply'}
 												<span
-													class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-white/15 text-primary-foreground/60"
+													class="inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium bg-white/10 text-text-tertiary"
 												>
 													Auto
 												</span>
