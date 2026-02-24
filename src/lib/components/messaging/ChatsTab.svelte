@@ -29,6 +29,10 @@
 	import AiSuggestPanel from './AiSuggestPanel.svelte';
 	import MessageReactions from './MessageReactions.svelte';
 	import ImageLightbox from './ImageLightbox.svelte';
+	import CallActivityBubble from './CallActivityBubble.svelte';
+	import VoicemailBubble from './VoicemailBubble.svelte';
+	import EmailBubble from './EmailBubble.svelte';
+	import ThreadItemActions from './ThreadItemActions.svelte';
 
 	/**
 	 * @type {{
@@ -250,7 +254,7 @@
 			if (selectedConvo) {
 				const prevCount = messages.length;
 				await Promise.all([
-					loadMessages(selectedConvo.id),
+					loadTimeline(selectedConvo.id),
 					loadScheduledForConvo(selectedConvo.id)
 				]);
 				if (messages.length > prevCount) {
@@ -287,8 +291,7 @@
 		selectedConvo = convo;
 		loadingMessages = true;
 		try {
-			const res = await api(`/api/messages/conversations/${convo.id}`);
-			messages = res.data;
+			await loadTimeline(convo.id);
 			convo.unread_count = 0;
 		} catch (e) {
 			console.error('Failed to load messages:', e);
@@ -326,6 +329,58 @@
 		}
 	}
 
+	/** Load unified timeline (messages + calls + voicemails + emails) */
+	async function loadTimeline(convId) {
+		try {
+			const res = await api(`/api/messages/conversations/${convId}/timeline`);
+			messages = res.data || [];
+		} catch (e) {
+			// Fallback to regular messages if timeline endpoint fails
+			console.error('Timeline load failed, falling back to messages:', e);
+			await loadMessages(convId);
+		}
+	}
+
+	/**
+	 * Send an email from the conversation panel.
+	 * @param {{ to: string, cc?: string[], bcc?: string[], subject: string, body: string }} email
+	 */
+	async function sendEmail(email) {
+		if (!selectedConvo) return;
+		try {
+			await api('/api/emails/send', {
+				method: 'POST',
+				body: JSON.stringify({
+					...email,
+					conversationId: selectedConvo.id,
+					contactId: selectedConvo.contact_id || undefined
+				})
+			});
+			await loadTimeline(selectedConvo.id);
+			setTimeout(scrollToBottom, 100);
+		} catch (e) {
+			onError(e.message ?? 'Failed to send email');
+			throw e;
+		}
+	}
+
+	/**
+	 * Handle star/resolve toggle on a thread item.
+	 * @param {string} itemType
+	 * @param {string} itemId
+	 * @param {'is_starred' | 'is_resolved'} field
+	 * @param {boolean} value
+	 */
+	function handleItemToggle(itemType, itemId, field, value) {
+		// Optimistic update in the messages array
+		messages = messages.map((m) => {
+			if (m.id === itemId || m.id === itemId) {
+				return { ...m, [field]: value };
+			}
+			return m;
+		});
+	}
+
 	/**
 	 * @param {string} body
 	 * @param {File} [file]
@@ -357,7 +412,7 @@
 			const res = await api('/api/messages/send', fetchOpts);
 
 			if (selectedConvo) {
-				await loadMessages(selectedConvo.id);
+				await loadTimeline(selectedConvo.id);
 			}
 			await loadConversations();
 
@@ -426,7 +481,7 @@
 				method: 'POST',
 				body: JSON.stringify({ conversationId: selectedConvo.id, body: noteBody })
 			});
-			await loadMessages(selectedConvo.id);
+			await loadTimeline(selectedConvo.id);
 			setTimeout(scrollToBottom, 100);
 		} catch (e) {
 			onError(e.message ?? 'Failed to create note');
@@ -527,12 +582,17 @@
 		}
 	}
 
-	// Merge real messages + pending scheduled into one timeline
+	// Merge real timeline items + pending scheduled into one combined thread
 	let combinedThread = $derived.by(() => {
-		const real = messages.map((m) => ({ ...m, __scheduled: false }));
+		const real = messages.map((m) => ({
+			...m,
+			__scheduled: false,
+			__type: m.__type || 'message'
+		}));
 		const sched = scheduledMsgs.map((s) => ({
 			...s,
 			__scheduled: true,
+			__type: 'message',
 			id: `sched-${s.id}`,
 			_realId: s.id,
 			direction: 'outbound',
@@ -592,11 +652,11 @@
 <div class="flex h-full overflow-hidden bg-card">
 	<!-- Conversation List / Log (left panel) -->
 	<div
-		class="w-full sm:w-80 lg:w-96 border-r-[3px] border-[#080809] flex flex-col shrink-0 {selectedConvo
+		class="w-full sm:w-80 lg:w-96 border-r-[9px] border-[#080809] flex flex-col shrink-0 {selectedConvo
 			? 'hidden sm:flex'
 			: 'flex'}"
 	>
-		<div class="p-4 border-b-[3px] border-[#080809] space-y-3">
+		<div class="p-4 border-b-[9px] border-[#080809] space-y-3">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-1.5">
 					<Button
@@ -901,7 +961,7 @@
 	<div class="flex-1 flex flex-col {selectedConvo || showNewConvo ? 'flex' : 'hidden sm:flex'}">
 		{#if selectedConvo}
 			<!-- Thread header -->
-			<div class="px-4 py-3 border-b-[3px] border-[#080809] flex items-center gap-3">
+			<div class="px-4 py-3 border-b-[9px] border-[#080809] flex items-center gap-3">
 				<button class="sm:hidden" onclick={goBack}>
 					<ArrowLeft class="h-5 w-5 text-text-secondary" />
 				</button>
@@ -1006,30 +1066,88 @@
 									</div>
 								</div>
 							</div>
+						{:else if msg.__type === 'call'}
+							<!-- Call activity bubble -->
+							<div class="relative group">
+								<CallActivityBubble call={msg} />
+								<div class="absolute top-2 right-2">
+									<ThreadItemActions
+										itemType="call"
+										itemId={msg.id}
+										isStarred={msg.is_starred || false}
+										isResolved={msg.is_resolved || false}
+										onToggle={(field, value) => handleItemToggle('call', msg.id, field, value)}
+									/>
+								</div>
+							</div>
+						{:else if msg.__type === 'voicemail'}
+							<!-- Voicemail bubble -->
+							<div class="relative group">
+								<VoicemailBubble voicemail={msg} />
+								<div class="absolute top-2 right-2">
+									<ThreadItemActions
+										itemType="voicemail"
+										itemId={msg.id}
+										isStarred={msg.is_starred || false}
+										isResolved={msg.is_resolved || false}
+										onToggle={(field, value) => handleItemToggle('voicemail', msg.id, field, value)}
+									/>
+								</div>
+							</div>
+						{:else if msg.__type === 'email'}
+							<!-- Email bubble -->
+							<div class="relative group">
+								<EmailBubble email={msg} />
+								<div
+									class="absolute top-2 {msg.direction === 'outbound'
+										? 'right-[27%]'
+										: 'left-[27%]'}"
+								>
+									<ThreadItemActions
+										itemType="email"
+										itemId={msg.id}
+										isStarred={msg.is_starred || false}
+										isResolved={msg.is_resolved || false}
+										onToggle={(field, value) => handleItemToggle('email', msg.id, field, value)}
+									/>
+								</div>
+							</div>
 						{:else if msg.is_internal_note}
 							<!-- Internal note bubble — warm cream, right-aligned -->
 							<div class="flex justify-end">
-								<div
-									class="max-w-[75%] rounded-2xl px-4 py-2.5 rounded-br-md bg-[rgba(255,248,225,0.12)] border border-[rgba(255,248,225,0.2)]"
-								>
-									<p class="text-[10px] font-medium mb-0.5 text-amber-300/80">
-										{msg.sender?.full_name || 'Staff'}
-										<span class="text-amber-300/50">(internal note)</span>
-									</p>
-									{#if msg.body}
-										<p class="text-sm whitespace-pre-wrap break-words text-text-primary">
-											{msg.body}
+								<div class="relative group">
+									<div
+										class="max-w-[75%] rounded-2xl px-4 py-2.5 rounded-br-md bg-[rgba(255,248,225,0.12)] border border-[rgba(255,248,225,0.2)]"
+									>
+										<p class="text-[10px] font-medium mb-0.5 text-amber-300/80">
+											{msg.sender?.full_name || 'Staff'}
+											<span class="text-amber-300/50">(internal note)</span>
 										</p>
-									{/if}
-									<p class="text-[10px] mt-1 text-amber-300/40">
-										{new Date(msg.created_at).toLocaleTimeString('en-US', {
-											hour: 'numeric',
-											minute: '2-digit'
-										})}
-									</p>
+										{#if msg.body}
+											<p class="text-sm whitespace-pre-wrap break-words text-text-primary">
+												{msg.body}
+											</p>
+										{/if}
+										<p class="text-[10px] mt-1 text-amber-300/40">
+											{new Date(msg.created_at).toLocaleTimeString('en-US', {
+												hour: 'numeric',
+												minute: '2-digit'
+											})}
+										</p>
+									</div>
+									<div class="absolute top-2 right-2">
+										<ThreadItemActions
+											itemType="message"
+											itemId={msg.id}
+											isStarred={msg.is_starred || false}
+											isResolved={msg.is_resolved || false}
+											onToggle={(field, value) => handleItemToggle('message', msg.id, field, value)}
+										/>
+									</div>
 								</div>
 							</div>
 						{:else}
+							<!-- SMS message bubble -->
 							<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
 								<div class="relative group">
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -1142,6 +1260,19 @@
 											{/each}
 										</div>
 									{/if}
+									<div
+										class="absolute top-2 {msg.direction === 'outbound'
+											? 'left-[-28px]'
+											: 'right-[-28px]'}"
+									>
+										<ThreadItemActions
+											itemType="message"
+											itemId={msg.id}
+											isStarred={msg.is_starred || false}
+											isResolved={msg.is_resolved || false}
+											onToggle={(field, value) => handleItemToggle('message', msg.id, field, value)}
+										/>
+									</div>
 								</div>
 							</div>
 						{/if}
@@ -1176,6 +1307,9 @@
 				onSend={sendMessage}
 				onSchedule={scheduleMessage}
 				onNote={sendNote}
+				onSendEmail={sendEmail}
+				contactEmail={selectedConvo?.contact_email || ''}
+				contactName={selectedConvo?.display_name || ''}
 				onAiSuggest={aiEnabled
 					? () => {
 							showAiPanel = !showAiPanel;

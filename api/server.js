@@ -120,6 +120,7 @@ import templateRoutes from './routes/templates.js';
 import scheduledMessageRoutes from './routes/scheduled-messages.js';
 import autoReplyRoutes from './routes/auto-replies.js';
 import broadcastRoutes from './routes/broadcasts.js';
+import emailRoutes from './routes/emails.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/calls', callRoutes);
@@ -136,6 +137,7 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/scheduled-messages', scheduledMessageRoutes);
 app.use('/api/auto-replies', autoReplyRoutes);
 app.use('/api/broadcasts', broadcastRoutes);
+app.use('/api/emails', emailRoutes);
 
 app.listen(PORT, () => {
 	console.log(`LM App API running on port ${PORT}`);

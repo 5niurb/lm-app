@@ -643,4 +643,298 @@ router.get('/:id/media/:index', logAction('messages.media'), async (req, res) =>
 	}
 });
 
+/**
+ * GET /api/messages/conversations/:id/timeline
+ * Unified timeline — merges messages, calls, voicemails, and emails chronologically.
+ * Attaches star/resolve flags from thread_item_flags.
+ *
+ * Query: pageSize (default 50), before (cursor timestamp)
+ */
+router.get('/conversations/:id/timeline', logAction('messages.timeline'), async (req, res) => {
+	const { id } = req.params;
+	const pageSize = Math.min(200, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
+
+	// Fetch conversation to get contact_id and phone for matching calls/voicemails
+	const { data: convo, error: convoErr } = await supabaseAdmin
+		.from('conversations')
+		.select('id, contact_id, phone_number')
+		.eq('id', id)
+		.single();
+
+	if (convoErr || !convo) {
+		return apiError(res, 404, 'not_found', 'Conversation not found');
+	}
+
+	const phoneDigits = convo.phone_number?.replace(/\D/g, '') || '';
+	const phoneE164 = normalizePhone(convo.phone_number);
+
+	// Build phone variants for matching
+	const phoneVariants = [convo.phone_number, phoneE164, phoneDigits].filter(Boolean);
+	if (phoneDigits.length === 11 && phoneDigits.startsWith('1'))
+		phoneVariants.push(phoneDigits.slice(1));
+	if (phoneDigits.length === 10) phoneVariants.push('+1' + phoneDigits, '1' + phoneDigits);
+
+	try {
+		// Fetch all four types in parallel
+		const [messagesRes, callsRes, voicemailsRes, emailsRes] = await Promise.all([
+			// Messages
+			supabaseAdmin
+				.from('messages')
+				.select('*, sender:profiles!messages_sent_by_fkey(full_name, email)')
+				.eq('conversation_id', id)
+				.order('created_at', { ascending: false })
+				.limit(pageSize),
+			// Calls — match by contact_id or phone number
+			(async () => {
+				let q = supabaseAdmin
+					.from('call_logs')
+					.select('*')
+					.order('started_at', { ascending: false })
+					.limit(pageSize);
+
+				if (convo.contact_id) {
+					q = q.eq('contact_id', convo.contact_id);
+				} else {
+					// Match by phone number variants
+					const orFilter = phoneVariants
+						.flatMap((v) => [`from_number.eq.${v}`, `to_number.eq.${v}`])
+						.join(',');
+					q = q.or(orFilter);
+				}
+				return q;
+			})(),
+			// Voicemails — match by phone number or via call_log contact_id
+			(async () => {
+				const orParts = phoneVariants.map((v) => `from_number.eq.${v}`).join(',');
+				return supabaseAdmin
+					.from('voicemails')
+					.select('*')
+					.or(orParts)
+					.order('created_at', { ascending: false })
+					.limit(pageSize);
+			})(),
+			// Emails
+			supabaseAdmin
+				.from('emails')
+				.select('*')
+				.eq('conversation_id', id)
+				.order('created_at', { ascending: false })
+				.limit(pageSize)
+		]);
+
+		// Tag each item with __type and normalize timestamp field
+		const items = [];
+
+		for (const msg of messagesRes.data || []) {
+			items.push({ ...msg, __type: 'message' });
+		}
+		for (const call of callsRes.data || []) {
+			items.push({ ...call, __type: 'call', created_at: call.started_at || call.created_at });
+		}
+		for (const vm of voicemailsRes.data || []) {
+			items.push({ ...vm, __type: 'voicemail' });
+		}
+		for (const email of emailsRes.data || []) {
+			items.push({ ...email, __type: 'email' });
+		}
+
+		// Sort chronologically (oldest first for display)
+		items.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+		// Attach flags from thread_item_flags
+		if (items.length > 0) {
+			const itemIds = items.map((i) => i.id);
+			const { data: flags } = await supabaseAdmin
+				.from('thread_item_flags')
+				.select('item_type, item_id, is_starred, is_resolved, starred_at, resolved_at')
+				.eq('conversation_id', id)
+				.in('item_id', itemIds);
+
+			if (flags?.length) {
+				const flagMap = new Map(flags.map((f) => [`${f.item_type}:${f.item_id}`, f]));
+				for (const item of items) {
+					const flag = flagMap.get(`${item.__type}:${item.id}`);
+					item.is_starred = flag?.is_starred || false;
+					item.is_resolved = flag?.is_resolved || false;
+				}
+			}
+		}
+
+		// Mark conversation as read
+		await supabaseAdmin.from('conversations').update({ unread_count: 0 }).eq('id', id);
+
+		return res.json({ data: items });
+	} catch (err) {
+		console.error('Failed to fetch timeline:', err.message);
+		return apiError(res, 500, 'server_error', 'Failed to fetch timeline');
+	}
+});
+
+/**
+ * POST /api/messages/timeline/:itemType/:itemId/star
+ * Toggle star on a thread item.
+ */
+router.post('/timeline/:itemType/:itemId/star', logAction('timeline.star'), async (req, res) => {
+	const { itemType, itemId } = req.params;
+	const ALLOWED_TYPES = ['message', 'call', 'voicemail', 'email'];
+	if (!ALLOWED_TYPES.includes(itemType)) {
+		return apiError(res, 400, 'validation_error', 'Invalid item type');
+	}
+
+	try {
+		// Check for existing flag
+		const { data: existing } = await supabaseAdmin
+			.from('thread_item_flags')
+			.select('id, is_starred, conversation_id')
+			.eq('item_type', itemType)
+			.eq('item_id', itemId)
+			.maybeSingle();
+
+		if (existing) {
+			const newStarred = !existing.is_starred;
+			const { data, error } = await supabaseAdmin
+				.from('thread_item_flags')
+				.update({
+					is_starred: newStarred,
+					starred_by: newStarred ? req.user?.id : null,
+					starred_at: newStarred ? new Date().toISOString() : null
+				})
+				.eq('id', existing.id)
+				.select()
+				.single();
+			if (error) return apiError(res, 500, 'server_error', 'Failed to update star');
+			return res.json({ data });
+		}
+
+		// Need to resolve conversation_id from the item
+		const conversationId = await resolveConversationId(itemType, itemId);
+
+		const { data, error } = await supabaseAdmin
+			.from('thread_item_flags')
+			.insert({
+				conversation_id: conversationId,
+				item_type: itemType,
+				item_id: itemId,
+				is_starred: true,
+				starred_by: req.user?.id,
+				starred_at: new Date().toISOString()
+			})
+			.select()
+			.single();
+		if (error) return apiError(res, 500, 'server_error', 'Failed to create star');
+		return res.json({ data });
+	} catch (err) {
+		console.error('Star toggle error:', err.message);
+		return apiError(res, 500, 'server_error', 'Failed to toggle star');
+	}
+});
+
+/**
+ * POST /api/messages/timeline/:itemType/:itemId/resolve
+ * Toggle resolve on a thread item.
+ */
+router.post(
+	'/timeline/:itemType/:itemId/resolve',
+	logAction('timeline.resolve'),
+	async (req, res) => {
+		const { itemType, itemId } = req.params;
+		const ALLOWED_TYPES = ['message', 'call', 'voicemail', 'email'];
+		if (!ALLOWED_TYPES.includes(itemType)) {
+			return apiError(res, 400, 'validation_error', 'Invalid item type');
+		}
+
+		try {
+			const { data: existing } = await supabaseAdmin
+				.from('thread_item_flags')
+				.select('id, is_resolved, conversation_id')
+				.eq('item_type', itemType)
+				.eq('item_id', itemId)
+				.maybeSingle();
+
+			if (existing) {
+				const newResolved = !existing.is_resolved;
+				const { data, error } = await supabaseAdmin
+					.from('thread_item_flags')
+					.update({
+						is_resolved: newResolved,
+						resolved_by: newResolved ? req.user?.id : null,
+						resolved_at: newResolved ? new Date().toISOString() : null
+					})
+					.eq('id', existing.id)
+					.select()
+					.single();
+				if (error) return apiError(res, 500, 'server_error', 'Failed to update resolve');
+				return res.json({ data });
+			}
+
+			const conversationId = await resolveConversationId(itemType, itemId);
+
+			const { data, error } = await supabaseAdmin
+				.from('thread_item_flags')
+				.insert({
+					conversation_id: conversationId,
+					item_type: itemType,
+					item_id: itemId,
+					is_resolved: true,
+					resolved_by: req.user?.id,
+					resolved_at: new Date().toISOString()
+				})
+				.select()
+				.single();
+			if (error) return apiError(res, 500, 'server_error', 'Failed to create resolve');
+			return res.json({ data });
+		} catch (err) {
+			console.error('Resolve toggle error:', err.message);
+			return apiError(res, 500, 'server_error', 'Failed to toggle resolve');
+		}
+	}
+);
+
+/**
+ * Resolve the conversation_id for a given item type and ID.
+ * @param {string} itemType
+ * @param {string} itemId
+ * @returns {Promise<string|null>}
+ */
+async function resolveConversationId(itemType, itemId) {
+	if (itemType === 'message' || itemType === 'email') {
+		const table = itemType === 'message' ? 'messages' : 'emails';
+		const { data } = await supabaseAdmin
+			.from(table)
+			.select('conversation_id')
+			.eq('id', itemId)
+			.single();
+		return data?.conversation_id || null;
+	}
+	// For calls/voicemails, look up via contact_id → conversation
+	if (itemType === 'call') {
+		const { data: call } = await supabaseAdmin
+			.from('call_logs')
+			.select('contact_id, from_number, to_number')
+			.eq('id', itemId)
+			.single();
+		if (call?.contact_id) {
+			const { data: convo } = await supabaseAdmin
+				.from('conversations')
+				.select('id')
+				.eq('contact_id', call.contact_id)
+				.limit(1)
+				.maybeSingle();
+			return convo?.id || null;
+		}
+	}
+	if (itemType === 'voicemail') {
+		const { data: vm } = await supabaseAdmin
+			.from('voicemails')
+			.select('from_number')
+			.eq('id', itemId)
+			.single();
+		if (vm?.from_number) {
+			const convo = await findConversation(vm.from_number);
+			return convo?.id || null;
+		}
+	}
+	return null;
+}
+
 export default router;

@@ -56,3 +56,51 @@ export async function sendOtpEmail(to, otp) {
 		return { success: false, error: err.message };
 	}
 }
+
+/**
+ * Send a generic email via the Resend API.
+ *
+ * @param {{ to: string, from?: string, fromName?: string, cc?: string[], bcc?: string[], subject: string, text: string, html?: string }} opts
+ * @returns {Promise<{ success: boolean, data?: object, error?: string }>}
+ */
+export async function sendEmail({ to, from, fromName, cc, bcc, subject, text, html }) {
+	const apiKey = process.env.RESEND_API_KEY;
+	if (!apiKey) {
+		console.error('RESEND_API_KEY is not set — cannot send email');
+		return { success: false, error: 'Email service not configured' };
+	}
+
+	const fromAddr = from || FROM_ADDRESS;
+	const fromFull = fromName ? `${fromName} <${fromAddr}>` : fromAddr;
+
+	try {
+		const response = await fetch(RESEND_API_URL, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				from: fromFull,
+				to: [to],
+				...(cc?.length && { cc }),
+				...(bcc?.length && { bcc }),
+				subject,
+				text,
+				...(html && { html })
+			})
+		});
+
+		if (!response.ok) {
+			const errorBody = await response.text();
+			console.error('Resend API error:', response.status, errorBody);
+			return { success: false, error: `Email send failed: ${response.status}` };
+		}
+
+		const data = await response.json();
+		return { success: true, data };
+	} catch (err) {
+		console.error('Failed to send email:', err);
+		return { success: false, error: err.message };
+	}
+}

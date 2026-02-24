@@ -282,4 +282,73 @@ router.patch('/:id', requireAdmin, logAction('calls.update'), async (req, res) =
 	return res.json({ data });
 });
 
+/**
+ * GET /api/calls/:id/recording
+ * Proxy the Twilio call recording audio so the browser doesn't need Twilio credentials.
+ * Mirrors the voicemail recording proxy pattern.
+ */
+router.get('/:id/recording', logAction('calls.playRecording'), async (req, res) => {
+	const { id } = req.params;
+
+	const { data: call, error } = await supabaseAdmin
+		.from('call_logs')
+		.select('recording_url, recording_sid')
+		.eq('id', id)
+		.single();
+
+	if (error || !call) {
+		return apiError(res, 404, 'not_found', 'Call log not found');
+	}
+
+	if (!call.recording_url && !call.recording_sid) {
+		return apiError(res, 404, 'not_found', 'No recording available');
+	}
+
+	try {
+		const accountSid = process.env.TWILIO_ACCOUNT_SID;
+		const authToken = process.env.TWILIO_AUTH_TOKEN;
+		let recordingUrl = call.recording_url;
+
+		if (recordingUrl && !recordingUrl.endsWith('.mp3') && !recordingUrl.endsWith('.wav')) {
+			recordingUrl = recordingUrl + '.mp3';
+		}
+
+		if (!recordingUrl && call.recording_sid) {
+			recordingUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${call.recording_sid}.mp3`;
+		}
+
+		const twilioRes = await fetch(recordingUrl, {
+			headers: {
+				Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+			}
+		});
+
+		if (!twilioRes.ok) {
+			console.error(`Twilio recording fetch failed: ${twilioRes.status} ${twilioRes.statusText}`);
+			return apiError(res, 502, 'bad_gateway', 'Failed to fetch recording from Twilio');
+		}
+
+		res.set('Content-Type', twilioRes.headers.get('content-type') || 'audio/mpeg');
+		const contentLength = twilioRes.headers.get('content-length');
+		if (contentLength) res.set('Content-Length', contentLength);
+		res.set('Cache-Control', 'private, max-age=3600');
+
+		const reader = twilioRes.body.getReader();
+		req.on('close', () => reader.cancel());
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) {
+				res.end();
+				break;
+			}
+			res.write(value);
+		}
+	} catch (e) {
+		console.error('Call recording proxy error:', e.message);
+		if (!res.headersSent) {
+			return apiError(res, 500, 'server_error', 'Failed to proxy recording');
+		}
+	}
+});
+
 export default router;
