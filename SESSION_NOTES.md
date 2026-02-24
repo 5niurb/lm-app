@@ -1,3 +1,57 @@
+## Session — 2026-02-23 (Session 62)
+**Focus:** API standardization — error format, pagination, auth, security hardening
+
+**Accomplished:**
+- Created 3 shared utilities: `api/utils/sanitize.js` (search input sanitizer), `api/utils/responses.js` (apiError helper), `api/middleware/requireAdmin.js` (admin guard)
+- Standardized all 14 route files to use `{ error: { code, message } }` envelope via `apiError()`
+- Changed PUT → PATCH on 7 route files for partial-update endpoints
+- Normalized DELETE responses to 204 No Content across 5 files
+- Added offset pagination (`page`, `per_page`, `meta`) to 6 list endpoints: services, auto-replies, templates, broadcasts, settings/extensions, settings/routing
+- Sanitized search inputs: 200-char cap, strip PostgREST metacharacters + LIKE wildcards (`%`, `_`)
+- **Security fixes from code + security review:**
+  - Added `requireAdmin` to broadcasts (create/update/delete/send), templates (CUD), auto-replies (CUD), calls PATCH, contacts merge
+  - Normalized auth login error to generic message (prevents account enumeration)
+  - Added sort field allowlist on calls endpoint
+  - Removed writable `status` from scheduled-messages PATCH
+  - Added null guard to `requireAdmin` middleware
+  - Sanitized internal error details in twilio-history sync response
+- Updated contacts-route tests for new error envelope format (129/129 pass)
+- 3 commits pushed: API standardization, format fix, test updates
+
+**Diagram:**
+```
+Before:                          After:
+res.status(400)                  apiError(res, 400,
+  .json({ error: "msg" })         'validation_error', 'msg')
+                                      ↓
+14 route files ───────────►  { error: { code, message } }
+
+New shared modules:
+  api/utils/sanitize.js      ← sanitizeSearch(input)
+  api/utils/responses.js     ← apiError(res, status, code, msg)
+  api/middleware/requireAdmin.js ← role guard
+
+List endpoints now return:
+  { data: [...], meta: { total, page, per_page, total_pages } }
+```
+
+**Current State:**
+- All API routes standardized, 129/129 tests pass, CI green
+- Branch: `chore/claude-reviews-and-ralph-loop` (3 new commits)
+- Deferred: exec_sql RPC cleanup, login rate limiting, phone variant .or() injection, frontend error envelope migration
+
+**Issues:**
+- Frontend (SvelteKit) still reads `response.error` as string in some places — needs migration to `response.error.message`
+- 3 GitHub Dependabot vulnerabilities on default branch (2 high, 1 low) — unrelated to this work
+
+**Next Steps:**
+- Migrate SvelteKit frontend to handle new `{ error: { code, message } }` format
+- Replace `exec_sql` RPC in contacts.js with typed DB function
+- Add `express-rate-limit` to login endpoint
+- Refactor phone variant `.or()` filters to chained `.eq()` calls
+
+---
+
 ## Session — 2026-02-24 (Session 61)
 **Focus:** Contact dedup/merge review UI (US-BL1)
 
