@@ -26,6 +26,9 @@ nul
 !.env.example
 !.env.test
 
+# Service account keys (secrets — NEVER commit)
+*service*key*.json
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
