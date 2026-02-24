@@ -1,3 +1,59 @@
+## Session — 2026-02-23 (Session 63, continued)
+**Focus:** API standardization wrap-up, merge to main, cleanup
+
+**Accomplished:**
+- Completed Fix #5 (pagination) on 6 list endpoints: services, auto-replies, templates, broadcasts, settings/extensions, settings/routing
+- Ran code-reviewer and security-reviewer agents in parallel — found 3 high + 4 medium issues
+- Fixed all review findings:
+  - `requireAdmin` null guard (crash if req.user undefined)
+  - Added `requireAdmin` to broadcasts CUD+send, templates CUD, auto-replies CUD, calls PATCH, contacts merge
+  - Removed camelCase/snake_case collision in broadcasts PATCH + added empty-update guard
+  - Fixed templates GET /:id mapping all errors to 404
+  - Added Array.isArray guard on auto-replies keyword validation
+  - Normalized auth login error message (prevents account enumeration)
+  - Added sort field allowlist on calls (prevents PostgREST injection)
+  - Removed writable `status` from scheduled-messages PATCH
+  - Sanitized twilio-history sync error response
+  - Capped search input to 200 chars + stripped LIKE wildcards (`%`, `_`)
+- Updated 3 test assertions for new error envelope format (129/129 pass)
+- Merged `chore/claude-reviews-and-ralph-loop` to `main` (fast-forward), deleted branch
+- Added `*.mkv`, `*.mp4`, `*.mov` to `.gitignore` (design reference videos)
+- Committed previously-unstaged TextMagic content-based dedup function
+
+**Diagram:**
+```
+Branch lifecycle:
+  chore/claude-reviews-and-ralph-loop
+    ├─ e27c6d9  [api] Standardize all API routes
+    ├─ fba139f  [config] Format sync-patients script
+    ├─ 3676f34  [tests] Update contacts tests for new error envelope
+    └─ 1c07299  [docs] Update SESSION_NOTES
+          ↓ fast-forward merge
+  main ← c7dd69b  [config] .gitignore + TextMagic dedup
+
+  Branch deleted (local + remote) ✓
+```
+
+**Current State:**
+- `main` branch, clean working tree, all pushed
+- 195 tests pass (129 vitest + 66 node:test), CI green
+- All API routes standardized with consistent error envelope, pagination, auth guards
+- Render auto-deploying from main
+
+**Issues:**
+- Frontend (SvelteKit) still reads `response.error` as string in some places — needs migration to `response.error.message`
+- 3 GitHub Dependabot vulnerabilities (2 high, 1 low) — unrelated to this work
+- `exec_sql` RPC in contacts.js should be replaced with typed DB function
+- Phone variant `.or()` filters in messages.js and twilio-history.js need refactor
+
+**Next Steps:**
+- Migrate SvelteKit frontend to handle `{ error: { code, message } }` format
+- Add `express-rate-limit` to login endpoint
+- Replace `exec_sql` RPC with typed function
+- Refactor phone `.or()` filters to chained `.eq()` calls
+
+---
+
 ## Session — 2026-02-23 (Session 63)
 **Focus:** Fix 3 production issues — wrong Twilio from number, message sync gaps, TextMagic reverse sync
 
