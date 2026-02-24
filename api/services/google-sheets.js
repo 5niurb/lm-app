@@ -1,9 +1,13 @@
 /**
  * Google Sheets API service — read/write access via service account.
  *
- * Env vars:
- *   GOOGLE_SERVICE_ACCOUNT_KEY_PATH — path to service account JSON key file
- *   GOOGLE_SPREADSHEET_ID — spreadsheet ID (extracted from URL or set directly)
+ * Auth (checked in order):
+ *   1. GOOGLE_SERVICE_ACCOUNT_JSON — JSON key as a string (for Render/cloud)
+ *   2. GOOGLE_SERVICE_ACCOUNT_KEY_PATH — path to JSON key file
+ *   3. Auto-detect local key file in project root
+ *
+ * Other env vars:
+ *   GOOGLE_SPREADSHEET_ID — spreadsheet ID (defaults to LeMed Contacts)
  *
  * The service account email must be shared as Editor on the target spreadsheet.
  */
@@ -42,22 +46,30 @@ let sheetsClient = null;
 
 /**
  * Get an authenticated Google Sheets client (singleton).
+ * Prefers GOOGLE_SERVICE_ACCOUNT_JSON env var (for cloud),
+ * falls back to key file on disk (for local dev).
  * @returns {import('googleapis').sheets_v4.Sheets}
  */
 export function getSheetsClient() {
 	if (sheetsClient) return sheetsClient;
 
-	const keyFile = resolveKeyFile();
-	if (!keyFile) {
-		throw new Error(
-			'Google service account key not found. Set GOOGLE_SERVICE_ACCOUNT_KEY_PATH or place key file in project root.'
-		);
-	}
+	const scopes = ['https://www.googleapis.com/auth/spreadsheets'];
+	let auth;
 
-	const auth = new google.auth.GoogleAuth({
-		keyFile,
-		scopes: ['https://www.googleapis.com/auth/spreadsheets']
-	});
+	// Option 1: JSON key as env var string (Render / cloud)
+	if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+		const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+		auth = new google.auth.GoogleAuth({ credentials, scopes });
+	} else {
+		// Option 2: Key file on disk (local dev)
+		const keyFile = resolveKeyFile();
+		if (!keyFile) {
+			throw new Error(
+				'Google service account key not found. Set GOOGLE_SERVICE_ACCOUNT_JSON env var or GOOGLE_SERVICE_ACCOUNT_KEY_PATH.'
+			);
+		}
+		auth = new google.auth.GoogleAuth({ keyFile, scopes });
+	}
 
 	sheetsClient = google.sheets({ version: 'v4', auth });
 	return sheetsClient;
