@@ -2,24 +2,14 @@ import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { sanitizeSearch } from '../utils/sanitize.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
 // All service routes require authentication
 router.use(verifyToken);
-
-/** Strip characters that could inject additional filter clauses in Supabase .or() */
-function sanitizeSearch(input) {
-	return String(input).replace(/[,.()[\]{}]/g, '');
-}
-
-/** Admin-only guard middleware */
-function requireAdmin(req, res, next) {
-	if (req.user.role !== 'admin') {
-		return res.status(403).json({ error: 'Admin access required' });
-	}
-	next();
-}
 
 // =============================================================================
 // SERVICE CONTENT — literal /content/ routes MUST come before /:id params
@@ -43,20 +33,20 @@ router.get('/content/:contentId', logAction('service_content.read'), async (req,
 			.single();
 
 		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Content not found' });
+		if (!data) return apiError(res, 404, 'not_found', 'Content not found');
 
 		res.json({ data });
 	} catch (err) {
 		console.error('Service content read error:', err.message);
-		res.status(500).json({ error: 'Failed to load content' });
+		return apiError(res, 500, 'server_error', 'Failed to load content');
 	}
 });
 
 /**
- * PUT /api/services/content/:contentId
+ * PATCH /api/services/content/:contentId
  * Update a content block (admin only).
  */
-router.put(
+router.patch(
 	'/content/:contentId',
 	requireAdmin,
 	logAction('service_content.update'),
@@ -72,7 +62,7 @@ router.put(
 			if (is_active !== undefined) updates.is_active = is_active;
 
 			if (Object.keys(updates).length === 0) {
-				return res.status(400).json({ error: 'No fields to update' });
+				return apiError(res, 400, 'validation_error', 'No fields to update');
 			}
 
 			// Bump version on content change
@@ -95,12 +85,12 @@ router.put(
 				.single();
 
 			if (error) throw error;
-			if (!data) return res.status(404).json({ error: 'Content not found' });
+			if (!data) return apiError(res, 404, 'not_found', 'Content not found');
 
 			res.json({ data });
 		} catch (err) {
 			console.error('Service content update error:', err.message);
-			res.status(500).json({ error: 'Failed to update content' });
+			return apiError(res, 500, 'server_error', 'Failed to update content');
 		}
 	}
 );
@@ -124,7 +114,7 @@ router.delete(
 			res.status(204).end();
 		} catch (err) {
 			console.error('Service content delete error:', err.message);
-			res.status(500).json({ error: 'Failed to delete content' });
+			return apiError(res, 500, 'server_error', 'Failed to delete content');
 		}
 	}
 );
@@ -141,7 +131,11 @@ router.delete(
  */
 router.get('/', logAction('services.list'), async (req, res) => {
 	try {
-		let query = supabaseAdmin.from('services').select('*');
+		const page = Math.max(1, parseInt(req.query.page) || 1);
+		const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page) || 50));
+		const offset = (page - 1) * per_page;
+
+		let query = supabaseAdmin.from('services').select('*', { count: 'exact' });
 
 		if (req.query.category) {
 			query = query.eq('category', req.query.category);
@@ -154,15 +148,18 @@ router.get('/', logAction('services.list'), async (req, res) => {
 			query = query.or(`name.ilike.%${s}%,description.ilike.%${s}%`);
 		}
 
-		query = query.order('sort_order', { ascending: true });
+		query = query.order('sort_order', { ascending: true }).range(offset, offset + per_page - 1);
 
-		const { data, error } = await query;
+		const { data, count, error } = await query;
 		if (error) throw error;
 
-		res.json({ data: data || [] });
+		res.json({
+			data: data || [],
+			meta: { total: count, page, per_page, total_pages: Math.ceil((count || 0) / per_page) }
+		});
 	} catch (err) {
 		console.error('Services list error:', err.message);
-		res.status(500).json({ error: 'Failed to load services' });
+		return apiError(res, 500, 'server_error', 'Failed to load services');
 	}
 });
 
@@ -184,12 +181,12 @@ router.get('/:id', logAction('services.read'), async (req, res) => {
 			.single();
 
 		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Service not found' });
+		if (!data) return apiError(res, 404, 'not_found', 'Service not found');
 
 		res.json({ data });
 	} catch (err) {
 		console.error('Service read error:', err.message);
-		res.status(500).json({ error: 'Failed to load service' });
+		return apiError(res, 500, 'server_error', 'Failed to load service');
 	}
 });
 
@@ -211,7 +208,7 @@ router.post('/', requireAdmin, logAction('services.create'), async (req, res) =>
 	} = req.body;
 
 	if (!name || !slug || !category) {
-		return res.status(400).json({ error: 'Name, slug, and category are required' });
+		return apiError(res, 400, 'validation_error', 'Name, slug, and category are required');
 	}
 
 	try {
@@ -236,17 +233,17 @@ router.post('/', requireAdmin, logAction('services.create'), async (req, res) =>
 	} catch (err) {
 		console.error('Service create error:', err.message);
 		if (err.message?.includes('unique') || err.message?.includes('duplicate')) {
-			return res.status(409).json({ error: 'A service with this slug already exists' });
+			return apiError(res, 409, 'conflict', 'A service with this slug already exists');
 		}
-		res.status(500).json({ error: 'Failed to create service' });
+		return apiError(res, 500, 'server_error', 'Failed to create service');
 	}
 });
 
 /**
- * PUT /api/services/:id
+ * PATCH /api/services/:id
  * Update a service (admin only).
  */
-router.put('/:id', requireAdmin, logAction('services.update'), async (req, res) => {
+router.patch('/:id', requireAdmin, logAction('services.update'), async (req, res) => {
 	const {
 		name,
 		slug,
@@ -272,7 +269,7 @@ router.put('/:id', requireAdmin, logAction('services.update'), async (req, res) 
 		if (metadata !== undefined) updates.metadata = metadata;
 
 		if (Object.keys(updates).length === 0) {
-			return res.status(400).json({ error: 'No fields to update' });
+			return apiError(res, 400, 'validation_error', 'No fields to update');
 		}
 
 		const { data, error } = await supabaseAdmin
@@ -283,12 +280,12 @@ router.put('/:id', requireAdmin, logAction('services.update'), async (req, res) 
 			.single();
 
 		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Service not found' });
+		if (!data) return apiError(res, 404, 'not_found', 'Service not found');
 
 		res.json({ data });
 	} catch (err) {
 		console.error('Service update error:', err.message);
-		res.status(500).json({ error: 'Failed to update service' });
+		return apiError(res, 500, 'server_error', 'Failed to update service');
 	}
 });
 
@@ -304,7 +301,7 @@ router.delete('/:id', requireAdmin, logAction('services.delete'), async (req, re
 		res.status(204).end();
 	} catch (err) {
 		console.error('Service delete error:', err.message);
-		res.status(500).json({ error: 'Failed to delete service' });
+		return apiError(res, 500, 'server_error', 'Failed to delete service');
 	}
 });
 
@@ -337,7 +334,7 @@ router.get('/:serviceId/content', logAction('service_content.list'), async (req,
 		res.json({ data: data || [] });
 	} catch (err) {
 		console.error('Service content list error:', err.message);
-		res.status(500).json({ error: 'Failed to load service content' });
+		return apiError(res, 500, 'server_error', 'Failed to load service content');
 	}
 });
 
@@ -353,7 +350,7 @@ router.post(
 		const { content_type, title, summary, page_slug, content_json, is_active } = req.body;
 
 		if (!content_type || !title) {
-			return res.status(400).json({ error: 'content_type and title are required' });
+			return apiError(res, 400, 'validation_error', 'content_type and title are required');
 		}
 
 		try {
@@ -377,11 +374,14 @@ router.post(
 		} catch (err) {
 			console.error('Service content create error:', err.message);
 			if (err.message?.includes('idx_service_content_uniq')) {
-				return res
-					.status(409)
-					.json({ error: 'An active content block of this type already exists for this service' });
+				return apiError(
+					res,
+					409,
+					'conflict',
+					'An active content block of this type already exists for this service'
+				);
 			}
-			res.status(500).json({ error: 'Failed to create content' });
+			return apiError(res, 500, 'server_error', 'Failed to create content');
 		}
 	}
 );

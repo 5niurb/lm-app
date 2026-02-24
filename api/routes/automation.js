@@ -3,19 +3,13 @@ import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { executeSequence, processScheduledAutomation } from '../services/automation.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
 // All automation routes require authentication
 router.use(verifyToken);
-
-/** Admin-only guard middleware */
-function requireAdmin(req, res, next) {
-	if (req.user.role !== 'admin') {
-		return res.status(403).json({ error: 'Admin access required' });
-	}
-	next();
-}
 
 // =============================================================================
 // AUTOMATION SEQUENCES (message templates + timing config)
@@ -53,7 +47,7 @@ router.get('/sequences', logAction('automation.sequences.list'), async (req, res
 		res.json({ data: data || [] });
 	} catch (err) {
 		console.error('Automation sequences list error:', err.message);
-		res.status(500).json({ error: 'Failed to load automation sequences' });
+		return apiError(res, 500, 'server_error', 'Failed to load automation sequences');
 	}
 });
 
@@ -76,12 +70,12 @@ router.get('/sequences/:id', logAction('automation.sequences.read'), async (req,
 			.single();
 
 		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Sequence not found' });
+		if (!data) return apiError(res, 404, 'not_found', 'Sequence not found');
 
 		res.json({ data });
 	} catch (err) {
 		console.error('Automation sequence read error:', err.message);
-		res.status(500).json({ error: 'Failed to load sequence' });
+		return apiError(res, 500, 'server_error', 'Failed to load sequence');
 	}
 });
 
@@ -110,9 +104,12 @@ router.post(
 		} = req.body;
 
 		if (!name || !trigger_event || !timing_offset || !template_type) {
-			return res
-				.status(400)
-				.json({ error: 'name, trigger_event, timing_offset, and template_type are required' });
+			return apiError(
+				res,
+				400,
+				'validation_error',
+				'name, trigger_event, timing_offset, and template_type are required'
+			);
 		}
 
 		try {
@@ -145,16 +142,16 @@ router.post(
 			res.status(201).json({ data });
 		} catch (err) {
 			console.error('Automation sequence create error:', err.message);
-			res.status(500).json({ error: 'Failed to create sequence' });
+			return apiError(res, 500, 'server_error', 'Failed to create sequence');
 		}
 	}
 );
 
 /**
- * PUT /api/automation/sequences/:id
+ * PATCH /api/automation/sequences/:id
  * Update an automation sequence (admin only).
  */
-router.put(
+router.patch(
 	'/sequences/:id',
 	requireAdmin,
 	logAction('automation.sequences.update'),
@@ -190,7 +187,7 @@ router.put(
 			if (sort_order !== undefined) updates.sort_order = sort_order;
 
 			if (Object.keys(updates).length === 0) {
-				return res.status(400).json({ error: 'No fields to update' });
+				return apiError(res, 400, 'validation_error', 'No fields to update');
 			}
 
 			const { data, error } = await supabaseAdmin
@@ -207,12 +204,12 @@ router.put(
 				.single();
 
 			if (error) throw error;
-			if (!data) return res.status(404).json({ error: 'Sequence not found' });
+			if (!data) return apiError(res, 404, 'not_found', 'Sequence not found');
 
 			res.json({ data });
 		} catch (err) {
 			console.error('Automation sequence update error:', err.message);
-			res.status(500).json({ error: 'Failed to update sequence' });
+			return apiError(res, 500, 'server_error', 'Failed to update sequence');
 		}
 	}
 );
@@ -236,7 +233,7 @@ router.delete(
 			res.status(204).end();
 		} catch (err) {
 			console.error('Automation sequence delete error:', err.message);
-			res.status(500).json({ error: 'Failed to delete sequence' });
+			return apiError(res, 500, 'server_error', 'Failed to delete sequence');
 		}
 	}
 );
@@ -254,7 +251,7 @@ router.post(
 		const { items } = req.body;
 
 		if (!items || !Array.isArray(items)) {
-			return res.status(400).json({ error: 'items array is required' });
+			return apiError(res, 400, 'validation_error', 'items array is required');
 		}
 
 		try {
@@ -270,7 +267,7 @@ router.post(
 			res.json({ success: true });
 		} catch (err) {
 			console.error('Automation reorder error:', err.message);
-			res.status(500).json({ error: 'Failed to reorder sequences' });
+			return apiError(res, 500, 'server_error', 'Failed to reorder sequences');
 		}
 	}
 );
@@ -329,7 +326,7 @@ router.get('/log', logAction('automation.log.list'), async (req, res) => {
 		});
 	} catch (err) {
 		console.error('Automation log list error:', err.message);
-		res.status(500).json({ error: 'Failed to load automation log' });
+		return apiError(res, 500, 'server_error', 'Failed to load automation log');
 	}
 });
 
@@ -389,7 +386,7 @@ router.get('/stats', logAction('automation.stats'), async (req, res) => {
 		});
 	} catch (err) {
 		console.error('Automation stats error:', err.message);
-		res.status(500).json({ error: 'Failed to load automation stats' });
+		return apiError(res, 500, 'server_error', 'Failed to load automation stats');
 	}
 });
 
@@ -403,7 +400,7 @@ router.post('/trigger', requireAdmin, logAction('automation.trigger'), async (re
 	const { sequence_id, client_id, dry_run } = req.body;
 
 	if (!sequence_id || !client_id) {
-		return res.status(400).json({ error: 'sequence_id and client_id are required' });
+		return apiError(res, 400, 'validation_error', 'sequence_id and client_id are required');
 	}
 
 	try {
@@ -420,7 +417,7 @@ router.post('/trigger', requireAdmin, logAction('automation.trigger'), async (re
 			.single();
 
 		if (seqErr || !sequence) {
-			return res.status(404).json({ error: 'Sequence not found' });
+			return apiError(res, 404, 'not_found', 'Sequence not found');
 		}
 
 		// Get the client
@@ -431,7 +428,7 @@ router.post('/trigger', requireAdmin, logAction('automation.trigger'), async (re
 			.single();
 
 		if (clientErr || !client) {
-			return res.status(404).json({ error: 'Client not found' });
+			return apiError(res, 404, 'not_found', 'Client not found');
 		}
 
 		// Dry run — return what would be sent without actually sending
@@ -463,18 +460,18 @@ router.post('/trigger', requireAdmin, logAction('automation.trigger'), async (re
 			manual: true
 		});
 
-		const sent = results.logEntries.filter((e) => e.status === 'sent').length;
-		const failed = results.logEntries.filter((e) => e.status === 'failed').length;
+		const sentCount = results.logEntries.filter((e) => e.status === 'sent').length;
+		const failedCount = results.logEntries.filter((e) => e.status === 'failed').length;
 
 		res.status(201).json({
 			data: results.logEntries,
 			sms: results.smsResult || null,
 			email: results.emailResult || null,
-			message: `Sequence "${sequence.name}" executed for ${client.full_name}: ${sent} sent, ${failed} failed.`
+			message: `Sequence "${sequence.name}" executed for ${client.full_name}: ${sentCount} sent, ${failedCount} failed.`
 		});
 	} catch (err) {
 		console.error('Automation trigger error:', err.message);
-		res.status(500).json({ error: 'Failed to trigger automation' });
+		return apiError(res, 500, 'server_error', 'Failed to trigger automation');
 	}
 });
 
@@ -492,7 +489,7 @@ router.post('/process', requireAdmin, logAction('automation.process'), async (re
 		});
 	} catch (err) {
 		console.error('Automation process error:', err.message);
-		res.status(500).json({ error: 'Failed to process automation queue' });
+		return apiError(res, 500, 'server_error', 'Failed to process automation queue');
 	}
 });
 
@@ -545,7 +542,7 @@ router.get('/consents', logAction('automation.consents.list'), async (req, res) 
 		});
 	} catch (err) {
 		console.error('Consent submissions list error:', err.message);
-		res.status(500).json({ error: 'Failed to load consent submissions' });
+		return apiError(res, 500, 'server_error', 'Failed to load consent submissions');
 	}
 });
 
@@ -569,12 +566,12 @@ router.get('/consents/:id', logAction('automation.consents.read'), async (req, r
 			.single();
 
 		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Consent submission not found' });
+		if (!data) return apiError(res, 404, 'not_found', 'Consent submission not found');
 
 		res.json({ data });
 	} catch (err) {
 		console.error('Consent submission read error:', err.message);
-		res.status(500).json({ error: 'Failed to load consent submission' });
+		return apiError(res, 500, 'server_error', 'Failed to load consent submission');
 	}
 });
 
@@ -594,9 +591,12 @@ router.patch(
 
 		const validStatuses = ['completed', 'voided', 'expired', 'pending'];
 		if (!status || !validStatuses.includes(status)) {
-			return res
-				.status(400)
-				.json({ error: `status is required and must be one of: ${validStatuses.join(', ')}` });
+			return apiError(
+				res,
+				400,
+				'validation_error',
+				`status is required and must be one of: ${validStatuses.join(', ')}`
+			);
 		}
 
 		try {
@@ -615,12 +615,12 @@ router.patch(
 				.single();
 
 			if (error) throw error;
-			if (!data) return res.status(404).json({ error: 'Consent submission not found' });
+			if (!data) return apiError(res, 404, 'not_found', 'Consent submission not found');
 
 			res.json({ data });
 		} catch (err) {
 			console.error('Consent submission update error:', err.message);
-			res.status(500).json({ error: 'Failed to update consent submission' });
+			return apiError(res, 500, 'server_error', 'Failed to update consent submission');
 		}
 	}
 );

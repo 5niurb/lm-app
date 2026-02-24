@@ -3,6 +3,9 @@ import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { lookupContactByPhone } from '../services/phone-lookup.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { sanitizeSearch } from '../utils/sanitize.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
@@ -39,8 +42,9 @@ router.get('/', logAction('calls.list'), async (req, res) => {
 		query = query.eq('status', req.query.status);
 	}
 	if (req.query.search) {
+		const s = sanitizeSearch(req.query.search);
 		query = query.or(
-			`from_number.ilike.%${req.query.search}%,to_number.ilike.%${req.query.search}%,notes.ilike.%${req.query.search}%,caller_name.ilike.%${req.query.search}%`
+			`from_number.ilike.%${s}%,to_number.ilike.%${s}%,notes.ilike.%${s}%,caller_name.ilike.%${s}%`
 		);
 	}
 	// Filter by Twilio number
@@ -56,8 +60,16 @@ router.get('/', logAction('calls.list'), async (req, res) => {
 		query = query.lte('started_at', req.query.to);
 	}
 
-	// Sorting
-	const sortField = req.query.sort || 'started_at';
+	// Sorting (allowlist to prevent injection)
+	const CALLS_SORT_ALLOWLIST = [
+		'started_at',
+		'duration',
+		'direction',
+		'disposition',
+		'status',
+		'caller_name'
+	];
+	const sortField = CALLS_SORT_ALLOWLIST.includes(req.query.sort) ? req.query.sort : 'started_at';
 	const sortOrder = req.query.order === 'asc' ? true : false;
 	query = query.order(sortField, { ascending: sortOrder });
 
@@ -68,7 +80,7 @@ router.get('/', logAction('calls.list'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch call logs:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch call logs' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch call logs');
 	}
 
 	// Enrich rows missing contact info with live contact lookup
@@ -111,7 +123,7 @@ router.get('/stats', logAction('calls.stats'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch call stats:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch call stats' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch call stats');
 	}
 
 	const calls = data || [];
@@ -159,7 +171,7 @@ router.get('/stats/daily', logAction('calls.stats.daily'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch daily stats:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch daily stats' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch daily stats');
 	}
 
 	// Group by date
@@ -194,7 +206,7 @@ router.get('/:id', logAction('calls.read'), async (req, res) => {
 	const { data, error } = await supabaseAdmin.from('call_logs').select('*').eq('id', id).single();
 
 	if (error || !data) {
-		return res.status(404).json({ error: 'Call log not found' });
+		return apiError(res, 404, 'not_found', 'Call log not found');
 	}
 
 	return res.json({ data });
@@ -208,7 +220,7 @@ router.post('/', logAction('calls.create'), async (req, res) => {
 	const { direction, from_number, to_number, notes, tags, disposition } = req.body;
 
 	if (!from_number && !to_number) {
-		return res.status(400).json({ error: 'At least one phone number is required' });
+		return apiError(res, 400, 'validation_error', 'At least one phone number is required');
 	}
 
 	const { data, error } = await supabaseAdmin
@@ -229,7 +241,7 @@ router.post('/', logAction('calls.create'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to create call log:', error.message);
-		return res.status(500).json({ error: 'Failed to create call log' });
+		return apiError(res, 500, 'server_error', 'Failed to create call log');
 	}
 
 	return res.status(201).json({ data });
@@ -240,7 +252,7 @@ router.post('/', logAction('calls.create'), async (req, res) => {
  * Update an existing call log entry (notes, tags, disposition).
  * Admin only.
  */
-router.patch('/:id', logAction('calls.update'), async (req, res) => {
+router.patch('/:id', requireAdmin, logAction('calls.update'), async (req, res) => {
 	const { id } = req.params;
 	const { notes, tags, disposition, handled_by } = req.body;
 
@@ -252,7 +264,7 @@ router.patch('/:id', logAction('calls.update'), async (req, res) => {
 	if (handled_by !== undefined) update.handled_by = handled_by;
 
 	if (Object.keys(update).length === 0) {
-		return res.status(400).json({ error: 'No fields to update' });
+		return apiError(res, 400, 'validation_error', 'No fields to update');
 	}
 
 	const { data, error } = await supabaseAdmin
@@ -264,7 +276,7 @@ router.patch('/:id', logAction('calls.update'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to update call log:', error.message);
-		return res.status(500).json({ error: 'Failed to update call log' });
+		return apiError(res, 500, 'server_error', 'Failed to update call log');
 	}
 
 	return res.json({ data });

@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
+import { sanitizeSearch } from '../utils/sanitize.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
@@ -41,9 +43,8 @@ router.get('/', logAction('voicemails.list'), async (req, res) => {
 
 	// Search by phone number or transcription
 	if (req.query.search) {
-		query = query.or(
-			`from_number.ilike.%${req.query.search}%,transcription.ilike.%${req.query.search}%`
-		);
+		const s = sanitizeSearch(req.query.search);
+		query = query.or(`from_number.ilike.%${s}%,transcription.ilike.%${s}%`);
 	}
 
 	// Sort newest first
@@ -56,7 +57,7 @@ router.get('/', logAction('voicemails.list'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch voicemails:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch voicemails' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch voicemails');
 	}
 
 	return res.json({
@@ -79,7 +80,7 @@ router.get('/stats', logAction('voicemails.stats'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch voicemail stats:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch voicemail stats' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch voicemail stats');
 	}
 
 	const counts = {
@@ -118,7 +119,7 @@ router.get('/:id', logAction('voicemails.read'), async (req, res) => {
 		.single();
 
 	if (error || !data) {
-		return res.status(404).json({ error: 'Voicemail not found' });
+		return apiError(res, 404, 'not_found', 'Voicemail not found');
 	}
 
 	return res.json({ data });
@@ -140,11 +141,11 @@ router.get('/:id/recording', logAction('voicemails.playRecording'), async (req, 
 		.single();
 
 	if (error || !vm) {
-		return res.status(404).json({ error: 'Voicemail not found' });
+		return apiError(res, 404, 'not_found', 'Voicemail not found');
 	}
 
 	if (!vm.recording_url && !vm.recording_sid) {
-		return res.status(404).json({ error: 'No recording available' });
+		return apiError(res, 404, 'not_found', 'No recording available');
 	}
 
 	// Check Supabase Storage first (preserved recordings)
@@ -191,7 +192,7 @@ router.get('/:id/recording', logAction('voicemails.playRecording'), async (req, 
 
 		if (!twilioRes.ok) {
 			console.error(`Twilio recording fetch failed: ${twilioRes.status} ${twilioRes.statusText}`);
-			return res.status(502).json({ error: 'Failed to fetch recording from Twilio' });
+			return apiError(res, 502, 'bad_gateway', 'Failed to fetch recording from Twilio');
 		}
 
 		// Stream the audio back to the client
@@ -216,7 +217,7 @@ router.get('/:id/recording', logAction('voicemails.playRecording'), async (req, 
 	} catch (e) {
 		console.error('Recording proxy error:', e.message);
 		if (!res.headersSent) {
-			return res.status(500).json({ error: 'Failed to proxy recording' });
+			return apiError(res, 500, 'server_error', 'Failed to proxy recording');
 		}
 	}
 });
@@ -240,7 +241,7 @@ router.patch('/:id/read', logAction('voicemails.markRead'), async (req, res) => 
 
 	if (error) {
 		console.error('Failed to mark voicemail as read:', error.message);
-		return res.status(500).json({ error: 'Failed to mark voicemail as read' });
+		return apiError(res, 500, 'server_error', 'Failed to mark voicemail as read');
 	}
 
 	return res.json({ data });
@@ -262,7 +263,7 @@ router.patch('/:id/unread', logAction('voicemails.markUnread'), async (req, res)
 
 	if (error) {
 		console.error('Failed to mark voicemail as unread:', error.message);
-		return res.status(500).json({ error: 'Failed to mark voicemail as unread' });
+		return apiError(res, 500, 'server_error', 'Failed to mark voicemail as unread');
 	}
 
 	return res.json({ data });
@@ -282,7 +283,7 @@ router.patch('/:id/save', logAction('voicemails.save'), async (req, res) => {
 		.single();
 
 	if (fetchErr || !vm) {
-		return res.status(404).json({ error: 'Voicemail not found' });
+		return apiError(res, 404, 'not_found', 'Voicemail not found');
 	}
 
 	if (vm.preserved && vm.storage_path) {
@@ -301,7 +302,7 @@ router.patch('/:id/save', logAction('voicemails.save'), async (req, res) => {
 	}
 
 	if (!recordingUrl) {
-		return res.status(404).json({ error: 'No recording URL available' });
+		return apiError(res, 404, 'not_found', 'No recording URL available');
 	}
 
 	try {
@@ -312,7 +313,7 @@ router.patch('/:id/save', logAction('voicemails.save'), async (req, res) => {
 		});
 
 		if (!twilioRes.ok) {
-			return res.status(502).json({ error: 'Failed to download from Twilio' });
+			return apiError(res, 502, 'bad_gateway', 'Failed to download from Twilio');
 		}
 
 		const audioBuffer = Buffer.from(await twilioRes.arrayBuffer());
@@ -326,7 +327,7 @@ router.patch('/:id/save', logAction('voicemails.save'), async (req, res) => {
 
 		if (uploadErr) {
 			console.error('Supabase Storage upload failed:', uploadErr.message);
-			return res.status(500).json({ error: 'Failed to upload to storage' });
+			return apiError(res, 500, 'server_error', 'Failed to upload to storage');
 		}
 
 		const { data: updated, error: updateErr } = await supabaseAdmin
@@ -338,13 +339,13 @@ router.patch('/:id/save', logAction('voicemails.save'), async (req, res) => {
 
 		if (updateErr) {
 			console.error('Failed to update voicemail:', updateErr.message);
-			return res.status(500).json({ error: 'Saved to storage but failed to update DB' });
+			return apiError(res, 500, 'server_error', 'Saved to storage but failed to update DB');
 		}
 
 		return res.json({ data: updated });
 	} catch (e) {
 		console.error('Voicemail save error:', e.message);
-		return res.status(500).json({ error: 'Failed to preserve voicemail' });
+		return apiError(res, 500, 'server_error', 'Failed to preserve voicemail');
 	}
 });
 
@@ -362,7 +363,7 @@ router.delete('/:id', logAction('voicemails.delete'), async (req, res) => {
 		.single();
 
 	if (fetchErr || !vm) {
-		return res.status(404).json({ error: 'Voicemail not found' });
+		return apiError(res, 404, 'not_found', 'Voicemail not found');
 	}
 
 	if (vm.storage_path) {
@@ -396,10 +397,10 @@ router.delete('/:id', logAction('voicemails.delete'), async (req, res) => {
 
 	if (deleteErr) {
 		console.error('Failed to delete voicemail from DB:', deleteErr.message);
-		return res.status(500).json({ error: 'Failed to delete voicemail' });
+		return apiError(res, 500, 'server_error', 'Failed to delete voicemail');
 	}
 
-	return res.json({ success: true });
+	return res.status(204).end();
 });
 
 export default router;

@@ -8,6 +8,8 @@ import { supabaseAdmin } from '../services/supabase.js';
 import { findConversation, normalizePhone } from '../services/phone-lookup.js';
 import { resolveTags } from '../services/tag-resolver.js';
 import { generateSuggestions } from '../services/ai-suggest.js';
+import { sanitizeSearch } from '../utils/sanitize.js';
+import { apiError } from '../utils/responses.js';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MIME_TO_EXT = {
@@ -29,11 +31,6 @@ const upload = multer({
 });
 
 const router = Router();
-
-/** Sanitize search input for Supabase .or() filter */
-function sanitizeSearch(input) {
-	return String(input).replace(/[,.()[\]{}]/g, '');
-}
 
 // All message routes require authentication
 router.use(verifyToken);
@@ -75,7 +72,7 @@ router.get('/conversations', logAction('messages.list'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch conversations:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch conversations' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch conversations');
 	}
 
 	return res.json({ data: data || [], count: count || 0, page, pageSize });
@@ -107,7 +104,7 @@ router.get('/conversations/:id', logAction('messages.read'), async (req, res) =>
 
 	if (error) {
 		console.error('Failed to fetch messages:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch messages' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch messages');
 	}
 
 	// Reverse to chronological order (oldest → newest) for display
@@ -145,7 +142,7 @@ router.get('/stats', logAction('messages.stats'), async (req, res) => {
 router.get('/lookup', logAction('messages.lookup'), async (req, res) => {
 	const phone = req.query.phone;
 	if (!phone) {
-		return res.status(400).json({ error: 'Phone number is required' });
+		return apiError(res, 400, 'validation_error', 'Phone number is required');
 	}
 
 	// Normalize phone number variants for matching
@@ -192,7 +189,7 @@ router.post(
 	(req, res, next) => {
 		upload.single('image')(req, res, (err) => {
 			if (err) {
-				return res.status(400).json({ error: err.message || 'Invalid file upload' });
+				return apiError(res, 400, 'validation_error', err.message || 'Invalid file upload');
 			}
 			next();
 		});
@@ -202,7 +199,7 @@ router.post(
 		const { to, body, conversationId } = req.body;
 
 		if (!to || (!body && !req.file)) {
-			return res.status(400).json({ error: '"to" is required, plus "body" or an image' });
+			return apiError(res, 400, 'validation_error', '"to" is required, plus "body" or an image');
 		}
 
 		const toNumber = normalizePhone(to);
@@ -214,7 +211,7 @@ router.post(
 			process.env.TWILIO_MAIN_PHONE_NUMBER;
 
 		if (!fromNumber) {
-			return res.status(500).json({ error: 'No Twilio phone number configured' });
+			return apiError(res, 500, 'server_error', 'No Twilio phone number configured');
 		}
 
 		// Resolve dynamic tags (e.g. {{first_name}}) before sending
@@ -240,7 +237,7 @@ router.post(
 
 				if (uploadErr) {
 					console.error('Supabase Storage upload failed:', uploadErr.message);
-					return res.status(500).json({ error: 'Failed to upload image' });
+					return apiError(res, 500, 'server_error', 'Failed to upload image');
 				}
 
 				// Signed URL — Twilio fetches once at send time; 1-hour expiry is plenty
@@ -249,7 +246,7 @@ router.post(
 					.createSignedUrl(storagePath, 3600);
 				if (signErr || !signedData?.signedUrl) {
 					console.error('Failed to create signed URL:', signErr?.message);
-					return res.status(500).json({ error: 'Failed to generate image URL' });
+					return apiError(res, 500, 'server_error', 'Failed to generate image URL');
 				}
 				mediaUrl = signedData.signedUrl;
 			}
@@ -347,7 +344,7 @@ router.post(
 					.catch(() => {});
 			}
 			console.error('Failed to send message:', err.message);
-			return res.status(500).json({ error: 'Failed to send message' });
+			return apiError(res, 500, 'server_error', 'Failed to send message');
 		}
 	}
 );
@@ -362,11 +359,11 @@ router.post('/ai-suggest', logAction('messages.ai-suggest'), async (req, res) =>
 	const { conversationId } = req.body;
 
 	if (!conversationId) {
-		return res.status(400).json({ error: '"conversationId" is required' });
+		return apiError(res, 400, 'validation_error', '"conversationId" is required');
 	}
 
 	if (!process.env.ANTHROPIC_API_KEY) {
-		return res.status(503).json({ error: 'AI features not configured' });
+		return apiError(res, 503, 'service_unavailable', 'AI features not configured');
 	}
 
 	try {
@@ -374,10 +371,10 @@ router.post('/ai-suggest', logAction('messages.ai-suggest'), async (req, res) =>
 		return res.json({ data: result });
 	} catch (err) {
 		if (err.status === 429) {
-			return res.status(429).json({ error: err.message });
+			return apiError(res, 429, 'rate_limited', err.message);
 		}
 		console.error('AI suggest failed:', err.message);
-		return res.status(500).json({ error: 'Failed to generate suggestions' });
+		return apiError(res, 500, 'server_error', 'Failed to generate suggestions');
 	}
 });
 
@@ -392,7 +389,7 @@ router.post('/note', logAction('messages.note'), async (req, res) => {
 	const { conversationId, body } = req.body;
 
 	if (!conversationId || !body) {
-		return res.status(400).json({ error: '"conversationId" and "body" are required' });
+		return apiError(res, 400, 'validation_error', '"conversationId" and "body" are required');
 	}
 
 	try {
@@ -412,7 +409,7 @@ router.post('/note', logAction('messages.note'), async (req, res) => {
 
 		if (noteErr) {
 			console.error('Failed to create internal note:', noteErr.message);
-			return res.status(500).json({ error: 'Failed to create internal note' });
+			return apiError(res, 500, 'server_error', 'Failed to create internal note');
 		}
 
 		// Update conversation last_at but NOT last_message (notes shouldn't show in preview)
@@ -424,7 +421,7 @@ router.post('/note', logAction('messages.note'), async (req, res) => {
 		return res.json({ data: note });
 	} catch (err) {
 		console.error('Failed to create internal note:', err.message);
-		return res.status(500).json({ error: 'Failed to create internal note' });
+		return apiError(res, 500, 'server_error', 'Failed to create internal note');
 	}
 });
 
@@ -459,7 +456,7 @@ router.get('/log', logAction('messages.log'), async (req, res) => {
 	}
 
 	if (req.query.search) {
-		const s = req.query.search.replace(/[,.()[\]{}]/g, '');
+		const s = sanitizeSearch(req.query.search);
 		query = query.or(`body.ilike.%${s}%,from_number.ilike.%${s}%,to_number.ilike.%${s}%`);
 	}
 
@@ -469,7 +466,7 @@ router.get('/log', logAction('messages.log'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch message log:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch message log' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch message log');
 	}
 
 	return res.json({ data: data || [], count: count || 0, page, pageSize });
@@ -487,7 +484,7 @@ router.post('/:id/react', logAction('messages.react'), async (req, res) => {
 	const { emoji } = req.body;
 
 	if (!emoji) {
-		return res.status(400).json({ error: 'emoji is required' });
+		return apiError(res, 400, 'validation_error', 'emoji is required');
 	}
 
 	try {
@@ -501,7 +498,7 @@ router.post('/:id/react', logAction('messages.react'), async (req, res) => {
 			.single();
 
 		if (msgErr || !msg) {
-			return res.status(404).json({ error: 'Message not found' });
+			return apiError(res, 404, 'not_found', 'Message not found');
 		}
 
 		// Append reaction to JSONB array
@@ -521,7 +518,7 @@ router.post('/:id/react', logAction('messages.react'), async (req, res) => {
 
 		if (updateErr) {
 			console.error('Failed to save reaction:', updateErr.message);
-			return res.status(500).json({ error: 'Failed to save reaction' });
+			return apiError(res, 500, 'server_error', 'Failed to save reaction');
 		}
 
 		// Send SMS reply with the reaction
@@ -568,7 +565,7 @@ router.post('/:id/react', logAction('messages.react'), async (req, res) => {
 		return res.json({ data: updated });
 	} catch (err) {
 		console.error('Failed to react to message:', err.message);
-		return res.status(500).json({ error: 'Failed to react to message' });
+		return apiError(res, 500, 'server_error', 'Failed to react to message');
 	}
 });
 
@@ -588,12 +585,12 @@ router.get('/:id/media/:index', logAction('messages.media'), async (req, res) =>
 		.single();
 
 	if (error || !msg) {
-		return res.status(404).json({ error: 'Message not found' });
+		return apiError(res, 404, 'not_found', 'Message not found');
 	}
 
 	const mediaUrls = msg.media_urls;
 	if (!Array.isArray(mediaUrls) || isNaN(idx) || idx < 0 || idx >= mediaUrls.length) {
-		return res.status(404).json({ error: 'Media not found at this index' });
+		return apiError(res, 404, 'not_found', 'Media not found at this index');
 	}
 
 	const mediaUrl = mediaUrls[idx];
@@ -602,10 +599,10 @@ router.get('/:id/media/:index', logAction('messages.media'), async (req, res) =>
 	try {
 		const parsed = new URL(mediaUrl);
 		if (!/^(api|media)\.twilio(cdn)?\.com$/.test(parsed.hostname)) {
-			return res.status(403).json({ error: 'Only Twilio media URLs can be proxied' });
+			return apiError(res, 403, 'forbidden', 'Only Twilio media URLs can be proxied');
 		}
 	} catch {
-		return res.status(400).json({ error: 'Invalid media URL' });
+		return apiError(res, 400, 'validation_error', 'Invalid media URL');
 	}
 
 	try {
@@ -620,7 +617,7 @@ router.get('/:id/media/:index', logAction('messages.media'), async (req, res) =>
 
 		if (!twilioRes.ok) {
 			console.error(`Twilio media fetch failed: ${twilioRes.status} ${twilioRes.statusText}`);
-			return res.status(502).json({ error: 'Failed to fetch media from Twilio' });
+			return apiError(res, 502, 'bad_gateway', 'Failed to fetch media from Twilio');
 		}
 
 		res.set('Content-Type', twilioRes.headers.get('content-type') || 'application/octet-stream');
@@ -641,7 +638,7 @@ router.get('/:id/media/:index', logAction('messages.media'), async (req, res) =>
 	} catch (e) {
 		console.error('Media proxy error:', e.message);
 		if (!res.headersSent) {
-			return res.status(502).json({ error: 'Failed to proxy media' });
+			return apiError(res, 502, 'bad_gateway', 'Failed to proxy media');
 		}
 	}
 });

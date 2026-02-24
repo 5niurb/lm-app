@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { supabase } from '../services/supabase.js';
 import { verifyToken } from '../middleware/auth.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
@@ -13,14 +14,14 @@ router.post('/login', async (req, res) => {
 	const { email, password } = req.body;
 
 	if (!email || !password) {
-		return res.status(400).json({ error: 'Email and password are required' });
+		return apiError(res, 400, 'validation_error', 'Email and password are required');
 	}
 
 	try {
 		const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
 		if (error) {
-			return res.status(401).json({ error: error.message });
+			return apiError(res, 401, 'unauthorized', 'Invalid email or password');
 		}
 
 		return res.json({
@@ -28,8 +29,8 @@ router.post('/login', async (req, res) => {
 			user: data.user
 		});
 	} catch (err) {
-		console.error('Login error:', err);
-		return res.status(500).json({ error: 'Internal server error' });
+		console.error('Login error:', err.message);
+		return apiError(res, 500, 'server_error', 'Internal server error');
 	}
 });
 
@@ -43,18 +44,18 @@ router.post('/verify-otp', async (req, res) => {
 	const { email, otp } = req.body;
 
 	if (!email || !otp) {
-		return res.status(400).json({ error: 'Email and OTP are required' });
+		return apiError(res, 400, 'validation_error', 'Email and OTP are required');
 	}
 
 	// OTP verification — dev bypass only in non-production
 	if (process.env.NODE_ENV === 'production') {
 		// TODO: Implement real OTP verification (check against stored OTP + expiry)
-		return res.status(501).json({ error: 'OTP verification not yet implemented' });
+		return apiError(res, 501, 'not_implemented', 'OTP verification not yet implemented');
 	}
 
 	// Dev-only bypass
 	if (otp !== '000000') {
-		return res.status(401).json({ error: 'Invalid or expired OTP' });
+		return apiError(res, 401, 'unauthorized', 'Invalid or expired OTP');
 	}
 
 	return res.json({
@@ -74,13 +75,13 @@ router.post('/logout', async (req, res) => {
 
 		if (error) {
 			console.error('Logout error:', error.message);
-			return res.status(500).json({ error: 'Logout failed' });
+			return apiError(res, 500, 'server_error', 'Logout failed');
 		}
 
 		return res.json({ success: true, message: 'Logged out successfully' });
 	} catch (err) {
 		console.error('Logout error:', err);
-		return res.status(500).json({ error: 'Internal server error' });
+		return apiError(res, 500, 'server_error', 'Internal server error');
 	}
 });
 

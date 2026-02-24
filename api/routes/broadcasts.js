@@ -4,6 +4,8 @@ import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { findConversation, normalizePhone } from '../services/phone-lookup.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
@@ -14,17 +16,25 @@ router.use(verifyToken);
  * List all broadcasts, newest first.
  */
 router.get('/', logAction('broadcasts.list'), async (req, res) => {
-	const { data, error } = await supabaseAdmin
+	const page = Math.max(1, parseInt(req.query.page) || 1);
+	const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page) || 50));
+	const offset = (page - 1) * per_page;
+
+	const { data, count, error } = await supabaseAdmin
 		.from('broadcasts')
-		.select('*')
-		.order('created_at', { ascending: false });
+		.select('*', { count: 'exact' })
+		.order('created_at', { ascending: false })
+		.range(offset, offset + per_page - 1);
 
 	if (error) {
 		console.error('Failed to fetch broadcasts:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch broadcasts' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch broadcasts');
 	}
 
-	return res.json({ data: data || [] });
+	return res.json({
+		data: data || [],
+		meta: { total: count, page, per_page, total_pages: Math.ceil((count || 0) / per_page) }
+	});
 });
 
 /**
@@ -32,11 +42,11 @@ router.get('/', logAction('broadcasts.list'), async (req, res) => {
  * Create a new broadcast (draft).
  * Body: { name, body, templateId?, recipientFilter?, fromNumber? }
  */
-router.post('/', logAction('broadcasts.create'), async (req, res) => {
+router.post('/', requireAdmin, logAction('broadcasts.create'), async (req, res) => {
 	const { name, body, templateId, recipientFilter, fromNumber } = req.body;
 
 	if (!name || !body) {
-		return res.status(400).json({ error: 'Name and body are required' });
+		return apiError(res, 400, 'validation_error', 'Name and body are required');
 	}
 
 	const { data, error } = await supabaseAdmin
@@ -54,17 +64,17 @@ router.post('/', logAction('broadcasts.create'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to create broadcast:', error.message);
-		return res.status(500).json({ error: 'Failed to create broadcast' });
+		return apiError(res, 500, 'server_error', 'Failed to create broadcast');
 	}
 
 	return res.status(201).json({ data });
 });
 
 /**
- * PUT /api/broadcasts/:id
+ * PATCH /api/broadcasts/:id
  * Update a draft broadcast.
  */
-router.put('/:id', logAction('broadcasts.update'), async (req, res) => {
+router.patch('/:id', requireAdmin, logAction('broadcasts.update'), async (req, res) => {
 	const { id } = req.params;
 
 	// Only allow editing drafts
@@ -74,17 +84,19 @@ router.put('/:id', logAction('broadcasts.update'), async (req, res) => {
 		.eq('id', id)
 		.single();
 
-	if (!existing) return res.status(404).json({ error: 'Broadcast not found' });
+	if (!existing) return apiError(res, 404, 'not_found', 'Broadcast not found');
 	if (existing.status !== 'draft') {
-		return res.status(400).json({ error: 'Only draft broadcasts can be edited' });
+		return apiError(res, 400, 'validation_error', 'Only draft broadcasts can be edited');
 	}
 
 	const allowed = ['name', 'body', 'template_id', 'recipient_filter', 'from_number'];
 	const updates = {};
 	for (const key of allowed) {
-		const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-		if (req.body[camelKey] !== undefined) updates[key] = req.body[camelKey];
 		if (req.body[key] !== undefined) updates[key] = req.body[key];
+	}
+
+	if (Object.keys(updates).length === 0) {
+		return apiError(res, 400, 'validation_error', 'No valid fields to update');
 	}
 
 	const { data, error } = await supabaseAdmin
@@ -96,7 +108,7 @@ router.put('/:id', logAction('broadcasts.update'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to update broadcast:', error.message);
-		return res.status(500).json({ error: 'Failed to update broadcast' });
+		return apiError(res, 500, 'server_error', 'Failed to update broadcast');
 	}
 
 	return res.json({ data });
@@ -106,7 +118,7 @@ router.put('/:id', logAction('broadcasts.update'), async (req, res) => {
  * DELETE /api/broadcasts/:id
  * Delete a draft broadcast.
  */
-router.delete('/:id', logAction('broadcasts.delete'), async (req, res) => {
+router.delete('/:id', requireAdmin, logAction('broadcasts.delete'), async (req, res) => {
 	const { id } = req.params;
 
 	const { data: existing } = await supabaseAdmin
@@ -115,19 +127,19 @@ router.delete('/:id', logAction('broadcasts.delete'), async (req, res) => {
 		.eq('id', id)
 		.single();
 
-	if (!existing) return res.status(404).json({ error: 'Broadcast not found' });
+	if (!existing) return apiError(res, 404, 'not_found', 'Broadcast not found');
 	if (existing.status !== 'draft') {
-		return res.status(400).json({ error: 'Only draft broadcasts can be deleted' });
+		return apiError(res, 400, 'validation_error', 'Only draft broadcasts can be deleted');
 	}
 
 	const { error } = await supabaseAdmin.from('broadcasts').delete().eq('id', id);
 
 	if (error) {
 		console.error('Failed to delete broadcast:', error.message);
-		return res.status(500).json({ error: 'Failed to delete broadcast' });
+		return apiError(res, 500, 'server_error', 'Failed to delete broadcast');
 	}
 
-	return res.json({ success: true });
+	return res.status(204).end();
 });
 
 // ── BC-002: Recipient resolution ──
@@ -197,7 +209,7 @@ router.post('/:id/preview', logAction('broadcasts.preview'), async (req, res) =>
 		.eq('id', id)
 		.single();
 
-	if (!broadcast) return res.status(404).json({ error: 'Broadcast not found' });
+	if (!broadcast) return apiError(res, 404, 'not_found', 'Broadcast not found');
 
 	try {
 		const { contacts, count } = await resolveRecipients(broadcast.recipient_filter || {});
@@ -213,7 +225,7 @@ router.post('/:id/preview', logAction('broadcasts.preview'), async (req, res) =>
 		return res.json({ count, sample });
 	} catch (err) {
 		console.error('Failed to resolve recipients:', err.message);
-		return res.status(500).json({ error: 'Failed to preview recipients' });
+		return apiError(res, 500, 'server_error', 'Failed to preview recipients');
 	}
 });
 
@@ -245,7 +257,7 @@ function sleep(ms) {
  * POST /api/broadcasts/:id/send
  * Start sending a broadcast. Returns immediately; sends in background.
  */
-router.post('/:id/send', logAction('broadcasts.send'), async (req, res) => {
+router.post('/:id/send', requireAdmin, logAction('broadcasts.send'), async (req, res) => {
 	const { id } = req.params;
 
 	const { data: broadcast } = await supabaseAdmin
@@ -254,9 +266,9 @@ router.post('/:id/send', logAction('broadcasts.send'), async (req, res) => {
 		.eq('id', id)
 		.single();
 
-	if (!broadcast) return res.status(404).json({ error: 'Broadcast not found' });
+	if (!broadcast) return apiError(res, 404, 'not_found', 'Broadcast not found');
 	if (broadcast.status !== 'draft') {
-		return res.status(400).json({ error: 'Only draft broadcasts can be sent' });
+		return apiError(res, 400, 'validation_error', 'Only draft broadcasts can be sent');
 	}
 
 	// Set to sending immediately
@@ -389,7 +401,7 @@ router.get('/:id/status', logAction('broadcasts.status'), async (req, res) => {
 		.eq('id', req.params.id)
 		.single();
 
-	if (error || !data) return res.status(404).json({ error: 'Broadcast not found' });
+	if (error || !data) return apiError(res, 404, 'not_found', 'Broadcast not found');
 
 	return res.json({ data });
 });

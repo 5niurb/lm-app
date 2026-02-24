@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { getEventsForDay, getEventsForRange, todayLA } from '../services/google-calendar.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
@@ -40,7 +41,7 @@ router.get('/', logAction('appointments.list'), async (req, res) => {
 		res.json({ data: events, count: events.length });
 	} catch (err) {
 		console.error('[appointments] fetch failed:', err.message);
-		res.status(500).json({ error: 'Failed to fetch appointments' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch appointments');
 	}
 });
 
@@ -54,7 +55,7 @@ router.get('/today', logAction('appointments.today'), async (req, res) => {
 		res.json({ data: events, count: events.length });
 	} catch (err) {
 		console.error('[appointments] today fetch failed:', err.message);
-		res.status(500).json({ error: 'Failed to fetch appointments' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch appointments');
 	}
 });
 
@@ -94,7 +95,7 @@ router.get('/stats', logAction('appointments.stats'), async (req, res) => {
 		});
 	} catch (err) {
 		console.error('[appointments] stats failed:', err.message);
-		res.status(500).json({ error: 'Failed to fetch appointment stats' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch appointment stats');
 	}
 });
 

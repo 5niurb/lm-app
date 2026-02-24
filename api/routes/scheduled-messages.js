@@ -3,6 +3,7 @@ import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { normalizePhone } from '../services/phone-lookup.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
@@ -39,7 +40,7 @@ router.get('/', logAction('scheduled.list'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch scheduled messages:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch scheduled messages' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch scheduled messages');
 	}
 
 	return res.json({ data: data || [], count: count || 0, page, pageSize });
@@ -54,12 +55,12 @@ router.post('/', logAction('scheduled.create'), async (req, res) => {
 	const { to, body, scheduledAt, from, templateId, conversationId } = req.body;
 
 	if (!to || !body || !scheduledAt) {
-		return res.status(400).json({ error: 'to, body, and scheduledAt are required' });
+		return apiError(res, 400, 'validation_error', 'to, body, and scheduledAt are required');
 	}
 
 	const scheduledDate = new Date(scheduledAt);
 	if (scheduledDate <= new Date()) {
-		return res.status(400).json({ error: 'scheduledAt must be in the future' });
+		return apiError(res, 400, 'validation_error', 'scheduledAt must be in the future');
 	}
 
 	const toNumber = normalizePhone(to);
@@ -80,32 +81,31 @@ router.post('/', logAction('scheduled.create'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to schedule message:', error.message);
-		return res.status(500).json({ error: 'Failed to schedule message' });
+		return apiError(res, 500, 'server_error', 'Failed to schedule message');
 	}
 
 	return res.status(201).json({ data });
 });
 
 /**
- * PUT /api/scheduled-messages/:id
+ * PATCH /api/scheduled-messages/:id
  * Update a scheduled message (only if still pending).
  * Body: { body?, scheduledAt?, status? }
  */
-router.put('/:id', logAction('scheduled.update'), async (req, res) => {
+router.patch('/:id', logAction('scheduled.update'), async (req, res) => {
 	const updates = {};
 
 	// Accept both camelCase and snake_case field names
 	const scheduledAt = req.body.scheduledAt || req.body.scheduled_at;
 	if (scheduledAt) updates.scheduled_at = scheduledAt;
 	if (req.body.body) updates.body = req.body.body;
-	if (req.body.status) updates.status = req.body.status;
 	const toNumber = req.body.toNumber || req.body.to_number;
 	if (toNumber) updates.to_number = toNumber;
 	const fromNumber = req.body.fromNumber || req.body.from_number;
 	if (fromNumber) updates.from_number = fromNumber;
 
 	if (Object.keys(updates).length === 0) {
-		return res.status(400).json({ error: 'No valid fields to update' });
+		return apiError(res, 400, 'validation_error', 'No valid fields to update');
 	}
 
 	const { data, error } = await supabaseAdmin
@@ -118,7 +118,7 @@ router.put('/:id', logAction('scheduled.update'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to update scheduled message:', error.message);
-		return res.status(500).json({ error: 'Failed to update scheduled message' });
+		return apiError(res, 500, 'server_error', 'Failed to update scheduled message');
 	}
 
 	return res.json({ data });
@@ -137,10 +137,10 @@ router.delete('/:id', logAction('scheduled.cancel'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to cancel scheduled message:', error.message);
-		return res.status(500).json({ error: 'Failed to cancel scheduled message' });
+		return apiError(res, 500, 'server_error', 'Failed to cancel scheduled message');
 	}
 
-	return res.json({ success: true });
+	return res.status(204).end();
 });
 
 /**

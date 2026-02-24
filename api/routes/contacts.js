@@ -3,13 +3,11 @@ import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { computeMerge } from '../services/contact-merge.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { sanitizeSearch } from '../utils/sanitize.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
-
-/** Sanitize search input for Supabase .or() filter — strips PostgREST operators */
-function sanitizeSearch(input) {
-	return String(input).replace(/[,.()[\]{}]/g, '');
-}
 
 /** Allowlisted sort columns for contacts */
 const CONTACTS_SORT_ALLOWLIST = [
@@ -90,7 +88,7 @@ router.get('/', logAction('contacts.list'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to fetch contacts:', error.message);
-		return res.status(500).json({ error: 'Failed to fetch contacts' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch contacts');
 	}
 
 	return res.json({
@@ -220,7 +218,7 @@ router.get('/search', logAction('contacts.search'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to search contacts:', error.message);
-		return res.status(500).json({ error: 'Failed to search contacts' });
+		return apiError(res, 500, 'server_error', 'Failed to search contacts');
 	}
 
 	return res.json({ data: data || [] });
@@ -245,7 +243,7 @@ router.get('/duplicates', logAction('contacts.duplicates'), async (req, res) => 
 
 		if (error) {
 			console.error('Failed to fetch contacts for dedup:', error.message);
-			return res.status(500).json({ error: 'Failed to fetch contacts' });
+			return apiError(res, 500, 'server_error', 'Failed to fetch contacts');
 		}
 		if (!data || data.length === 0) break;
 		all = all.concat(data);
@@ -285,11 +283,11 @@ router.get('/duplicates', logAction('contacts.duplicates'), async (req, res) => 
  * Merge a group of duplicate contacts.
  * Body: { winnerId, loserIds }
  */
-router.post('/merge', logAction('contacts.merge'), async (req, res) => {
+router.post('/merge', requireAdmin, logAction('contacts.merge'), async (req, res) => {
 	const { winnerId, loserIds } = req.body;
 
 	if (!winnerId || !Array.isArray(loserIds) || loserIds.length === 0) {
-		return res.status(400).json({ error: 'winnerId and loserIds[] are required' });
+		return apiError(res, 400, 'validation_error', 'winnerId and loserIds[] are required');
 	}
 
 	// Fetch all involved contacts
@@ -300,7 +298,7 @@ router.post('/merge', logAction('contacts.merge'), async (req, res) => {
 		.in('id', allIds);
 
 	if (fetchErr || !contacts || contacts.length !== allIds.length) {
-		return res.status(404).json({ error: 'One or more contacts not found' });
+		return apiError(res, 404, 'not_found', 'One or more contacts not found');
 	}
 
 	// Compute merge using the shared logic
@@ -314,7 +312,7 @@ router.post('/merge', logAction('contacts.merge'), async (req, res) => {
 
 	if (updateErr) {
 		console.error('Failed to update winner contact:', updateErr.message);
-		return res.status(500).json({ error: 'Failed to update winner contact' });
+		return apiError(res, 500, 'server_error', 'Failed to update winner contact');
 	}
 
 	// Repoint foreign keys from losers to winner
@@ -339,7 +337,7 @@ router.post('/merge', logAction('contacts.merge'), async (req, res) => {
 
 	if (delErr) {
 		console.error('Failed to delete merged contacts:', delErr.message);
-		return res.status(500).json({ error: 'Winner updated but failed to delete duplicates' });
+		return apiError(res, 500, 'server_error', 'Winner updated but failed to delete duplicates');
 	}
 
 	// Fetch updated winner
@@ -375,7 +373,7 @@ router.post('/:id/tags', logAction('contacts.addTags'), async (req, res) => {
 	const { tags: newTags } = req.body;
 
 	if (!Array.isArray(newTags) || newTags.length === 0) {
-		return res.status(400).json({ error: 'tags must be a non-empty array' });
+		return apiError(res, 400, 'validation_error', 'tags must be a non-empty array');
 	}
 
 	// Fetch current tags
@@ -386,7 +384,7 @@ router.post('/:id/tags', logAction('contacts.addTags'), async (req, res) => {
 		.single();
 
 	if (fetchErr || !contact) {
-		return res.status(404).json({ error: 'Contact not found' });
+		return apiError(res, 404, 'not_found', 'Contact not found');
 	}
 
 	// Merge (no duplicates)
@@ -402,7 +400,7 @@ router.post('/:id/tags', logAction('contacts.addTags'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to add tags:', error.message);
-		return res.status(500).json({ error: 'Failed to add tags' });
+		return apiError(res, 500, 'server_error', 'Failed to add tags');
 	}
 
 	return res.json({ data });
@@ -418,7 +416,7 @@ router.delete('/:id/tags', logAction('contacts.removeTags'), async (req, res) =>
 	const { tags: removeTags } = req.body;
 
 	if (!Array.isArray(removeTags) || removeTags.length === 0) {
-		return res.status(400).json({ error: 'tags must be a non-empty array' });
+		return apiError(res, 400, 'validation_error', 'tags must be a non-empty array');
 	}
 
 	// Fetch current tags
@@ -429,7 +427,7 @@ router.delete('/:id/tags', logAction('contacts.removeTags'), async (req, res) =>
 		.single();
 
 	if (fetchErr || !contact) {
-		return res.status(404).json({ error: 'Contact not found' });
+		return apiError(res, 404, 'not_found', 'Contact not found');
 	}
 
 	const removeSet = new Set(removeTags.map((t) => t.toLowerCase().trim()));
@@ -444,7 +442,7 @@ router.delete('/:id/tags', logAction('contacts.removeTags'), async (req, res) =>
 
 	if (error) {
 		console.error('Failed to remove tags:', error.message);
-		return res.status(500).json({ error: 'Failed to remove tags' });
+		return apiError(res, 500, 'server_error', 'Failed to remove tags');
 	}
 
 	return res.json({ data });
@@ -464,7 +462,7 @@ router.get('/:id', logAction('contacts.read'), async (req, res) => {
 		.single();
 
 	if (error || !contact) {
-		return res.status(404).json({ error: 'Contact not found' });
+		return apiError(res, 404, 'not_found', 'Contact not found');
 	}
 
 	// Get recent call history for this contact
@@ -503,7 +501,7 @@ router.post('/', logAction('contacts.create'), async (req, res) => {
 		req.body;
 
 	if (!full_name && !first_name && !phone && !email) {
-		return res.status(400).json({ error: 'At least a name, phone, or email is required' });
+		return apiError(res, 400, 'validation_error', 'At least a name, phone, or email is required');
 	}
 
 	const contactName = full_name || [first_name, last_name].filter(Boolean).join(' ') || null;
@@ -527,7 +525,7 @@ router.post('/', logAction('contacts.create'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to create contact:', error.message);
-		return res.status(500).json({ error: 'Failed to create contact' });
+		return apiError(res, 500, 'server_error', 'Failed to create contact');
 	}
 
 	return res.status(201).json({ data });
@@ -556,7 +554,7 @@ router.patch('/:id', logAction('contacts.update'), async (req, res) => {
 	if (metadata !== undefined) update.metadata = metadata;
 
 	if (Object.keys(update).length === 0) {
-		return res.status(400).json({ error: 'No fields to update' });
+		return apiError(res, 400, 'validation_error', 'No fields to update');
 	}
 
 	update.updated_at = new Date().toISOString();
@@ -570,7 +568,7 @@ router.patch('/:id', logAction('contacts.update'), async (req, res) => {
 
 	if (error) {
 		console.error('Failed to update contact:', error.message);
-		return res.status(500).json({ error: 'Failed to update contact' });
+		return apiError(res, 500, 'server_error', 'Failed to update contact');
 	}
 
 	return res.json({ data });

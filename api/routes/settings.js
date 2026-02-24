@@ -2,19 +2,13 @@ import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 
 // All settings routes require authentication
 router.use(verifyToken);
-
-/** Admin-only guard middleware */
-function requireAdmin(req, res, next) {
-	if (req.user.role !== 'admin') {
-		return res.status(403).json({ error: 'Admin access required' });
-	}
-	next();
-}
 
 // =============================================================================
 // SETTINGS (key-value store)
@@ -39,20 +33,20 @@ router.get('/', logAction('settings.list'), async (req, res) => {
 		res.json({ data: settings, raw: data });
 	} catch (err) {
 		console.error('Settings list error:', err.message);
-		res.status(500).json({ error: 'Failed to load settings' });
+		return apiError(res, 500, 'server_error', 'Failed to load settings');
 	}
 });
 
 /**
  * PUT /api/settings/:key
- * Update a single setting (admin only).
+ * Update a single setting (admin only). PUT is correct — full key-value replacement.
  */
 router.put('/:key', requireAdmin, logAction('settings.update'), async (req, res) => {
 	const { key } = req.params;
 	const { value } = req.body;
 
 	if (value === undefined) {
-		return res.status(400).json({ error: 'Missing "value" in request body' });
+		return apiError(res, 400, 'validation_error', 'Missing "value" in request body');
 	}
 
 	try {
@@ -66,19 +60,19 @@ router.put('/:key', requireAdmin, logAction('settings.update'), async (req, res)
 		res.json({ data });
 	} catch (err) {
 		console.error('Settings update error:', err.message);
-		res.status(500).json({ error: 'Failed to update setting' });
+		return apiError(res, 500, 'server_error', 'Failed to update setting');
 	}
 });
 
 /**
  * PUT /api/settings
- * Bulk update multiple settings at once (admin only).
+ * Bulk update multiple settings at once (admin only). PUT is correct — full key-value replacement.
  */
 router.put('/', requireAdmin, logAction('settings.bulk_update'), async (req, res) => {
 	const { settings } = req.body;
 
 	if (!settings || typeof settings !== 'object') {
-		return res.status(400).json({ error: 'Missing "settings" object in request body' });
+		return apiError(res, 400, 'validation_error', 'Missing "settings" object in request body');
 	}
 
 	try {
@@ -97,7 +91,7 @@ router.put('/', requireAdmin, logAction('settings.bulk_update'), async (req, res
 		res.json({ data });
 	} catch (err) {
 		console.error('Settings bulk update error:', err.message);
-		res.status(500).json({ error: 'Failed to update settings' });
+		return apiError(res, 500, 'server_error', 'Failed to update settings');
 	}
 });
 
@@ -111,21 +105,30 @@ router.put('/', requireAdmin, logAction('settings.bulk_update'), async (req, res
  */
 router.get('/extensions', logAction('extensions.list'), async (req, res) => {
 	try {
-		const { data, error } = await supabaseAdmin
+		const page = Math.max(1, parseInt(req.query.page) || 1);
+		const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page) || 50));
+		const offset = (page - 1) * per_page;
+
+		const { data, count, error } = await supabaseAdmin
 			.from('phone_extensions')
 			.select(
 				`
         *,
         user:profiles(id, full_name, email, role)
-      `
+      `,
+				{ count: 'exact' }
 			)
-			.order('extension');
+			.order('extension')
+			.range(offset, offset + per_page - 1);
 
 		if (error) throw error;
-		res.json({ data });
+		res.json({
+			data,
+			meta: { total: count, page, per_page, total_pages: Math.ceil((count || 0) / per_page) }
+		});
 	} catch (err) {
 		console.error('Extensions list error:', err.message);
-		res.status(500).json({ error: 'Failed to load extensions' });
+		return apiError(res, 500, 'server_error', 'Failed to load extensions');
 	}
 });
 
@@ -144,7 +147,7 @@ router.post('/extensions', requireAdmin, logAction('extensions.create'), async (
 	} = req.body;
 
 	if (!extension) {
-		return res.status(400).json({ error: 'Extension number is required' });
+		return apiError(res, 400, 'validation_error', 'Extension number is required');
 	}
 
 	try {
@@ -171,17 +174,17 @@ router.post('/extensions', requireAdmin, logAction('extensions.create'), async (
 	} catch (err) {
 		console.error('Extension create error:', err.message);
 		if (err.message?.includes('unique')) {
-			return res.status(409).json({ error: 'Extension number already exists' });
+			return apiError(res, 409, 'conflict', 'Extension number already exists');
 		}
-		res.status(500).json({ error: 'Failed to create extension' });
+		return apiError(res, 500, 'server_error', 'Failed to create extension');
 	}
 });
 
 /**
- * PUT /api/settings/extensions/:id
+ * PATCH /api/settings/extensions/:id
  * Update a phone extension (admin only).
  */
-router.put('/extensions/:id', requireAdmin, logAction('extensions.update'), async (req, res) => {
+router.patch('/extensions/:id', requireAdmin, logAction('extensions.update'), async (req, res) => {
 	const { id } = req.params;
 	const {
 		extension,
@@ -215,11 +218,11 @@ router.put('/extensions/:id', requireAdmin, logAction('extensions.update'), asyn
 			.single();
 
 		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Extension not found' });
+		if (!data) return apiError(res, 404, 'not_found', 'Extension not found');
 		res.json({ data });
 	} catch (err) {
 		console.error('Extension update error:', err.message);
-		res.status(500).json({ error: 'Failed to update extension' });
+		return apiError(res, 500, 'server_error', 'Failed to update extension');
 	}
 });
 
@@ -237,7 +240,7 @@ router.delete('/extensions/:id', requireAdmin, logAction('extensions.delete'), a
 		res.status(204).end();
 	} catch (err) {
 		console.error('Extension delete error:', err.message);
-		res.status(500).json({ error: 'Failed to delete extension' });
+		return apiError(res, 500, 'server_error', 'Failed to delete extension');
 	}
 });
 
@@ -251,16 +254,24 @@ router.delete('/extensions/:id', requireAdmin, logAction('extensions.delete'), a
  */
 router.get('/routing', logAction('routing.list'), async (req, res) => {
 	try {
-		const { data, error } = await supabaseAdmin
+		const page = Math.max(1, parseInt(req.query.page) || 1);
+		const per_page = Math.min(100, Math.max(1, parseInt(req.query.per_page) || 50));
+		const offset = (page - 1) * per_page;
+
+		const { data, count, error } = await supabaseAdmin
 			.from('call_routing_rules')
-			.select('*')
-			.order('priority', { ascending: true });
+			.select('*', { count: 'exact' })
+			.order('priority', { ascending: true })
+			.range(offset, offset + per_page - 1);
 
 		if (error) throw error;
-		res.json({ data });
+		res.json({
+			data,
+			meta: { total: count, page, per_page, total_pages: Math.ceil((count || 0) / per_page) }
+		});
 	} catch (err) {
 		console.error('Routing rules list error:', err.message);
-		res.status(500).json({ error: 'Failed to load routing rules' });
+		return apiError(res, 500, 'server_error', 'Failed to load routing rules');
 	}
 });
 
@@ -282,7 +293,7 @@ router.post('/routing', requireAdmin, logAction('routing.create'), async (req, r
 	} = req.body;
 
 	if (!name || !action_type) {
-		return res.status(400).json({ error: 'Name and action_type are required' });
+		return apiError(res, 400, 'validation_error', 'Name and action_type are required');
 	}
 
 	try {
@@ -306,15 +317,15 @@ router.post('/routing', requireAdmin, logAction('routing.create'), async (req, r
 		res.status(201).json({ data });
 	} catch (err) {
 		console.error('Routing rule create error:', err.message);
-		res.status(500).json({ error: 'Failed to create routing rule' });
+		return apiError(res, 500, 'server_error', 'Failed to create routing rule');
 	}
 });
 
 /**
- * PUT /api/settings/routing/:id
+ * PATCH /api/settings/routing/:id
  * Update a routing rule (admin only).
  */
-router.put('/routing/:id', requireAdmin, logAction('routing.update'), async (req, res) => {
+router.patch('/routing/:id', requireAdmin, logAction('routing.update'), async (req, res) => {
 	const { id } = req.params;
 	const {
 		name,
@@ -348,11 +359,11 @@ router.put('/routing/:id', requireAdmin, logAction('routing.update'), async (req
 			.single();
 
 		if (error) throw error;
-		if (!data) return res.status(404).json({ error: 'Routing rule not found' });
+		if (!data) return apiError(res, 404, 'not_found', 'Routing rule not found');
 		res.json({ data });
 	} catch (err) {
 		console.error('Routing rule update error:', err.message);
-		res.status(500).json({ error: 'Failed to update routing rule' });
+		return apiError(res, 500, 'server_error', 'Failed to update routing rule');
 	}
 });
 
@@ -370,7 +381,7 @@ router.delete('/routing/:id', requireAdmin, logAction('routing.delete'), async (
 		res.status(204).end();
 	} catch (err) {
 		console.error('Routing rule delete error:', err.message);
-		res.status(500).json({ error: 'Failed to delete routing rule' });
+		return apiError(res, 500, 'server_error', 'Failed to delete routing rule');
 	}
 });
 

@@ -4,6 +4,7 @@ import { verifyToken } from '../middleware/auth.js';
 import { logAction } from '../middleware/auditLog.js';
 import { supabaseAdmin } from '../services/supabase.js';
 import { findConversation, normalizePhone } from '../services/phone-lookup.js';
+import { apiError } from '../utils/responses.js';
 
 const router = Router();
 router.use(verifyToken);
@@ -41,7 +42,7 @@ router.get('/numbers', logAction('twilio.numbers'), async (req, res) => {
 		return res.json({ data });
 	} catch (err) {
 		console.error('Failed to list Twilio numbers:', err.message);
-		return res.status(500).json({ error: 'Failed to fetch Twilio phone numbers' });
+		return apiError(res, 500, 'server_error', 'Failed to fetch Twilio phone numbers');
 	}
 });
 
@@ -77,8 +78,8 @@ router.post('/sync', logAction('twilio.sync'), async (req, res) => {
 		for (const number of numbersToSync) {
 			// ── Sync Messages ──
 			const [outboundMsgs, inboundMsgs] = await Promise.all([
-				client.messages.list({ from: number, dateSentAfter: sinceDate, limit: 1000 }),
-				client.messages.list({ to: number, dateSentAfter: sinceDate, limit: 1000 })
+				client.messages.list({ from: number, dateSentAfter: sinceDate, limit: 5000 }),
+				client.messages.list({ to: number, dateSentAfter: sinceDate, limit: 5000 })
 			]);
 
 			const allMessages = [...outboundMsgs, ...inboundMsgs];
@@ -148,8 +149,8 @@ router.post('/sync', logAction('twilio.sync'), async (req, res) => {
 
 			// ── Sync Calls ──
 			const [outboundCalls, inboundCalls] = await Promise.all([
-				client.calls.list({ from: number, startTimeAfter: sinceDate, limit: 1000 }),
-				client.calls.list({ to: number, startTimeAfter: sinceDate, limit: 1000 })
+				client.calls.list({ from: number, startTimeAfter: sinceDate, limit: 5000 }),
+				client.calls.list({ to: number, startTimeAfter: sinceDate, limit: 5000 })
 			]);
 
 			const allCalls = [...outboundCalls, ...inboundCalls];
@@ -232,7 +233,7 @@ router.post('/sync', logAction('twilio.sync'), async (req, res) => {
 		});
 	} catch (err) {
 		console.error('Twilio sync failed:', err.message);
-		return res.status(500).json({ error: err.message });
+		return apiError(res, 500, 'server_error', 'Sync failed');
 	}
 });
 
