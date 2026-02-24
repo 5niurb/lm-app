@@ -104,7 +104,7 @@
 		{/if}
 
 		<!-- Timestamp -->
-		<p class="text-[10px] mt-1.5 text-white/25">
+		<p class="text-[10px] mt-1.5 text-text-tertiary">
 			{new Date(email.created_at).toLocaleTimeString('en-US', {
 				hour: 'numeric',
 				minute: '2-digit'

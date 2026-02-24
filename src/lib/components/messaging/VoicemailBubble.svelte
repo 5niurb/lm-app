@@ -56,7 +56,7 @@
 				<div class="flex items-center gap-2 text-[10px] text-text-tertiary">
 					{#if voicemail.duration > 0}
 						<span>{formatDuration(voicemail.duration)}</span>
-						<span class="text-border">•</span>
+						<span class="text-text-tertiary">•</span>
 					{/if}
 					<span>
 						{new Date(voicemail.created_at).toLocaleTimeString('en-US', {

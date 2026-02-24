@@ -83,7 +83,7 @@
 				<div class="flex items-center gap-2 text-[10px] text-text-tertiary">
 					{#if call.duration > 0}
 						<span>{formatDuration(call.duration)}</span>
-						<span class="text-border">•</span>
+						<span class="text-text-tertiary">•</span>
 					{/if}
 					<span>
 						{new Date(call.started_at || call.created_at).toLocaleTimeString('en-US', {

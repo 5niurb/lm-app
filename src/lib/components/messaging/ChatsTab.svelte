@@ -1205,8 +1205,8 @@
 										{/if}
 										<p
 											class="text-[10px] mt-1 flex items-center gap-1 {msg.direction === 'outbound'
-												? 'text-white/30'
-												: 'text-white/25'}"
+												? 'text-white/50'
+												: 'text-text-tertiary'}"
 										>
 											<span>
 												{new Date(msg.created_at).toLocaleTimeString('en-US', {

@@ -154,12 +154,12 @@
 	/* Semantic tokens */
 	--text-primary: #fafafa;
 	--text-secondary: #a1a1aa;
-	--text-tertiary: #71717a;
-	--text-ghost: rgba(255, 255, 255, 0.1);
-	--surface-subtle: rgba(255, 255, 255, 0.02);
-	--surface-raised: rgba(255, 255, 255, 0.04);
-	--surface-hover: rgba(255, 255, 255, 0.06);
-	--border-subtle: rgba(255, 255, 255, 0.06);
+	--text-tertiary: #8b8b95;
+	--text-ghost: rgba(255, 255, 255, 0.32);
+	--surface-subtle: rgba(255, 255, 255, 0.04);
+	--surface-raised: rgba(255, 255, 255, 0.06);
+	--surface-hover: rgba(255, 255, 255, 0.08);
+	--border-subtle: rgba(255, 255, 255, 0.1);
 	--border-default: #27272a;
 
 	/* Shadows — gold-tinted glow */
@@ -228,12 +228,12 @@
 	--vivid-pink: #f472b6;
 	--text-primary: #fafaf9;
 	--text-secondary: #a8a29e;
-	--text-tertiary: #78716c;
-	--text-ghost: rgba(255, 255, 255, 0.1);
-	--surface-subtle: rgba(255, 255, 255, 0.02);
-	--surface-raised: rgba(255, 255, 255, 0.04);
-	--surface-hover: rgba(255, 255, 255, 0.06);
-	--border-subtle: rgba(255, 255, 255, 0.06);
+	--text-tertiary: #928b85;
+	--text-ghost: rgba(255, 255, 255, 0.32);
+	--surface-subtle: rgba(255, 255, 255, 0.04);
+	--surface-raised: rgba(255, 255, 255, 0.06);
+	--surface-hover: rgba(255, 255, 255, 0.08);
+	--border-subtle: rgba(255, 255, 255, 0.1);
 	--border-default: #292524;
 	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
 	--shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(201, 162, 78, 0.1);
@@ -299,11 +299,11 @@
 	--text-primary: #09090b;
 	--text-secondary: #52525b;
 	--text-tertiary: #a1a1aa;
-	--text-ghost: rgba(0, 0, 0, 0.08);
-	--surface-subtle: rgba(0, 0, 0, 0.02);
-	--surface-raised: rgba(0, 0, 0, 0.03);
-	--surface-hover: rgba(0, 0, 0, 0.05);
-	--border-subtle: rgba(0, 0, 0, 0.06);
+	--text-ghost: rgba(0, 0, 0, 0.28);
+	--surface-subtle: rgba(0, 0, 0, 0.03);
+	--surface-raised: rgba(0, 0, 0, 0.05);
+	--surface-hover: rgba(0, 0, 0, 0.07);
+	--border-subtle: rgba(0, 0, 0, 0.1);
 	--border-default: #e4e4e7;
 	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 	--shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(160, 136, 46, 0.1);
