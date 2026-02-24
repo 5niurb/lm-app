@@ -210,7 +210,6 @@ router.post(
 		const fromNumber =
 			req.body.from ||
 			process.env.TWILIO_SMS_FROM_NUMBER ||
-			process.env.TWILIO_TEST1_PHONE_NUMBER ||
 			process.env.TWILIO_PHONE_NUMBER ||
 			process.env.TWILIO_MAIN_PHONE_NUMBER;
 

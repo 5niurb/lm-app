@@ -19,7 +19,7 @@ The scheduled_messages table, API (CRUD), and UI (ScheduledTab + SchedulePopover
 - **Twilio:** Use existing `twilio` client pattern from `api/routes/messages.js` — `client.messages.create()`
 - **Existing send pattern:** See `POST /api/messages/send` in `api/routes/messages.js` for conversation find-or-create logic
 - **Phone lookup:** Use `findConversation()` and `lookupContactByPhone()` from `api/services/phone-lookup.js`
-- **From number fallback chain:** `from_number || TWILIO_SMS_FROM_NUMBER || TWILIO_TEST1_PHONE_NUMBER || TWILIO_PHONE_NUMBER || TWILIO_MAIN_PHONE_NUMBER`
+- **From number fallback chain:** `from_number || TWILIO_SMS_FROM_NUMBER || TWILIO_PHONE_NUMBER || TWILIO_MAIN_PHONE_NUMBER`
 
 ## API Shape Reference
 

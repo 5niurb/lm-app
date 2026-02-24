@@ -26,7 +26,7 @@
 - Pre-push hook runs prettier --check on ENTIRE repo, not just changed files
 - PUBLIC_API_URL is baked at BUILD TIME — must override for production builds
 - Two Supabase clients: supabase (anon/RLS) and supabaseAdmin (service role)
-- From number fallback: from_number || TWILIO_SMS_FROM_NUMBER || TWILIO_TEST1_PHONE_NUMBER || TWILIO_PHONE_NUMBER || TWILIO_MAIN_PHONE_NUMBER
+- From number fallback: from_number || TWILIO_SMS_FROM_NUMBER || TWILIO_PHONE_NUMBER || TWILIO_MAIN_PHONE_NUMBER
 - Use findConversation() and lookupContactByPhone() from api/services/phone-lookup.js — don't duplicate
 
 ## Existing Messaging Infrastructure

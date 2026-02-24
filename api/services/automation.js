@@ -53,7 +53,6 @@ export async function sendSms({ to, body, clientId, clientName, metadata }) {
 	const authToken = process.env.TWILIO_AUTH_TOKEN;
 	const fromNumber =
 		process.env.TWILIO_SMS_FROM_NUMBER ||
-		process.env.TWILIO_TEST1_PHONE_NUMBER ||
 		process.env.TWILIO_PHONE_NUMBER ||
 		process.env.TWILIO_MAIN_PHONE_NUMBER;
 
