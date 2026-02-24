@@ -54,3 +54,8 @@ twilio/assets/
 # Screenshots (temp working files, not deliverables)
 *.png
 !docs/rcs-assets/*.png
+
+# Large video files (design reference — too large for git)
+*.mkv
+*.mp4
+*.mov

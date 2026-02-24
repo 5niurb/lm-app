@@ -344,6 +344,27 @@ async function syncTextMagicMessages(sinceDate) {
 		(data || []).forEach((r) => existingSids.add(r.twilio_sid));
 	}
 
+	/**
+	 * Content-based dedup: check if a message with the same body, direction,
+	 * and conversation already exists within 5 seconds (from Twilio webhook).
+	 * Prevents duplicates when the same SMS arrives via both Twilio and TextMagic.
+	 */
+	async function isDuplicateByContent(convId, body, direction, timestamp) {
+		const ts = new Date(timestamp);
+		const before = new Date(ts.getTime() - 5000).toISOString();
+		const after = new Date(ts.getTime() + 5000).toISOString();
+		const { data } = await supabaseAdmin
+			.from('messages')
+			.select('id')
+			.eq('conversation_id', convId)
+			.eq('direction', direction)
+			.eq('body', body)
+			.gte('created_at', before)
+			.lte('created_at', after)
+			.limit(1);
+		return data && data.length > 0;
+	}
+
 	// ── Process outbound messages ──
 	for (const msg of outboundMessages) {
 		const sid = `tm_${msg.id}`;
@@ -354,6 +375,9 @@ async function syncTextMagicMessages(sinceDate) {
 
 		const convId = await findOrCreateConversationByPhone(patientPhone);
 		if (!convId) continue;
+
+		// Skip if this message already exists via Twilio webhook (same body + timestamp)
+		if (await isDuplicateByContent(convId, msg.text || '', 'outbound', msg.messageTime)) continue;
 
 		const fromNumber = normalizePhone(msg.sender || msg.fromNumber || '');
 		const { error } = await supabaseAdmin.from('messages').insert({
@@ -390,6 +414,9 @@ async function syncTextMagicMessages(sinceDate) {
 
 		const convId = await findOrCreateConversationByPhone(patientPhone);
 		if (!convId) continue;
+
+		// Skip if this message already exists via Twilio webhook (same body + timestamp)
+		if (await isDuplicateByContent(convId, msg.text || '', 'inbound', msg.messageTime)) continue;
 
 		const toNumber = normalizePhone(msg.receiver || '');
 		const { error } = await supabaseAdmin.from('messages').insert({
