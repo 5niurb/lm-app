@@ -1,3 +1,66 @@
+## Session — 2026-02-24 (Session 65)
+**Focus:** Unified conversation timeline — calls, voicemails, emails in threads + star/resolve
+
+**Accomplished:**
+- 8 conversation UI style changes (glass bubbles, colored icons, gold outlines, shimmer, black dividers)
+- Tripled black panel dividers twice (1px → 3px → 9px)
+- **Unified Timeline API** — new `/conversations/:id/timeline` merges messages, calls, voicemails, emails chronologically
+- **6 new frontend components:**
+  - `CallActivityBubble` — call entries with recording playback, transcripts, call-back
+  - `VoicemailBubble` — voicemail with audio player, mailbox badge, transcript toggle
+  - `EmailBubble` — email with subject, body preview, expand/collapse, status badges
+  - `EmailCompose` — full email form (to/cc/bcc/subject/body) in compose bar
+  - `AudioPlayer` — reusable audio with seek, speed control, download
+  - `ThreadItemActions` — star/resolve overlay on all items (optimistic UI)
+- **ComposeBar** — SMS/Email/Note mode tabs with email compose integration
+- **API additions:** email send endpoint, star/resolve toggle endpoints, call recording proxy
+- **DB migrations applied:** `thread_item_flags` table, `emails` table
+- All 195 tests pass, deployed to CF Pages + Render
+
+**Diagram:**
+```
+Unified Conversation Timeline:
+┌─────────────┐  ┌──────────┐  ┌────────────┐  ┌────────┐
+│   messages   │  │ call_logs │  │ voicemails  │  │ emails │
+└──────┬──────┘  └─────┬────┘  └──────┬─────┘  └───┬────┘
+       │               │              │             │
+       └───────────────┴──────────────┴─────────────┘
+                        │
+              GET /conversations/:id/timeline
+                        │
+              ┌─────────▼─────────┐
+              │  Merged + sorted  │
+              │  by created_at    │
+              └─────────┬─────────┘
+                        │
+    ┌───────────┬───────┴───────┬──────────────┐
+    ▼           ▼               ▼              ▼
+  SMS Bubble  CallBubble  VoicemailBubble  EmailBubble
+    │           │               │              │
+    └───────────┴───────────────┴──────────────┘
+                        │
+              ThreadItemActions (star/resolve)
+```
+
+**Current State:**
+- `main` branch, clean tree, all pushed (commit 4abdf43)
+- Production deployed: https://lm-app.pages.dev (CF Pages) + API auto-deploys on Render
+- Preview: https://63542f1a.lm-app.pages.dev
+- DB migrations applied (thread_item_flags + emails tables)
+
+**Issues:**
+- `contact_email` not yet included in conversation list API response — email compose will show blank "to" field until wired
+- Unused imports in new components (CalendarClock, MessageSquare in ComposeBar; Square in AudioPlayer; ChevronDown, X in EmailCompose) — warnings only, not errors
+
+**Next Steps:**
+- Wire `contact_email` into conversation list/detail API response
+- Test timeline with real call/voicemail data on production
+- Consider scheduling writeback sync as cron job
+- Frontend migration to `{ error: { code, message } }` format
+- Address 3 GitHub Dependabot vulnerabilities
+
+---
+
 ## Session — 2026-02-24 (Session 64)
 **Focus:** Google Sheets API deploy + production verification
 
