@@ -1,3 +1,62 @@
+## Session — 2026-02-24 (Session 61)
+**Focus:** Contact dedup/merge review UI (US-BL1)
+
+**Accomplished:**
+- Extracted shared merge logic into `api/services/contact-merge.js` — pure `computeMerge()` function used by both API and CLI script
+- Added `GET /api/contacts/duplicates` endpoint — groups contacts by phone_normalized, runs computeMerge preview on each group
+- Added `POST /api/contacts/merge` endpoint — updates winner, repoints call_logs + conversations FKs, deletes losers, audit logs
+- Built `DedupReviewSheet.svelte` — step-through review UI with side-by-side comparison, gold-bordered winner card, merge preview, skip/merge controls, summary screen
+- Wired "Review Duplicates" button into contacts page header
+- Refactored `api/scripts/dedup-contacts.mjs` to import from shared module (eliminated duplicated logic)
+- Commit `a0c7f5a`, all 195 tests pass, deployed to CF Pages + API auto-deployed on push
+
+**Diagram:**
+```
+Contacts Page Header:
+┌──────────────────────────────────────────────┐
+│ Contacts              [Review Duplicates]    │
+│ CRM directory — 450 contacts                 │
+└──────────────────────────────────────────────┘
+                           │ click
+                           ▼
+┌─ DedupReviewSheet (right-side Sheet) ────────┐
+│                                              │
+│  GET /api/contacts/duplicates                │
+│    → groups by phone_normalized              │
+│    → computeMerge() preview each             │
+│                                              │
+│  ┌─ Winner ─────┐  ┌─ Loser ──────┐        │
+│  │ 🏆 Primary    │  │ → merge into │        │
+│  │ gold border   │  │ green = new  │        │
+│  │ AR source     │  │ data gained  │        │
+│  └──────────────┘  └──────────────┘        │
+│                                              │
+│  ┌─ Merged Preview ──────────────┐          │
+│  │ Combined name/email/tags      │          │
+│  └───────────────────────────────┘          │
+│                                              │
+│  [Skip]  [Merge]           1 / 5            │
+│                                              │
+│  POST /api/contacts/merge                    │
+│    → update winner → repoint FKs → delete   │
+└──────────────────────────────────────────────┘
+```
+
+**Current State:**
+- Dedup review UI live on production (lemedspa.app/contacts)
+- Shared merge module: `api/services/contact-merge.js`
+- All code committed and pushed (`a0c7f5a`), build clean, 195 tests pass
+- Frontend deployed to CF Pages, API deployed via Render auto-deploy
+
+**Issues:**
+- Pre-existing: 17 ESLint warnings (1 new — unused `sourcePriority` import in dedup CLI script, harmless)
+
+**Next Steps:**
+- Test merge flow end-to-end on real duplicate groups in production
+- Consider adding a duplicate count badge to the "Review Duplicates" button
+
+---
+
 ## Session — 2026-02-23 (Session 60)
 **Focus:** Implement all 16 remaining messaging stories across 3 PRDs (Internal Notes, AI Suggest, Broadcast)
 
