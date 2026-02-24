@@ -65,6 +65,22 @@ app.get('/api/health', (req, res) => {
 	res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Google Sheets connectivity check (no auth — reads 1 cell to verify service account)
+app.get('/api/health/sheets', async (req, res) => {
+	try {
+		const { getSheetsClient, SPREADSHEET_ID } = await import('./services/google-sheets.js');
+		const sheets = getSheetsClient();
+		const { data } = await sheets.spreadsheets.values.get({
+			spreadsheetId: SPREADSHEET_ID,
+			range: "'patients3'!A1:A1"
+		});
+		const cell = data.values?.[0]?.[0] || '(empty)';
+		res.json({ status: 'ok', cell, timestamp: new Date().toISOString() });
+	} catch (err) {
+		res.status(500).json({ status: 'error', error: err.message });
+	}
+});
+
 // Public webhook — website contact form (no auth, needs JSON parsing)
 import webhookContactForm from './routes/webhooks/contact-form.js';
 app.use('/api/webhooks/contact-form', webhookContactForm);
