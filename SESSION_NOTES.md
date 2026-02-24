@@ -43,10 +43,11 @@ Unified Conversation Timeline:
 ```
 
 **Current State:**
-- `main` branch, clean tree, all pushed (commit 4abdf43)
+- `main` branch, clean tree, all pushed (commit 80f20fd)
 - Production deployed: https://lm-app.pages.dev (CF Pages) + API auto-deploys on Render
-- Preview: https://63542f1a.lm-app.pages.dev
+- Latest preview: https://02a568a0.lm-app.pages.dev
 - DB migrations applied (thread_item_flags + emails tables)
+- All 195 tests pass, 0 errors, 29 warnings (all pre-existing unused imports)
 
 **Issues:**
 - `contact_email` not yet included in conversation list API response — email compose will show blank "to" field until wired
@@ -55,6 +56,7 @@ Unified Conversation Timeline:
 **Next Steps:**
 - Wire `contact_email` into conversation list/detail API response
 - Test timeline with real call/voicemail data on production
+- Clean up unused imports in new components
 - Consider scheduling writeback sync as cron job
 - Frontend migration to `{ error: { code, message } }` format
 - Address 3 GitHub Dependabot vulnerabilities
