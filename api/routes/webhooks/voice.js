@@ -2,6 +2,8 @@ import { Router } from 'express';
 import express from 'express';
 import { supabaseAdmin } from '../../services/supabase.js';
 import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
+import { sendEmail } from '../../services/resend.js';
+import { twilioClient } from '../../services/twilio.js';
 
 const router = Router();
 
@@ -319,6 +321,28 @@ router.post('/status', validateTwilioSignature, async (req, res) => {
 		}
 	}
 
+	// Send call notification (SMS + email) for every inbound call at terminal state
+	const isTerminal = ['completed', 'no-answer', 'busy', 'failed', 'canceled'].includes(CallStatus);
+	if (isTerminal && From) {
+		// Look up caller name
+		let callerName = null;
+		const { data: callLog } = await supabaseAdmin
+			.from('call_logs')
+			.select('caller_name, disposition')
+			.eq('twilio_sid', CallSid)
+			.maybeSingle();
+		callerName = callLog?.caller_name;
+		const disposition = callLog?.disposition || update.disposition || CallStatus;
+
+		// Fire-and-forget — don't block the response
+		sendCallNotification({
+			from: From,
+			callerName,
+			disposition,
+			duration: parseInt(CallDuration, 10) || 0
+		}).catch((err) => console.error('[status] Notification error:', err.message));
+	}
+
 	res.sendStatus(200);
 });
 
@@ -456,6 +480,31 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 				})
 				.eq('id', callLog.id);
 		}
+
+		// Send email notification only if voicemail was actually created (prevents duplicates across machines)
+		if (!error) {
+			try {
+				let callerName = null;
+				if (callLog?.id) {
+					const { data: cl } = await supabaseAdmin
+						.from('call_logs')
+						.select('caller_name')
+						.eq('id', callLog.id)
+						.maybeSingle();
+					callerName = cl?.caller_name;
+				}
+				await sendVoicemailEmail({
+					mailbox: mailbox || 'operator',
+					from: From || 'Unknown',
+					callerName,
+					duration: parseInt(RecordingDuration, 10) || 0,
+					recordingSid: RecordingSid,
+					transcription: null
+				});
+			} catch (err) {
+				console.error('[recording] Email error:', err.message);
+			}
+		}
 	}
 
 	// Respond with TwiML to end the call gracefully
@@ -575,7 +624,8 @@ router.post('/save-voicemail', async (req, res) => {
 /**
  * POST /api/webhooks/voice/transcription
  * Twilio transcription callback.
- * Updates the voicemail with transcription text.
+ * Updates the voicemail with transcription text, then sends the combined
+ * voicemail notification email (recording link + transcript in one email).
  */
 router.post('/transcription', validateTwilioSignature, async (req, res) => {
 	const { RecordingSid, TranscriptionText, TranscriptionStatus } = req.body;
@@ -586,19 +636,451 @@ router.post('/transcription', validateTwilioSignature, async (req, res) => {
 
 	const status = TranscriptionStatus === 'completed' ? 'completed' : 'failed';
 
-	const { error } = await supabaseAdmin
+	const { data: voicemail, error } = await supabaseAdmin
 		.from('voicemails')
 		.update({
 			transcription: TranscriptionText || null,
 			transcription_status: status
 		})
-		.eq('recording_sid', RecordingSid);
+		.eq('recording_sid', RecordingSid)
+		.select('id, from_number, mailbox, duration, call_log_id, created_at')
+		.maybeSingle();
 
 	if (error) {
 		console.error('Failed to update transcription:', error.message);
 	}
 
+	console.log(`[transcription] Updated ${RecordingSid} — status: ${status}`);
+
+	// Send SMS/MMS notification with transcription + recording
+	if (voicemail && twilioClient) {
+		try {
+			const apiBase = process.env.API_BASE_URL || 'https://api.lemedspa.app';
+			const playUrl = `${apiBase}/api/webhooks/voice/play-recording/${RecordingSid}`;
+			const fromPhone = voicemail.from_number || 'Unknown';
+			const mailboxLabel = formatMailbox(voicemail.mailbox);
+			const displayName = formatPhone(fromPhone);
+
+			const body = TranscriptionText
+				? `New voicemail for ${mailboxLabel} from ${displayName}:\n\n"${TranscriptionText}"`
+				: `New voicemail for ${mailboxLabel} from ${displayName} (no transcription available)`;
+
+			const msg = await twilioClient.messages.create({
+				to: '+13106218356',
+				from: process.env.TWILIO_PHONE_NUMBER,
+				body,
+				mediaUrl: [playUrl]
+			});
+			console.log(`[transcription] SMS sent — SID: ${msg.sid}`);
+		} catch (smsErr) {
+			console.error('[transcription] SMS error:', smsErr.message);
+		}
+	}
+
 	res.sendStatus(200);
 });
+
+/**
+ * GET /api/webhooks/voice/record-voicemail?mailbox=X
+ * Returns TwiML that records with transcription enabled.
+ * Called via twiml-redirect from Studio after the greeting plays.
+ */
+router.all('/record-voicemail', (req, res) => {
+	const mailbox = req.query.mailbox || 'operator';
+	const apiBase = process.env.API_BASE_URL || 'https://api.lemedspa.app';
+
+	const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Record
+    maxLength="120"
+    playBeep="true"
+    trim="trim-silence"
+    timeout="5"
+    transcribe="true"
+    transcribeCallback="${apiBase}/api/webhooks/voice/transcription"
+    action="${apiBase}/api/webhooks/voice/voicemail-recorded?mailbox=${encodeURIComponent(mailbox)}"
+  />
+  <Say voice="Polly.Joanna">We didn't receive a message. Goodbye.</Say>
+  <Hangup />
+</Response>`;
+
+	res.type('text/xml');
+	res.send(twiml);
+});
+
+/**
+ * POST /api/webhooks/voice/voicemail-recorded?mailbox=X
+ * <Record action> callback — saves voicemail to DB and sends email notification.
+ * Twilio sends URL-encoded body with recording data.
+ */
+router.all('/voicemail-recorded', async (req, res) => {
+	console.log(
+		'[voicemail-recorded] HIT — method:',
+		req.method,
+		'query:',
+		req.query,
+		'body keys:',
+		Object.keys(req.body)
+	);
+	const { CallSid, RecordingSid, RecordingUrl, RecordingDuration, From, To } = req.body;
+	const mailbox = req.query.mailbox || req.body.mailbox || 'operator';
+
+	if (!RecordingSid) {
+		res.type('text/xml');
+		return res.send('<?xml version="1.0" encoding="UTF-8"?><Response><Hangup /></Response>');
+	}
+
+	// Duplicate check
+	const { data: existing } = await supabaseAdmin
+		.from('voicemails')
+		.select('id')
+		.eq('recording_sid', RecordingSid)
+		.maybeSingle();
+
+	if (existing) {
+		res.type('text/xml');
+		return res.send(
+			'<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Joanna">Thank you. Goodbye.</Say><Hangup /></Response>'
+		);
+	}
+
+	// Look up the call log
+	let callLog = null;
+	let callerName = null;
+	if (CallSid) {
+		const { data } = await supabaseAdmin
+			.from('call_logs')
+			.select('id, caller_name')
+			.eq('twilio_sid', CallSid)
+			.maybeSingle();
+		callLog = data;
+		callerName = data?.caller_name;
+
+		if (!callLog && From) {
+			const { data: phoneMatch } = await supabaseAdmin
+				.from('call_logs')
+				.select('id, caller_name')
+				.eq('from_number', From)
+				.eq('direction', 'inbound')
+				.gte('started_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+				.order('started_at', { ascending: false })
+				.limit(1)
+				.maybeSingle();
+			callLog = phoneMatch;
+			callerName = phoneMatch?.caller_name;
+		}
+
+		if (!callLog && From) {
+			const { data: created } = await supabaseAdmin
+				.from('call_logs')
+				.insert({
+					twilio_sid: CallSid,
+					direction: 'inbound',
+					from_number: From,
+					to_number: To || process.env.TWILIO_PHONE_NUMBER || '',
+					status: 'completed',
+					disposition: 'voicemail',
+					metadata: { source: 'twiml_record_voicemail' }
+				})
+				.select('id')
+				.single();
+			callLog = created;
+		}
+	}
+
+	const duration = parseInt(RecordingDuration, 10) || 0;
+
+	const { data: voicemail, error } = await supabaseAdmin
+		.from('voicemails')
+		.insert({
+			call_log_id: callLog?.id || null,
+			from_number: From || 'unknown',
+			recording_url: RecordingUrl || '',
+			recording_sid: RecordingSid,
+			duration,
+			transcription_status: 'pending',
+			mailbox
+		})
+		.select('id')
+		.maybeSingle();
+
+	if (error) {
+		console.error('[voicemail-recorded] Failed:', error.message);
+	}
+
+	// Update call log disposition
+	if (callLog?.id) {
+		await supabaseAdmin
+			.from('call_logs')
+			.update({
+				disposition: 'voicemail',
+				recording_url: RecordingUrl,
+				recording_duration: duration
+			})
+			.eq('id', callLog.id);
+	}
+
+	// Send email notification immediately (fire-and-forget)
+	// Transcription updates the DB separately for the web app
+	try {
+		const emailResult = await sendVoicemailEmail({
+			mailbox,
+			from: From || 'Unknown',
+			callerName,
+			duration,
+			recordingSid: RecordingSid,
+			transcription: null
+		});
+		console.log(`[voicemail-recorded] Email result:`, emailResult ? 'sent' : 'no result');
+	} catch (err) {
+		console.error('[voicemail-recorded] Email error:', err.message);
+	}
+
+	console.log(`[voicemail-recorded] Saved ${mailbox} voicemail from ${From} (${RecordingSid})`);
+
+	res.type('text/xml');
+	res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Joanna">Thank you for your message. Goodbye.</Say>
+  <Hangup />
+</Response>`);
+});
+
+/**
+ * GET /api/webhooks/voice/play-recording/:recordingSid
+ * Public recording proxy — streams Twilio recording audio.
+ * No user auth needed; the recording SID is unguessable.
+ * Used in voicemail notification emails.
+ */
+router.get('/play-recording/:recordingSid', async (req, res) => {
+	const { recordingSid } = req.params;
+	const accountSid = process.env.TWILIO_ACCOUNT_SID;
+	const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+	if (!accountSid || !authToken) {
+		return res.status(503).send('Audio playback not configured');
+	}
+
+	try {
+		const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Recordings/${recordingSid}.mp3`;
+		const twilioRes = await fetch(url, {
+			headers: {
+				Authorization: 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+			}
+		});
+
+		if (!twilioRes.ok) {
+			return res.status(404).send('Recording not found');
+		}
+
+		res.set('Content-Type', 'audio/mpeg');
+		const contentLength = twilioRes.headers.get('content-length');
+		if (contentLength) res.set('Content-Length', contentLength);
+
+		const reader = twilioRes.body.getReader();
+		const pump = async () => {
+			const { done, value } = await reader.read();
+			if (done) return res.end();
+			res.write(Buffer.from(value));
+			return pump();
+		};
+		await pump();
+	} catch (e) {
+		console.error('[play-recording] Proxy error:', e.message);
+		if (!res.headersSent) res.status(500).send('Failed to stream recording');
+	}
+});
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+/** Format a phone number for display: +13105551234 → (310) 555-1234 */
+function formatPhone(phone) {
+	if (!phone) return 'Unknown';
+	const digits = phone.replace(/\D/g, '');
+	if (digits.length === 11 && digits.startsWith('1')) {
+		return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+	}
+	if (digits.length === 10) {
+		return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+	}
+	return phone;
+}
+
+/** Format mailbox slug for display: clinical_md → Clinical Md */
+function formatMailbox(mailbox) {
+	return (mailbox || 'operator').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Send voicemail notification email to inbox@lemedspa.com (recording + optional transcript) */
+async function sendVoicemailEmail({
+	mailbox,
+	from,
+	callerName,
+	duration,
+	recordingSid,
+	transcription
+}) {
+	const apiBase = process.env.API_BASE_URL || 'https://api.lemedspa.app';
+	const playUrl = `${apiBase}/api/webhooks/voice/play-recording/${recordingSid}`;
+
+	const displayName = callerName || formatPhone(from);
+	const mailboxLabel = formatMailbox(mailbox);
+
+	const now = new Date();
+	const laTime = now.toLocaleString('en-US', {
+		timeZone: 'America/Los_Angeles',
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true
+	});
+
+	const mins = Math.floor(duration / 60);
+	const secs = duration % 60;
+	const durationStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+
+	const transcriptText = transcription
+		? `\nTranscript:\n"${transcription}"`
+		: '\n(Transcription not available)';
+
+	const transcriptHtml = transcription
+		? `<div style="background: #252540; border-radius: 8px; padding: 16px; margin-top: 16px; border-left: 3px solid #d4a843;">
+						<p style="margin: 0 0 6px; color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Transcript</p>
+						<p style="margin: 0; color: #f0f0f0; font-size: 15px; line-height: 1.6;">&ldquo;${transcription}&rdquo;</p>
+					</div>`
+		: `<p style="margin-top: 12px; color: #666; font-size: 12px; font-style: italic;">Transcription not available</p>`;
+
+	const toEmail = 'care@lemedspa.com';
+	console.log(`[voicemail-email] Sending to ${toEmail} — ${displayName} → ${mailboxLabel}`);
+	const result = await sendEmail({
+		to: toEmail,
+		fromName: 'Le Med Spa Voicemail',
+		subject: `New Voicemail — ${displayName} → ${mailboxLabel}`,
+		text: [
+			`New voicemail from ${displayName} (${from})`,
+			`Mailbox: ${mailboxLabel}`,
+			`Duration: ${durationStr}`,
+			`Time: ${laTime}`,
+			'',
+			`Listen: ${playUrl}`,
+			transcriptText
+		].join('\n'),
+		html: `
+			<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+				<div style="background: #1a1a2e; border-radius: 12px; padding: 24px; color: #f0f0f0;">
+					<h2 style="margin: 0 0 16px; color: #d4a843; font-size: 18px;">New Voicemail</h2>
+					<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+						<tr><td style="padding: 6px 0; color: #999; width: 80px;">From</td><td style="padding: 6px 0; color: #f0f0f0; font-weight: 600;">${displayName}</td></tr>
+						<tr><td style="padding: 6px 0; color: #999;">Phone</td><td style="padding: 6px 0; color: #f0f0f0;">${from}</td></tr>
+						<tr><td style="padding: 6px 0; color: #999;">Mailbox</td><td style="padding: 6px 0; color: #f0f0f0;">${mailboxLabel}</td></tr>
+						<tr><td style="padding: 6px 0; color: #999;">Duration</td><td style="padding: 6px 0; color: #f0f0f0;">${durationStr}</td></tr>
+						<tr><td style="padding: 6px 0; color: #999;">Time</td><td style="padding: 6px 0; color: #f0f0f0;">${laTime}</td></tr>
+					</table>
+					<div style="margin-top: 20px;">
+						<a href="${playUrl}" style="display: inline-block; background: #d4a843; color: #1a1a2e; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
+							Listen to Voicemail
+						</a>
+					</div>
+					${transcriptHtml}
+				</div>
+			</div>`
+	});
+	if (result.success) {
+		console.log(`[voicemail-email] Sent — Resend ID:`, result.data?.id);
+	} else {
+		console.error(`[voicemail-email] Failed:`, result.error);
+	}
+}
+
+/** Send SMS + email notification for an inbound call */
+async function sendCallNotification({ from, callerName, disposition, duration }) {
+	const displayName = callerName || formatPhone(from);
+	const phoneFormatted = formatPhone(from);
+
+	const now = new Date();
+	const laTime = now.toLocaleString('en-US', {
+		timeZone: 'America/Los_Angeles',
+		weekday: 'short',
+		month: 'short',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true
+	});
+
+	const mins = Math.floor(duration / 60);
+	const secs = duration % 60;
+	const durationStr = duration > 0 ? (mins > 0 ? `${mins}m ${secs}s` : `${secs}s`) : '';
+
+	// Disposition label
+	const labels = {
+		answered: 'Answered',
+		missed: 'Missed',
+		voicemail: 'Voicemail',
+		abandoned: 'Abandoned',
+		completed: 'Completed',
+		'no-answer': 'Missed',
+		busy: 'Busy',
+		failed: 'Failed',
+		canceled: 'Canceled'
+	};
+	const label = labels[disposition] || disposition;
+
+	// SMS
+	if (twilioClient) {
+		try {
+			const smsBody =
+				`Inbound call — ${label}` +
+				`\nFrom: ${displayName}` +
+				(displayName !== phoneFormatted ? `\nPhone: ${phoneFormatted}` : '') +
+				(durationStr ? `\nDuration: ${durationStr}` : '') +
+				`\nTime: ${laTime}`;
+
+			const msg = await twilioClient.messages.create({
+				to: '+13106218356',
+				from: process.env.TWILIO_PHONE_NUMBER,
+				body: smsBody
+			});
+			console.log(`[call-notify] SMS sent — SID: ${msg.sid}`);
+		} catch (smsErr) {
+			console.error('[call-notify] SMS error:', smsErr.message);
+		}
+	}
+
+	// Email
+	try {
+		const toEmail = 'care@lemedspa.com';
+		await sendEmail({
+			to: toEmail,
+			fromName: 'Le Med Spa Calls',
+			subject: `${label} Call — ${displayName}`,
+			text: [
+				`${label} call from ${displayName} (${from})`,
+				durationStr ? `Duration: ${durationStr}` : null,
+				`Time: ${laTime}`
+			]
+				.filter(Boolean)
+				.join('\n'),
+			html: `
+				<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+					<div style="background: #1a1a2e; border-radius: 12px; padding: 24px; color: #f0f0f0;">
+						<h2 style="margin: 0 0 16px; color: #d4a843; font-size: 18px;">${label} Call</h2>
+						<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+							<tr><td style="padding: 6px 0; color: #999; width: 80px;">From</td><td style="padding: 6px 0; color: #f0f0f0; font-weight: 600;">${displayName}</td></tr>
+							<tr><td style="padding: 6px 0; color: #999;">Phone</td><td style="padding: 6px 0; color: #f0f0f0;">${phoneFormatted}</td></tr>
+							${durationStr ? `<tr><td style="padding: 6px 0; color: #999;">Duration</td><td style="padding: 6px 0; color: #f0f0f0;">${durationStr}</td></tr>` : ''}
+							<tr><td style="padding: 6px 0; color: #999;">Status</td><td style="padding: 6px 0; color: #f0f0f0;">${label}</td></tr>
+							<tr><td style="padding: 6px 0; color: #999;">Time</td><td style="padding: 6px 0; color: #f0f0f0;">${laTime}</td></tr>
+						</table>
+					</div>
+				</div>`
+		});
+		console.log(`[call-notify] Email sent to ${toEmail}`);
+	} catch (emailErr) {
+		console.error('[call-notify] Email error:', emailErr.message);
+	}
+}
 
 export default router;

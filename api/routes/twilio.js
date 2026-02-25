@@ -181,8 +181,8 @@ router.post('/outbound-status', async (req, res) => {
 router.post('/connect-operator', (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
 	const callerNumber = req.body.From || req.body.Caller || 'Unknown';
-	const sipUser = process.env.TWILIO_SIP1_USERNAME;
-	const sipPass = process.env.TWILIO_SIP1_PASSWORD;
+	const sipUser = process.env.TWILIO_SIPTEST_USERNAME;
+	const sipPass = process.env.TWILIO_SIPTEST_PASSWORD;
 	const baseUrl =
 		process.env.RENDER_EXTERNAL_URL ||
 		process.env.FRONTEND_URL_PUBLIC ||
@@ -209,7 +209,11 @@ router.post('/connect-operator', (req, res) => {
 	// 2. Ring the browser softphone client
 	dial.client('lea');
 
-	// No fallback phone number — SIP + softphone only
+	// 3. Ring the fallback phone number
+	const fallback = process.env.TWILIO_OPERATOR_FALLBACK;
+	if (fallback) {
+		dial.number(fallback);
+	}
 
 	res.type('text/xml');
 	res.send(twiml.toString());

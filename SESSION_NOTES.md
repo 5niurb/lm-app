@@ -1,3 +1,39 @@
+## Session — 2026-02-25 (Session 72)
+**Focus:** Voicemail save fix + frontend redeploy for Fly.io
+
+**Accomplished:**
+- Fixed voicemail save bug: Studio `make-http-request` widgets don't resolve `{{widgets.*}}` in URL-encoded bodies — switched all 4 save widgets to JSON content type
+- Added `express.json()` middleware to voice webhook router for JSON body parsing
+- Added `POST /api/webhooks/voice/save-voicemail` endpoint (no Twilio sig validation — Studio doesn't sign)
+- Rebuilt + redeployed frontend to CF Pages with `PUBLIC_API_URL=https://api.lemedspa.app` (was baked with dead Render URL)
+- Removed stale Render keep-alive code from server.js (Fly.io is always-on)
+- Deployed IVR flow to test (rev 73), verified voicemail saved to DB, then deployed to prod (rev 8)
+
+**Diagram:**
+```
+  Caller → Studio IVR → record_*_vmail → save_*_vmail (JSON) → API /save-voicemail → Supabase
+                                              ↑
+                            FIX: URL-encoded → JSON content type
+                            (template vars now resolve correctly)
+```
+
+**Current State:**
+- API: Fly.io (api.lemedspa.app) — healthy, all secrets set
+- Frontend: CF Pages (lemedspa.app) — baked with correct API URL
+- Softphone: working (confirmed by user)
+- Voicemails: saving to DB (confirmed — operator mailbox, 7s recording)
+- All 195 tests passing, pushed to main (ddabcef)
+
+**Issues:**
+- User mentioned "we created a staging env on supabase also" — not yet addressed
+
+**Next Steps:**
+- Address staging Supabase environment setup
+- Test voicemail from prod main line to confirm end-to-end
+- Consider transcription (currently not wired — Studio drops transcription_callback)
+
+---
+
 ## Session — 2026-02-25 (Session 71)
 **Focus:** Fly.io deployment — API back online
 

@@ -23,6 +23,7 @@ nul
 .env
 .env.*
 .env-vars
+.lm-app-api_render*
 !.env.example
 !.env.test
 
