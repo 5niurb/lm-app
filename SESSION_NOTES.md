@@ -1,42 +1,42 @@
-## Session — 2026-02-24 (Session 67)
-**Focus:** Star/resolve icon polish, positioning, starred filter
+## Session — 2026-02-25 (Session 68)
+**Focus:** UI polish — icons, dividers, gold color, light mode, broadcast merge tags
 
 **Accomplished:**
-- **ThreadItemActions icon sizing** — bumped icons h-3→h-3.5, containers h-6→h-7 to match other action icons
-- **Always-visible when active** — starred/resolved icons stay visible (not hover-only) when item has a flag
-- **Anchored to bubble edge** — all bubble types now use `right-full mr-1` / `left-full ml-1` positioning:
-  - SMS: was `left-[-28px]`/`right-[-28px]` (floating 28px away) → flush to bubble edge
-  - Call/Voicemail: was `absolute right-2` (far right of full-width container) → `left-full ml-1` with proper max-w wrapper
-  - Email: was `right-[27%]`/`left-[27%]` (fragile percentage) → `right-full mr-1`/`left-full ml-1` with proper wrapper
-  - Internal note: was `right-2` → `right-full mr-1`
-- **Starred filter** — toggle button in thread header (gold star icon), filters timeline to starred items only
-  - Empty state with star icon + "Show all items" link
-  - Resets when switching conversations
-- Deployed to CF Pages (https://4f509bc5.lm-app.pages.dev)
+- **Star/resolve icons** — bigger (h-4 w-4 in h-8 w-8), vertical layout, consistently RIGHT of all bubble types
+- **Reaction emoticons** — anchored to lower-right corner of bubble (`mt-[-14px] justify-end`)
+- **Panel dividers themed** — `--panel-divider` CSS var: `#080809` dark, `#d4d4d8` light (Champagne)
+- **Sidebar divider** — 6px thick border between nav and content via `[data-slot='sidebar-container']`
+- **Nav group headers** — gold-colored, bolder (`font-weight: 700`), more prominent
+- **Sidebar brand** — "LeMed Spa" in `font-variant: small-caps`
+- **Browser tab title** — changed to "LeMedSpa App"
+- **Gold color shinier** — brightened across all 3 themes (Midnight `#dbb54a`, Dusk `#d4ad4a`, Champagne `#b09730`) + text-shadow glow
+- **Light mode fixes** — message bubbles now legible with proper backgrounds + `color: #09090b`
+- **Broadcast merge tags** — `{..}` (Braces) icon button with dropdown: `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{phone}}`
+- Deployed to CF Pages (https://a99fbdb8.lm-app.pages.dev)
 - All 195 tests pass (129 vitest + 66 node:test)
 
 **Diagram:**
 ```
-ThreadItemActions positioning (before → after):
+Theme-aware panel dividers:
+┌──────────┐ 6px ┌──────────────┐ 9px ┌──────────────┐
+│ Sidebar  │─────│ Contact List │─────│  Thread View  │
+│ (nav)    │dark │              │dark │               │
+└──────────┘     └──────────────┘     └──────────────┘
+  --panel-divider: #080809 (dark) / #d4d4d8 (light)
 
-Before:                          After:
-  ┌─────────┐   ★ ✓             ┌─────────┐
-  │  bubble  │   (floating)    ★✓│  bubble  │
-  └─────────┘   28px away        └─────────┘
-                                  ↑ flush (4px gap)
-
-Thread header:
-  [Contact Name]  [★] [📞] [📱]
-                   ↑ starred filter toggle
+Gold color upgrade:
+  Midnight: #d4a843 → #dbb54a  (+shine glow)
+  Dusk:     #c9a24e → #d4ad4a
+  Champagne:#a0882e → #b09730
 ```
 
 **Current State:**
-- `main` branch, clean tree, all pushed (commit f8fd80f)
+- `main` branch, clean tree, all pushed (commit 4dc89a3 via PR #9)
 - Production deployed: lmedspa.app + API on Render
 - 0 errors, 24 warnings (all pre-existing unused vars)
 
 **Commits this session:**
-- `f8fd80f` [messages] Fix star/resolve icon sizing, positioning, and add starred filter
+- `259613b` [ui] Polish icons, panel dividers, gold color, and light mode fixes (PR #9 → merged as 4dc89a3)
 
 **Issues:**
 - 1 remaining Dependabot alert (high) — likely transitive dep
