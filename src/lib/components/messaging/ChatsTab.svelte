@@ -1282,9 +1282,9 @@
 											{#each [...new Set(msg.reactions.map((r) => r.emoji))] as emoji (emoji)}
 												{@const count = msg.reactions.filter((r) => r.emoji === emoji).length}
 												<span
-													class="inline-flex items-center gap-0.5 rounded-full bg-surface-raised border border-border px-1.5 py-0.5 text-xs shadow-sm"
+													class="inline-flex items-center gap-0.5 rounded-full bg-surface-raised border border-border px-2 py-0.5 text-sm opacity-100 shadow-sm"
 												>
-													{emoji}{#if count > 1}<span class="text-[9px] text-text-tertiary"
+													{emoji}{#if count > 1}<span class="text-[10px] text-text-tertiary"
 															>{count}</span
 														>{/if}
 												</span>
