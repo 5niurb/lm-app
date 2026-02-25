@@ -17,7 +17,12 @@ const mockInsert = vi.fn(() => ({
 	}))
 }));
 const mockUpdate = vi.fn(() => ({
-	eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
+	eq: vi.fn(() => ({
+		select: vi.fn(() => ({
+			maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null }))
+		})),
+		then: (resolve) => resolve({ data: null, error: null })
+	}))
 }));
 const mockSelectChain = {
 	eq: vi.fn(() => ({
