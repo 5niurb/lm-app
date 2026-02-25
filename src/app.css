@@ -110,9 +110,10 @@
 	--radius: 0.75rem;
 
 	/* Gold — the signature LM accent for text, headers, links, borders */
-	--gold: #d4a843;
-	--gold-dim: rgba(212, 168, 67, 0.4);
-	--gold-glow: rgba(212, 168, 67, 0.1);
+	--gold: #dbb54a;
+	--gold-dim: rgba(219, 181, 74, 0.4);
+	--gold-glow: rgba(219, 181, 74, 0.12);
+	--panel-divider: #080809;
 
 	/* Sidebar */
 	--sidebar: #0c0c0e;
@@ -195,10 +196,11 @@
 	--destructive-foreground: #ffffff;
 	--border: #292524;
 	--input: #292524;
-	--ring: #c9a24e;
-	--gold: #c9a24e;
-	--gold-dim: rgba(201, 162, 78, 0.4);
-	--gold-glow: rgba(201, 162, 78, 0.1);
+	--ring: #d4ad4a;
+	--gold: #d4ad4a;
+	--gold-dim: rgba(212, 173, 74, 0.4);
+	--gold-glow: rgba(212, 173, 74, 0.12);
+	--panel-divider: #0a0908;
 	--sidebar: #0a0908;
 	--sidebar-foreground: #fafaf9;
 	--sidebar-primary: #c9a24e;
@@ -265,10 +267,11 @@
 	--destructive-foreground: #ffffff;
 	--border: #e4e4e7;
 	--input: #e4e4e7;
-	--ring: #a0882e;
-	--gold: #a0882e;
-	--gold-dim: rgba(160, 136, 46, 0.3);
-	--gold-glow: rgba(160, 136, 46, 0.06);
+	--ring: #b09730;
+	--gold: #b09730;
+	--gold-dim: rgba(176, 151, 48, 0.3);
+	--gold-glow: rgba(176, 151, 48, 0.08);
+	--panel-divider: #d4d4d8;
 	--sidebar: #ffffff;
 	--sidebar-foreground: #09090b;
 	--sidebar-primary: #a0882e;
@@ -343,6 +346,7 @@
 	/* Backward-compat gold utilities — now map to primary */
 	.text-gold {
 		color: var(--gold);
+		text-shadow: 0 0 12px var(--gold-glow);
 	}
 	.border-gold {
 		border-color: var(--gold-dim);
@@ -595,11 +599,12 @@ button {
 }
 .section-label-gold {
 	font-family: var(--font-display);
-	font-size: 0.6rem;
-	font-weight: 600;
-	letter-spacing: 0.1em;
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.12em;
 	text-transform: uppercase;
-	color: var(--text-tertiary);
+	color: var(--gold);
+	opacity: 0.7;
 }
 
 /* ═══════════════════════════════════════════
@@ -808,6 +813,18 @@ html select {
 }
 
 /* ═══════════════════════════════════════════
+   PANEL DIVIDERS & SIDEBAR BORDER
+   ═══════════════════════════════════════════ */
+.panel-divider-color {
+	border-color: var(--panel-divider);
+}
+
+/* Thick black divider between sidebar and content */
+[data-slot='sidebar-container'] {
+	border-right: 6px solid var(--panel-divider) !important;
+}
+
+/* ═══════════════════════════════════════════
    LIGHT THEME OVERRIDES
    ═══════════════════════════════════════════ */
 .theme-champagne .noise-texture::before {
@@ -821,4 +838,21 @@ html select {
 		rgba(0, 0, 0, 0.03) 75%
 	);
 	background-size: 200% 100%;
+}
+.theme-champagne .text-gold {
+	text-shadow: none;
+}
+
+/* Light mode message bubbles — darker text, proper backgrounds */
+.theme-champagne .msg-bubble-in {
+	background: linear-gradient(135deg, #f8f5ef, #faf7f1 50%, #f5f2ec);
+	border: 2px solid rgba(176, 151, 48, 0.35);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+	color: #09090b;
+}
+.theme-champagne .msg-bubble-out {
+	background: linear-gradient(135deg, #eef3fa, #f0f5fc 50%, #ebf0f8);
+	border: 2px solid rgba(100, 140, 200, 0.35);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+	color: #09090b;
 }

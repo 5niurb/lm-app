@@ -661,11 +661,11 @@
 <div class="flex h-full overflow-hidden bg-card">
 	<!-- Conversation List / Log (left panel) -->
 	<div
-		class="w-full sm:w-80 lg:w-96 border-r-[9px] border-[#080809] flex flex-col shrink-0 {selectedConvo
+		class="w-full sm:w-80 lg:w-96 border-r-[9px] panel-divider-color flex flex-col shrink-0 {selectedConvo
 			? 'hidden sm:flex'
 			: 'flex'}"
 	>
-		<div class="p-4 border-b-[9px] border-[#080809] space-y-3">
+		<div class="p-4 border-b-[9px] panel-divider-color space-y-3">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-1.5">
 					<Button
@@ -970,7 +970,7 @@
 	<div class="flex-1 flex flex-col {selectedConvo || showNewConvo ? 'flex' : 'hidden sm:flex'}">
 		{#if selectedConvo}
 			<!-- Thread header -->
-			<div class="px-4 py-3 border-b-[9px] border-[#080809] flex items-center gap-3">
+			<div class="px-4 py-3 border-b-[9px] panel-divider-color flex items-center gap-3">
 				<button class="sm:hidden" onclick={goBack}>
 					<ArrowLeft class="h-5 w-5 text-text-secondary" />
 				</button>
@@ -1030,7 +1030,7 @@
 			</div>
 
 			<!-- Messages -->
-			<div id="message-scroll" class="flex-1 overflow-y-auto p-4 space-y-3">
+			<div id="message-scroll" class="flex-1 overflow-y-auto p-4 pr-12 space-y-3">
 				{#if loadingMessages}
 					<div class="space-y-3">
 						{#each Array(5) as _, i (i)}
@@ -1137,11 +1137,7 @@
 							<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
 								<div class="relative group max-w-[85%]">
 									<EmailBubble email={msg} />
-									<div
-										class="absolute top-2 {msg.direction === 'outbound'
-											? 'right-full mr-1'
-											: 'left-full ml-1'}"
-									>
+									<div class="absolute top-2 left-full ml-1">
 										<ThreadItemActions
 											itemType="email"
 											itemId={msg.id}
@@ -1155,9 +1151,9 @@
 						{:else if msg.is_internal_note}
 							<!-- Internal note bubble — warm cream, right-aligned -->
 							<div class="flex justify-end">
-								<div class="relative group">
+								<div class="relative group max-w-[75%]">
 									<div
-										class="max-w-[75%] rounded-2xl px-4 py-2.5 rounded-br-md bg-[rgba(255,248,225,0.12)] border border-[rgba(255,248,225,0.2)]"
+										class="rounded-2xl px-4 py-2.5 rounded-br-md bg-[rgba(255,248,225,0.12)] border border-[rgba(255,248,225,0.2)]"
 									>
 										<p class="text-[10px] font-medium mb-0.5 text-amber-300/80">
 											{msg.sender?.full_name || 'Staff'}
@@ -1175,7 +1171,7 @@
 											})}
 										</p>
 									</div>
-									<div class="absolute top-1 right-full mr-1">
+									<div class="absolute top-1 left-full ml-1">
 										<ThreadItemActions
 											itemType="message"
 											itemId={msg.id}
@@ -1189,11 +1185,10 @@
 						{:else}
 							<!-- SMS message bubble -->
 							<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
-								<div class="relative group">
+								<div class="relative group max-w-[75%]">
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
-										class="max-w-[75%] rounded-2xl px-4 py-2.5 select-none {msg.direction ===
-										'outbound'
+										class="rounded-2xl px-4 py-2.5 select-none {msg.direction === 'outbound'
 											? 'msg-bubble-out text-text-primary rounded-br-md'
 											: 'msg-bubble-in text-text-primary rounded-bl-md'}"
 										oncontextmenu={(e) => openReactionBar(e, msg, i)}
@@ -1283,11 +1278,7 @@
 										</p>
 									</div>
 									{#if msg.reactions?.length > 0}
-										<div
-											class="flex gap-0.5 mt-[-6px] {msg.direction === 'outbound'
-												? 'justify-end pr-2'
-												: 'justify-start pl-2'}"
-										>
+										<div class="flex gap-0.5 justify-end pr-2 mt-[-14px] relative z-10">
 											{#each [...new Set(msg.reactions.map((r) => r.emoji))] as emoji (emoji)}
 												{@const count = msg.reactions.filter((r) => r.emoji === emoji).length}
 												<span
@@ -1300,11 +1291,7 @@
 											{/each}
 										</div>
 									{/if}
-									<div
-										class="absolute top-1 {msg.direction === 'outbound'
-											? 'right-full mr-1'
-											: 'left-full ml-1'}"
-									>
+									<div class="absolute top-1 left-full ml-1">
 										<ThreadItemActions
 											itemType="message"
 											itemId={msg.id}

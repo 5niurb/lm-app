@@ -59,7 +59,7 @@
 </script>
 
 <svelte:head>
-	<title>LM App - Le Med Spa</title>
+	<title>LeMedSpa App</title>
 </svelte:head>
 
 {@render children()}

@@ -1,56 +1,50 @@
-## Session — 2026-02-24 (Session 66)
-**Focus:** Contrast fixes, cleanup, security, deploy
+## Session — 2026-02-24 (Session 67)
+**Focus:** Star/resolve icon polish, positioning, starred filter
 
 **Accomplished:**
-- Upgraded learning infrastructure: rewrote observe hook for structured metadata, created 32 instincts from MEMORY.md, upgraded strategic-compact to phase-aware detection (committed to lmdev repo)
-- Cleaned unused imports in ComposeBar, AudioPlayer, EmailCompose (3 files)
-- Wired `contact_email` into conversation list API via Supabase FK join
-- Fixed 3 Dependabot vulnerabilities: removed unused `xlsx` dep, updated `qs` 6.14.1→6.14.2
-- **Design token contrast overhaul** — fixed near-invisible text across entire app:
-  - `--text-ghost`: 10% → 32% opacity (was practically invisible)
-  - `--text-tertiary`: #71717a → #8b8b95 (better readability at small sizes)
-  - `--surface-subtle/raised/hover`: doubled opacity for card definition
-  - `--border-subtle`: 6% → 10% for visible card edges
-  - Fixed hardcoded `text-white/25` timestamps in EmailBubble, ChatsTab
-  - Fixed invisible `text-border` dot separators in CallActivityBubble, VoicemailBubble
-  - Applied same proportional fixes to Dusk and Champagne themes
-- Deployed to CF Pages (https://97c31a04.lm-app.pages.dev)
+- **ThreadItemActions icon sizing** — bumped icons h-3→h-3.5, containers h-6→h-7 to match other action icons
+- **Always-visible when active** — starred/resolved icons stay visible (not hover-only) when item has a flag
+- **Anchored to bubble edge** — all bubble types now use `right-full mr-1` / `left-full ml-1` positioning:
+  - SMS: was `left-[-28px]`/`right-[-28px]` (floating 28px away) → flush to bubble edge
+  - Call/Voicemail: was `absolute right-2` (far right of full-width container) → `left-full ml-1` with proper max-w wrapper
+  - Email: was `right-[27%]`/`left-[27%]` (fragile percentage) → `right-full mr-1`/`left-full ml-1` with proper wrapper
+  - Internal note: was `right-2` → `right-full mr-1`
+- **Starred filter** — toggle button in thread header (gold star icon), filters timeline to starred items only
+  - Empty state with star icon + "Show all items" link
+  - Resets when switching conversations
+- Deployed to CF Pages (https://4f509bc5.lm-app.pages.dev)
 - All 195 tests pass (129 vitest + 66 node:test)
 
 **Diagram:**
 ```
-Design Token Contrast Fix (cascading):
-┌──────────────────────────────────────────────┐
-│  app.css  (3 themes: Midnight, Dusk, Champ)  │
-│  --text-ghost:   0.10 → 0.32                 │
-│  --text-tertiary: #71717a → #8b8b95          │
-│  --surface-*:    doubled opacity             │
-│  --border-subtle: 0.06 → 0.10               │
-└──────────┬───────────────────────────────────┘
-           │ cascades to 50+ components
-           ▼
-  ┌────────────────┬──────────────┬──────────┐
-  │ Messages/Chats │ Login/Header │ Settings │
-  │ Calls/VM/Email │ Dashboard    │ Services │
-  └────────────────┴──────────────┴──────────┘
+ThreadItemActions positioning (before → after):
+
+Before:                          After:
+  ┌─────────┐   ★ ✓             ┌─────────┐
+  │  bubble  │   (floating)    ★✓│  bubble  │
+  └─────────┘   28px away        └─────────┘
+                                  ↑ flush (4px gap)
+
+Thread header:
+  [Contact Name]  [★] [📞] [📱]
+                   ↑ starred filter toggle
 ```
 
 **Current State:**
-- `main` branch, clean tree, all pushed (commit ff52a3e)
+- `main` branch, clean tree, all pushed (commit f8fd80f)
 - Production deployed: lmedspa.app + API on Render
 - 0 errors, 24 warnings (all pre-existing unused vars)
 
 **Commits this session:**
-- `7711445` [skills] Upgrade observe hook + strategic compact (lmdev repo)
-- `b9eab70` [messages] Wire contact_email + clean unused imports
-- `9ad2a12` [security] Remove xlsx, update qs for Dependabot
-- `ff52a3e` [ui] Fix contrast — bump text-ghost, text-tertiary, surface, border tokens
+- `f8fd80f` [messages] Fix star/resolve icon sizing, positioning, and add starred filter
 
 **Issues:**
 - 1 remaining Dependabot alert (high) — likely transitive dep
+- Pre-existing bug: calls page has hardcoded `localhost:3001` URL for voicemail recording playback
 - 24 eslint warnings (unused vars in scripts/tests, not app code)
 
 **Next Steps:**
+- Fix calls page localhost voicemail URL (use PUBLIC_API_URL or relative path)
 - Test timeline with real call/voicemail data on production
 - Consider scheduling Google Sheets writeback sync as cron job
 - Frontend migration to `{ error: { code, message } }` format
