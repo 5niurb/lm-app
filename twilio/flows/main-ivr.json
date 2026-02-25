@@ -256,24 +256,46 @@
 					"y": 620
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=operator",
 				"timeout": 5,
 				"transcribe": true,
-				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"trim": "trim-silence"
 			},
 			"transitions": [
 				{
-					"event": "recordingComplete"
+					"event": "recordingComplete",
+					"next": "save_closed_vmail"
 				},
 				{
 					"event": "noAudio"
 				},
 				{
-					"event": "hangup"
+					"event": "hangup",
+					"next": "save_closed_vmail"
 				}
 			],
 			"type": "record-voicemail"
+		},
+		{
+			"name": "save_closed_vmail",
+			"properties": {
+				"body": "{\"RecordingSid\":\"{{widgets.record_closed_vmail.RecordingSid}}\",\"RecordingUrl\":\"{{widgets.record_closed_vmail.RecordingUrl}}\",\"RecordingDuration\":\"{{widgets.record_closed_vmail.RecordingDuration}}\",\"CallSid\":\"{{trigger.call.CallSid}}\",\"From\":\"{{trigger.call.From}}\",\"To\":\"{{trigger.call.To}}\",\"mailbox\":\"operator\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": -100,
+					"y": 770
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/voice/save-voicemail"
+			},
+			"transitions": [
+				{
+					"event": "success"
+				},
+				{
+					"event": "failed"
+				}
+			],
+			"type": "make-http-request"
 		},
 		{
 			"name": "x0a-MainGreetingMenu_Open",
@@ -646,24 +668,46 @@
 					"y": 1800
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=lea",
 				"timeout": 5,
 				"transcribe": true,
-				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"trim": "trim-silence"
 			},
 			"transitions": [
 				{
-					"event": "recordingComplete"
+					"event": "recordingComplete",
+					"next": "save_lea_vmail"
 				},
 				{
 					"event": "noAudio"
 				},
 				{
-					"event": "hangup"
+					"event": "hangup",
+					"next": "save_lea_vmail"
 				}
 			],
 			"type": "record-voicemail"
+		},
+		{
+			"name": "save_lea_vmail",
+			"properties": {
+				"body": "{\"RecordingSid\":\"{{widgets.record_lea_vmail.RecordingSid}}\",\"RecordingUrl\":\"{{widgets.record_lea_vmail.RecordingUrl}}\",\"RecordingDuration\":\"{{widgets.record_lea_vmail.RecordingDuration}}\",\"CallSid\":\"{{trigger.call.CallSid}}\",\"From\":\"{{trigger.call.From}}\",\"To\":\"{{trigger.call.To}}\",\"mailbox\":\"lea\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 320,
+					"y": 1950
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/voice/save-voicemail"
+			},
+			"transitions": [
+				{
+					"event": "success"
+				},
+				{
+					"event": "failed"
+				}
+			],
+			"type": "make-http-request"
 		},
 		{
 			"name": "gather_clinicalmd_vmail",
@@ -728,24 +772,46 @@
 					"y": 1600
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=clinical_md",
 				"timeout": 5,
 				"transcribe": true,
-				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"trim": "trim-silence"
 			},
 			"transitions": [
 				{
-					"event": "recordingComplete"
+					"event": "recordingComplete",
+					"next": "save_clinicalmd_vmail"
 				},
 				{
 					"event": "noAudio"
 				},
 				{
-					"event": "hangup"
+					"event": "hangup",
+					"next": "save_clinicalmd_vmail"
 				}
 			],
 			"type": "record-voicemail"
+		},
+		{
+			"name": "save_clinicalmd_vmail",
+			"properties": {
+				"body": "{\"RecordingSid\":\"{{widgets.record_clinicalmd_vmail.RecordingSid}}\",\"RecordingUrl\":\"{{widgets.record_clinicalmd_vmail.RecordingUrl}}\",\"RecordingDuration\":\"{{widgets.record_clinicalmd_vmail.RecordingDuration}}\",\"CallSid\":\"{{trigger.call.CallSid}}\",\"From\":\"{{trigger.call.From}}\",\"To\":\"{{trigger.call.To}}\",\"mailbox\":\"clinical_md\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 990,
+					"y": 1750
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/voice/save-voicemail"
+			},
+			"transitions": [
+				{
+					"event": "success"
+				},
+				{
+					"event": "failed"
+				}
+			],
+			"type": "make-http-request"
 		},
 		{
 			"name": "x3c-AccountsOps_Menu",
@@ -915,24 +981,46 @@
 					"y": 2040
 				},
 				"play_beep": "true",
-				"recording_status_callback": "https://api.lemedspa.app/api/webhooks/voice/recording?mailbox=accounts",
 				"timeout": 5,
 				"transcribe": true,
-				"trim": "trim-silence",
-				"transcription_callback": "https://api.lemedspa.app/api/webhooks/voice/transcription"
+				"trim": "trim-silence"
 			},
 			"transitions": [
 				{
-					"event": "recordingComplete"
+					"event": "recordingComplete",
+					"next": "save_accounts_vmail"
 				},
 				{
 					"event": "noAudio"
 				},
 				{
-					"event": "hangup"
+					"event": "hangup",
+					"next": "save_accounts_vmail"
 				}
 			],
 			"type": "record-voicemail"
+		},
+		{
+			"name": "save_accounts_vmail",
+			"properties": {
+				"body": "{\"RecordingSid\":\"{{widgets.record_accounts_vmail.RecordingSid}}\",\"RecordingUrl\":\"{{widgets.record_accounts_vmail.RecordingUrl}}\",\"RecordingDuration\":\"{{widgets.record_accounts_vmail.RecordingDuration}}\",\"CallSid\":\"{{trigger.call.CallSid}}\",\"From\":\"{{trigger.call.From}}\",\"To\":\"{{trigger.call.To}}\",\"mailbox\":\"accounts\"}",
+				"content_type": "application/json;charset=utf-8",
+				"method": "POST",
+				"offset": {
+					"x": 1120,
+					"y": 2190
+				},
+				"url": "https://api.lemedspa.app/api/webhooks/voice/save-voicemail"
+			},
+			"transitions": [
+				{
+					"event": "success"
+				},
+				{
+					"event": "failed"
+				}
+			],
+			"type": "make-http-request"
 		},
 		{
 			"name": "connect_call_accounts",

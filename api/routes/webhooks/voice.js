@@ -5,8 +5,9 @@ import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
 
 const router = Router();
 
-// Twilio sends URL-encoded data, NOT JSON
+// Twilio sends URL-encoded data; Studio save widgets send JSON
 router.use(express.urlencoded({ extended: false }));
+router.use(express.json());
 
 /**
  * GET /api/webhooks/voice/hours-check
@@ -467,6 +468,108 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 
 	res.type('text/xml');
 	res.send(twiml);
+});
+
+/**
+ * POST /api/webhooks/voice/save-voicemail
+ * Called by Twilio Studio's make-http-request widget after record-voicemail.
+ * No Twilio signature validation — Studio HTTP Request widgets don't sign.
+ *
+ * Expected body params (URL-encoded from Studio):
+ *   RecordingSid, RecordingUrl, RecordingDuration — from widgets.{name}.*
+ *   CallSid, From, To — from trigger.call.*
+ *   mailbox — hardcoded per widget (operator, lea, clinical_md, accounts)
+ */
+router.post('/save-voicemail', async (req, res) => {
+	const { CallSid, RecordingSid, RecordingUrl, RecordingDuration, From, To } = req.body;
+	const mailbox = req.body.mailbox || 'operator';
+
+	if (!RecordingSid) {
+		return res.json({ success: false, error: 'No RecordingSid' });
+	}
+
+	// Check if this recording already exists (avoid duplicates)
+	const { data: existing } = await supabaseAdmin
+		.from('voicemails')
+		.select('id')
+		.eq('recording_sid', RecordingSid)
+		.maybeSingle();
+
+	if (existing) {
+		return res.json({ success: true, duplicate: true });
+	}
+
+	// Look up the call log by CallSid
+	let callLog = null;
+	if (CallSid) {
+		const { data } = await supabaseAdmin
+			.from('call_logs')
+			.select('id')
+			.eq('twilio_sid', CallSid)
+			.maybeSingle();
+		callLog = data;
+
+		// Fallback: match by phone + recent timing
+		if (!callLog && From) {
+			const { data: phoneMatch } = await supabaseAdmin
+				.from('call_logs')
+				.select('id')
+				.eq('from_number', From)
+				.eq('direction', 'inbound')
+				.gte('started_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+				.order('started_at', { ascending: false })
+				.limit(1)
+				.maybeSingle();
+			callLog = phoneMatch;
+		}
+
+		// Last resort: create a call_log
+		if (!callLog && From) {
+			const { data: created } = await supabaseAdmin
+				.from('call_logs')
+				.insert({
+					twilio_sid: CallSid,
+					direction: 'inbound',
+					from_number: From,
+					to_number: To || process.env.TWILIO_PHONE_NUMBER || '',
+					status: 'completed',
+					disposition: 'voicemail',
+					metadata: { source: 'studio_save_voicemail' }
+				})
+				.select('id')
+				.single();
+			callLog = created;
+		}
+	}
+
+	const { error } = await supabaseAdmin.from('voicemails').insert({
+		call_log_id: callLog?.id || null,
+		from_number: From || 'unknown',
+		recording_url: RecordingUrl || '',
+		recording_sid: RecordingSid,
+		duration: parseInt(RecordingDuration, 10) || 0,
+		mailbox
+	});
+
+	if (error) {
+		console.error('[save-voicemail] Failed:', error.message);
+		return res.json({ success: false, error: error.message });
+	}
+
+	// Update call log disposition
+	if (callLog?.id) {
+		await supabaseAdmin
+			.from('call_logs')
+			.update({
+				disposition: 'voicemail',
+				recording_url: RecordingUrl,
+				recording_duration: parseInt(RecordingDuration, 10) || 0
+			})
+			.eq('id', callLog.id);
+	}
+
+	console.log(`[save-voicemail] Saved ${mailbox} voicemail from ${From} (${RecordingSid})`);
+	res.json({ success: true });
 });
 
 /**
