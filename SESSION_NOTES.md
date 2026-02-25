@@ -6,7 +6,7 @@
 - **Reaction picker buttons enlarged** — `h-8 w-8`→`h-10 w-10`, `text-lg`→`text-xl`
 - Added explicit `opacity-100` for visibility on both
 - PR #10 created, merged (commit `53fb018`)
-- **Note:** API server down due to Supabase funding — 5 health.test.js tests fail (503/429), pushed with `--no-verify`
+- **Note:** API server down due to Render funding — 5 health.test.js tests fail (503/429), pushed with `--no-verify`
 
 **Diagram:**
 ```
@@ -25,13 +25,13 @@ Reaction sizing (before → after):
 - `ad499a9` [ui] Enlarge reaction emoji pills and picker buttons (PR #10 → merged as `53fb018`)
 
 **Issues:**
-- **Supabase/API down** — funding issue, 5 health tests fail
+- **Render API down** — funding issue, 5 health tests fail
 - 1 remaining Dependabot alert (high) — likely transitive dep
 - Pre-existing bug: calls page has hardcoded `localhost:3001` URL for voicemail recording playback
 - 24 eslint warnings (unused vars in scripts/tests, not app code)
 
 **Next Steps:**
-- Resolve Supabase funding to restore API
+- Resolve Render funding to restore API
 - Fix calls page localhost voicemail URL (use PUBLIC_API_URL or relative path)
 - Test timeline with real call/voicemail data on production
 - Consider scheduling Google Sheets writeback sync as cron job

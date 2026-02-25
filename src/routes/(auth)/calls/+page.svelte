@@ -19,6 +19,7 @@
 		Trash2
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
+	import { PUBLIC_API_URL } from '$env/static/public';
 	import { resolve } from '$app/paths';
 	import { formatPhone, formatDuration, formatRelativeDate } from '$lib/utils/formatters.js';
 	import ContactAvatar from '$lib/components/ContactAvatar.svelte';
@@ -229,7 +230,7 @@
 		if (audioEl) audioEl.pause();
 		revokeBlobUrl();
 
-		const proxyUrl = `${import.meta.env.PUBLIC_API_URL || 'http://localhost:3001'}/api/voicemails/${vmId}/recording`;
+		const proxyUrl = `${PUBLIC_API_URL || 'http://localhost:3001'}/api/voicemails/${vmId}/recording`;
 		const currentSession = (await import('$lib/stores/auth.js')).session;
 		const { get } = await import('svelte/store');
 		const token = get(currentSession)?.access_token;
