@@ -6,6 +6,8 @@
 - **Reaction picker buttons enlarged** — `h-8 w-8`→`h-10 w-10`, `text-lg`→`text-xl`
 - Added explicit `opacity-100` for visibility on both
 - PR #10 created, merged (commit `53fb018`)
+- **Fixed calls page voicemail URL** — replaced `import.meta.env.PUBLIC_API_URL` with `$env/static/public` import (was hardcoding localhost in prod builds)
+- Deployed to CF Pages (https://4f23fd60.lm-app.pages.dev)
 - **Note:** API server down due to Render funding — 5 health.test.js tests fail (503/429), pushed with `--no-verify`
 
 **Diagram:**
@@ -16,13 +18,15 @@ Reaction sizing (before → after):
 ```
 
 **Current State:**
-- `main` branch, clean tree, all pushed (commit `53fb018`)
-- API server DOWN (Supabase funding issue)
+- `main` branch, clean tree, all pushed (commit `c902331`)
+- Deployed to CF Pages (https://4f23fd60.lm-app.pages.dev)
+- API server DOWN (Render funding issue)
 - 129 vitest pass, 61/66 node:test pass (5 health tests fail due to API down)
 - 0 errors, 24 warnings (pre-existing unused vars)
 
 **Commits this session:**
 - `ad499a9` [ui] Enlarge reaction emoji pills and picker buttons (PR #10 → merged as `53fb018`)
+- `c902331` [calls] Fix voicemail playback URL — use $env/static/public instead of import.meta.env
 
 **Issues:**
 - **Render API down** — funding issue, 5 health tests fail
@@ -32,8 +36,7 @@ Reaction sizing (before → after):
 
 **Next Steps:**
 - Resolve Render funding to restore API
-- Fix calls page localhost voicemail URL (use PUBLIC_API_URL or relative path)
-- Test timeline with real call/voicemail data on production
+- Test timeline with real call/voicemail data on production (once Render is back)
 - Consider scheduling Google Sheets writeback sync as cron job
 - Frontend migration to `{ error: { code, message } }` format
 - Add `express-rate-limit` to login endpoint
