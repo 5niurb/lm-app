@@ -1,3 +1,131 @@
+## Session — 2026-02-25 (Session 71)
+**Focus:** Fly.io deployment — API back online
+
+**Accomplished:**
+- Created Dockerfile, fly.toml, .dockerignore for Express API
+- Deployed to Fly.io (2 machines, LAX, shared-cpu-1x, 256MB, always-on)
+- Set all 24 secrets (Supabase, Twilio x16, Resend, app config)
+- Custom domain api.lemedspa.app — SSL cert issued (Let's Encrypt), DNS updated in Cloudflare
+- CORS verified working from lemedspa.app origin
+- Saved Cloudflare DNS API token for future autonomous DNS management (~/.claude/secrets/cloudflare-dns)
+
+**Diagram:**
+```
+BEFORE (broken):
+  lemedspa.app → api.lemedspa.app → Render (DOWN) ✗
+
+AFTER (working):
+  lemedspa.app → api.lemedspa.app → Cloudflare proxy → Fly.io (LAX, 2 machines) ✓
+                                       A: 66.241.124.197
+                                       AAAA: 2a09:8280:1::d9:c37:0
+                                       TXT: _fly-ownership → app-36ok0q0
+                                       CNAME: _acme-challenge → flydns.net
+```
+
+**Current State:**
+- API live: https://api.lemedspa.app/api/health → `{"status":"ok"}`
+- Also: https://lm-app-api.fly.dev/api/health
+- All env vars set, both machines healthy
+- Cloudflare DNS token saved for future use
+
+**Still TODO:**
+- Verify Twilio webhooks are hitting Fly.io (inbound calls, SMS)
+- Update Twilio webhook URLs if they still point to Render
+- Rebuild frontend with correct PUBLIC_API_URL if needed
+- Test softphone token endpoint
+- Commit Dockerfile/fly.toml/dockerignore to git
+- Update CLAUDE.md deployment docs (Render → Fly.io)
+
+**Next Steps:**
+1. Verify Twilio webhook URLs point to api.lemedspa.app (should already be correct)
+2. Test a real inbound call
+3. Commit deployment files
+4. Update CLAUDE.md with Fly.io deploy commands
+5. Future: CF Workers for edge voice routes, PayTrack merge, React Native
+
+---
+
+## Session — 2026-02-25 (Session 70)
+**Focus:** Infrastructure migration planning — Render → Fly.io + CF Workers
+
+**URGENT: API server is DOWN (Render funding). Phone calls broken until Fly.io is deployed.**
+
+**Accomplished:**
+- Deep research: Render replacement platforms (saved to `lm-docs/research/hosting-platforms.research.md`)
+- Analyzed all voice webhook routes, softphone code, PayTrack structure
+- Designed 6-phase migration plan (saved to `~/.claude/plans/enumerated-greeting-turing.md`)
+- Key discovery: Softphone ALREADY uses `@twilio/voice-sdk` v2.18.0 with Device.register()
+- Key discovery: All 31 `RENDER_EXTERNAL_URL` refs already have `|| API_BASE_URL` fallback — zero code changes for Fly.io
+
+**Diagram:**
+```
+IMMEDIATE (tonight):
+  Render (DOWN) ──migrate──► Fly.io (~$2/mo, always-on, LAX region)
+
+  api/Dockerfile + api/fly.toml ──► flyctl deploy
+  Set API_BASE_URL=https://api.lemedspa.app (NOT RENDER_EXTERNAL_URL)
+  DNS: api.lemedspa.app CNAME → Fly.io
+
+FUTURE (separate sessions):
+  CF Workers (free) ← hours-check, connect-operator, token (edge voice)
+  PayTrack routes ← merge into lm-app under /api/paytrack/*
+  React Native ← /api/mobile/token endpoint
+```
+
+**NEXT SESSION — IMMEDIATE PRIORITY:**
+1. User runs `flyctl auth login` (interactive browser auth — user does this)
+2. Create `api/Dockerfile`, `api/fly.toml`, `api/.dockerignore`
+3. `flyctl launch` / `flyctl deploy` from `lm-app/api/`
+4. Set all secrets: `flyctl secrets set API_BASE_URL=https://api.lemedspa.app SUPABASE_URL=... TWILIO_ACCOUNT_SID=... etc.`
+   - Get Supabase keys via MCP tools
+   - Twilio creds: check if stored anywhere accessible, or user provides
+5. Verify: `curl https://lm-app-api.fly.dev/api/health`
+6. Add custom domain: `flyctl certs create api.lemedspa.app`
+7. Update Cloudflare DNS: `api.lemedspa.app` → Fly.io
+8. Verify calls work: hours-check, softphone token, inbound call
+
+**ENV VARS NEEDED (mirror from Render):**
+```
+API_BASE_URL=https://api.lemedspa.app
+DISABLE_KEEP_ALIVE=true
+SUPABASE_URL=<get via MCP>
+SUPABASE_ANON_KEY=<get via MCP>
+SUPABASE_SERVICE_ROLE_KEY=<need from user or Supabase dashboard>
+TWILIO_ACCOUNT_SID=<need>
+TWILIO_AUTH_TOKEN=<need>
+TWILIO_PHONE_NUMBER=<need>
+TWILIO_API_KEY_SID=<need>
+TWILIO_API_KEY_SECRET=<need>
+TWILIO_TWIML_APP_SID=<need>
+TWILIO_SIP1_USERNAME=<need>
+TWILIO_SIP1_PASSWORD=<need>
+RESEND_API_KEY=<need>
+FRONTEND_URL=https://lemedspa.app
+NODE_ENV=production
+PORT=3001
+```
+
+**Critical Files for Migration:**
+- `api/routes/twilio.js` — token endpoint + TwiML handlers (lines 24-53, 74-128, 181-216)
+- `api/routes/webhooks/voice.js` — all voice webhook callbacks
+- `api/routes/webhooks/sms.js` — SMS webhooks
+- `api/middleware/twilioSignature.js` — uses `RENDER_EXTERNAL_URL || API_BASE_URL` (line 31-33)
+- `api/server.js` — keep-alive at line 153-158 uses `RENDER_EXTERNAL_URL` fallback
+
+**Current State:**
+- API server DOWN (Render funding issue)
+- Frontend deployed to CF Pages (working, but API calls fail)
+- `main` branch, clean tree, all pushed
+- Full migration plan at `~/.claude/plans/enumerated-greeting-turing.md`
+- Research doc at `lmdev/lm-docs/research/hosting-platforms.research.md`
+
+**Issues:**
+- Need Twilio credentials for Fly.io secrets (not in git, were in Render dashboard)
+- Need Supabase service role key (can try MCP tools)
+- flyctl auth requires interactive browser login (user must do this step)
+
+---
+
 ## Session — 2026-02-25 (Session 69)
 **Focus:** Reaction emoji sizing, commit/push/PR with API down
 
