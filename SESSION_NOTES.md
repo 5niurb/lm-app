@@ -1,3 +1,63 @@
+## Session — 2026-02-24 (Session 66)
+**Focus:** Contrast fixes, cleanup, security, deploy
+
+**Accomplished:**
+- Upgraded learning infrastructure: rewrote observe hook for structured metadata, created 32 instincts from MEMORY.md, upgraded strategic-compact to phase-aware detection (committed to lmdev repo)
+- Cleaned unused imports in ComposeBar, AudioPlayer, EmailCompose (3 files)
+- Wired `contact_email` into conversation list API via Supabase FK join
+- Fixed 3 Dependabot vulnerabilities: removed unused `xlsx` dep, updated `qs` 6.14.1→6.14.2
+- **Design token contrast overhaul** — fixed near-invisible text across entire app:
+  - `--text-ghost`: 10% → 32% opacity (was practically invisible)
+  - `--text-tertiary`: #71717a → #8b8b95 (better readability at small sizes)
+  - `--surface-subtle/raised/hover`: doubled opacity for card definition
+  - `--border-subtle`: 6% → 10% for visible card edges
+  - Fixed hardcoded `text-white/25` timestamps in EmailBubble, ChatsTab
+  - Fixed invisible `text-border` dot separators in CallActivityBubble, VoicemailBubble
+  - Applied same proportional fixes to Dusk and Champagne themes
+- Deployed to CF Pages (https://97c31a04.lm-app.pages.dev)
+- All 195 tests pass (129 vitest + 66 node:test)
+
+**Diagram:**
+```
+Design Token Contrast Fix (cascading):
+┌──────────────────────────────────────────────┐
+│  app.css  (3 themes: Midnight, Dusk, Champ)  │
+│  --text-ghost:   0.10 → 0.32                 │
+│  --text-tertiary: #71717a → #8b8b95          │
+│  --surface-*:    doubled opacity             │
+│  --border-subtle: 0.06 → 0.10               │
+└──────────┬───────────────────────────────────┘
+           │ cascades to 50+ components
+           ▼
+  ┌────────────────┬──────────────┬──────────┐
+  │ Messages/Chats │ Login/Header │ Settings │
+  │ Calls/VM/Email │ Dashboard    │ Services │
+  └────────────────┴──────────────┴──────────┘
+```
+
+**Current State:**
+- `main` branch, clean tree, all pushed (commit ff52a3e)
+- Production deployed: lmedspa.app + API on Render
+- 0 errors, 24 warnings (all pre-existing unused vars)
+
+**Commits this session:**
+- `7711445` [skills] Upgrade observe hook + strategic compact (lmdev repo)
+- `b9eab70` [messages] Wire contact_email + clean unused imports
+- `9ad2a12` [security] Remove xlsx, update qs for Dependabot
+- `ff52a3e` [ui] Fix contrast — bump text-ghost, text-tertiary, surface, border tokens
+
+**Issues:**
+- 1 remaining Dependabot alert (high) — likely transitive dep
+- 24 eslint warnings (unused vars in scripts/tests, not app code)
+
+**Next Steps:**
+- Test timeline with real call/voicemail data on production
+- Consider scheduling Google Sheets writeback sync as cron job
+- Frontend migration to `{ error: { code, message } }` format
+- Add `express-rate-limit` to login endpoint
+
+---
+
 ## Session — 2026-02-24 (Session 65)
 **Focus:** Unified conversation timeline — calls, voicemails, emails in threads + star/resolve
 

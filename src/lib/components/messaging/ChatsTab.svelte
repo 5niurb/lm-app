@@ -16,7 +16,8 @@
 		CheckCheck,
 		Clock,
 		X,
-		AlertTriangle
+		AlertTriangle,
+		Star
 	} from '@lucide/svelte';
 	import { resolve } from '$app/paths';
 	import { get } from 'svelte/store';
@@ -69,6 +70,9 @@
 	/** @type {any[]|null} */
 	let logMessages = $state(null);
 	let loadingLog = $state(false);
+
+	// Thread filters
+	let showStarredOnly = $state(false);
 
 	// Scheduled messages shown inline in thread
 	/** @type {any[]} */
@@ -289,6 +293,7 @@
 	async function selectConversation(convo) {
 		clearMediaCache();
 		selectedConvo = convo;
+		showStarredOnly = false;
 		loadingMessages = true;
 		try {
 			await loadTimeline(convo.id);
@@ -599,7 +604,11 @@
 			body: s.body,
 			created_at: s.scheduled_at
 		}));
-		return [...real, ...sched];
+		let items = [...real, ...sched];
+		if (showStarredOnly) {
+			items = items.filter((m) => m.is_starred);
+		}
+		return items;
 	});
 
 	async function loadScheduledForConvo(convId) {
@@ -992,6 +1001,17 @@
 					{/if}
 				</div>
 				<div class="flex items-center gap-1.5 shrink-0 ml-auto">
+					<button
+						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border transition-all {showStarredOnly
+							? 'border-gold/50 bg-gold/10 text-gold'
+							: 'border-border-default text-text-tertiary hover:bg-surface-subtle hover:text-gold hover:border-gold/30'}"
+						title={showStarredOnly ? 'Show all items' : 'Show starred only'}
+						onclick={() => {
+							showStarredOnly = !showStarredOnly;
+						}}
+					>
+						<Star class="h-4 w-4" fill={showStarredOnly ? 'currentColor' : 'none'} />
+					</button>
 					<a
 						href={resolve(`/softphone?call=${encodeURIComponent(selectedConvo.phone_number)}`)}
 						class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-vivid-emerald/30 text-vivid-emerald/50 hover:bg-vivid-emerald/10 hover:text-vivid-emerald hover:border-vivid-emerald transition-all"
@@ -1019,7 +1039,20 @@
 					</div>
 				{:else if combinedThread.length === 0}
 					<div class="flex h-full items-center justify-center">
-						<p class="text-sm text-text-tertiary">No messages in this conversation yet.</p>
+						{#if showStarredOnly}
+							<div class="text-center">
+								<Star class="h-8 w-8 text-text-ghost mx-auto mb-2" />
+								<p class="text-sm text-text-tertiary">No starred items</p>
+								<button
+									class="text-xs text-gold hover:text-gold/80 mt-1"
+									onclick={() => {
+										showStarredOnly = false;
+									}}>Show all items</button
+								>
+							</div>
+						{:else}
+							<p class="text-sm text-text-tertiary">No messages in this conversation yet.</p>
+						{/if}
 					</div>
 				{:else}
 					{#each combinedThread as msg, i (msg.id)}
@@ -1068,48 +1101,55 @@
 							</div>
 						{:else if msg.__type === 'call'}
 							<!-- Call activity bubble -->
-							<div class="relative group">
-								<CallActivityBubble call={msg} />
-								<div class="absolute top-2 right-2">
-									<ThreadItemActions
-										itemType="call"
-										itemId={msg.id}
-										isStarred={msg.is_starred || false}
-										isResolved={msg.is_resolved || false}
-										onToggle={(field, value) => handleItemToggle('call', msg.id, field, value)}
-									/>
+							<div class="flex justify-center">
+								<div class="relative group max-w-[85%] w-full">
+									<CallActivityBubble call={msg} />
+									<div class="absolute top-2 left-full ml-1">
+										<ThreadItemActions
+											itemType="call"
+											itemId={msg.id}
+											isStarred={msg.is_starred || false}
+											isResolved={msg.is_resolved || false}
+											onToggle={(field, value) => handleItemToggle('call', msg.id, field, value)}
+										/>
+									</div>
 								</div>
 							</div>
 						{:else if msg.__type === 'voicemail'}
 							<!-- Voicemail bubble -->
-							<div class="relative group">
-								<VoicemailBubble voicemail={msg} />
-								<div class="absolute top-2 right-2">
-									<ThreadItemActions
-										itemType="voicemail"
-										itemId={msg.id}
-										isStarred={msg.is_starred || false}
-										isResolved={msg.is_resolved || false}
-										onToggle={(field, value) => handleItemToggle('voicemail', msg.id, field, value)}
-									/>
+							<div class="flex justify-center">
+								<div class="relative group max-w-[85%] w-full">
+									<VoicemailBubble voicemail={msg} />
+									<div class="absolute top-2 left-full ml-1">
+										<ThreadItemActions
+											itemType="voicemail"
+											itemId={msg.id}
+											isStarred={msg.is_starred || false}
+											isResolved={msg.is_resolved || false}
+											onToggle={(field, value) =>
+												handleItemToggle('voicemail', msg.id, field, value)}
+										/>
+									</div>
 								</div>
 							</div>
 						{:else if msg.__type === 'email'}
 							<!-- Email bubble -->
-							<div class="relative group">
-								<EmailBubble email={msg} />
-								<div
-									class="absolute top-2 {msg.direction === 'outbound'
-										? 'right-[27%]'
-										: 'left-[27%]'}"
-								>
-									<ThreadItemActions
-										itemType="email"
-										itemId={msg.id}
-										isStarred={msg.is_starred || false}
-										isResolved={msg.is_resolved || false}
-										onToggle={(field, value) => handleItemToggle('email', msg.id, field, value)}
-									/>
+							<div class="flex {msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}">
+								<div class="relative group max-w-[85%]">
+									<EmailBubble email={msg} />
+									<div
+										class="absolute top-2 {msg.direction === 'outbound'
+											? 'right-full mr-1'
+											: 'left-full ml-1'}"
+									>
+										<ThreadItemActions
+											itemType="email"
+											itemId={msg.id}
+											isStarred={msg.is_starred || false}
+											isResolved={msg.is_resolved || false}
+											onToggle={(field, value) => handleItemToggle('email', msg.id, field, value)}
+										/>
+									</div>
 								</div>
 							</div>
 						{:else if msg.is_internal_note}
@@ -1135,7 +1175,7 @@
 											})}
 										</p>
 									</div>
-									<div class="absolute top-2 right-2">
+									<div class="absolute top-1 right-full mr-1">
 										<ThreadItemActions
 											itemType="message"
 											itemId={msg.id}
@@ -1261,9 +1301,9 @@
 										</div>
 									{/if}
 									<div
-										class="absolute top-2 {msg.direction === 'outbound'
-											? 'left-[-28px]'
-											: 'right-[-28px]'}"
+										class="absolute top-1 {msg.direction === 'outbound'
+											? 'right-full mr-1'
+											: 'left-full ml-1'}"
 									>
 										<ThreadItemActions
 											itemType="message"

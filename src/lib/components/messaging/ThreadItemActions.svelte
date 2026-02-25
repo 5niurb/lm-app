@@ -37,25 +37,29 @@
 	}
 </script>
 
-<div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+<div
+	class="flex items-center gap-0.5 transition-opacity {isStarred || isResolved
+		? 'opacity-100'
+		: 'opacity-0 group-hover:opacity-100'}"
+>
 	<button
 		type="button"
-		class="flex h-6 w-6 items-center justify-center rounded-md transition-colors {isStarred
+		class="flex h-7 w-7 items-center justify-center rounded-md transition-colors {isStarred
 			? 'text-gold bg-gold/10'
 			: 'text-text-ghost hover:text-gold hover:bg-gold/10'}"
 		title={isStarred ? 'Unstar' : 'Star for follow-up'}
 		onclick={toggleStar}
 	>
-		<Star class="h-3 w-3" fill={isStarred ? 'currentColor' : 'none'} />
+		<Star class="h-3.5 w-3.5" fill={isStarred ? 'currentColor' : 'none'} />
 	</button>
 	<button
 		type="button"
-		class="flex h-6 w-6 items-center justify-center rounded-md transition-colors {isResolved
+		class="flex h-7 w-7 items-center justify-center rounded-md transition-colors {isResolved
 			? 'text-vivid-emerald bg-vivid-emerald/10'
 			: 'text-text-ghost hover:text-vivid-emerald hover:bg-vivid-emerald/10'}"
 		title={isResolved ? 'Mark unresolved' : 'Mark resolved'}
 		onclick={toggleResolve}
 	>
-		<CircleCheck class="h-3 w-3" fill={isResolved ? 'currentColor' : 'none'} />
+		<CircleCheck class="h-3.5 w-3.5" fill={isResolved ? 'currentColor' : 'none'} />
 	</button>
 </div>
