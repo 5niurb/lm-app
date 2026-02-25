@@ -97,8 +97,8 @@
 			<div class="flex flex-col">
 				<span
 					class="text-sm font-semibold tracking-wide text-text-primary"
-					style="font-family: 'Outfit', sans-serif;"
-					>LEMEDSPA<span class="text-[8px] align-super text-text-tertiary">&reg;</span></span
+					style="font-family: 'Outfit', sans-serif; font-variant: small-caps;"
+					>LeMed Spa<span class="text-[8px] align-super text-text-tertiary">&reg;</span></span
 				>
 				<span class="text-[10px] uppercase tracking-[0.15em] text-text-tertiary">Operations</span>
 			</div>

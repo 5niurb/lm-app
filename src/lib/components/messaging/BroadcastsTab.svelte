@@ -13,7 +13,8 @@
 		Users,
 		CheckCircle,
 		XCircle,
-		Loader2
+		Loader2,
+		Braces
 	} from '@lucide/svelte';
 	import { api } from '$lib/api/client.js';
 	import { formatRelativeDate } from '$lib/utils/formatters.js';
@@ -29,6 +30,35 @@
 	let composeName = $state('');
 	let composeBody = $state('');
 	let composeFromNumber = $state('');
+	let showMergeTags = $state(false);
+
+	/** @type {HTMLTextAreaElement|null} */
+	let composeTextareaRef = $state(null);
+
+	const mergeTags = [
+		{ tag: '{{first_name}}', label: 'First Name' },
+		{ tag: '{{last_name}}', label: 'Last Name' },
+		{ tag: '{{full_name}}', label: 'Full Name' },
+		{ tag: '{{phone}}', label: 'Phone' }
+	];
+
+	/** @param {string} tag */
+	function insertMergeTag(tag) {
+		if (!composeTextareaRef) {
+			composeBody += tag;
+			showMergeTags = false;
+			return;
+		}
+		const start = composeTextareaRef.selectionStart;
+		const end = composeTextareaRef.selectionEnd;
+		composeBody = composeBody.slice(0, start) + tag + composeBody.slice(end);
+		showMergeTags = false;
+		const newPos = start + tag.length;
+		requestAnimationFrame(() => {
+			composeTextareaRef?.setSelectionRange(newPos, newPos);
+			composeTextareaRef?.focus();
+		});
+	}
 
 	/** @type {string[]} */
 	let selectedTags = $state([]);
@@ -96,6 +126,7 @@
 			composeBody = '';
 			selectedTags = [];
 			showCompose = false;
+			showMergeTags = false;
 
 			await loadBroadcasts();
 
@@ -228,12 +259,46 @@
 			{#if showCompose}
 				<div class="mt-3 space-y-2.5">
 					<Input placeholder="Broadcast name..." class="h-9 text-sm" bind:value={composeName} />
-					<textarea
-						bind:value={composeBody}
-						placeholder="Message body (use {'{{first_name}}'} for merge tags)..."
-						rows="3"
-						class="w-full resize-none rounded-lg border border-border-subtle bg-surface-subtle px-3 py-2 text-sm text-text-primary placeholder:text-text-ghost focus:border-gold focus:outline-none"
-					></textarea>
+					<div class="relative">
+						<textarea
+							bind:this={composeTextareaRef}
+							bind:value={composeBody}
+							placeholder="Message body..."
+							rows="3"
+							class="w-full resize-none rounded-lg border border-border-subtle bg-surface-subtle px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-ghost focus:border-gold focus:outline-none"
+						></textarea>
+						<button
+							type="button"
+							class="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-md transition-colors {showMergeTags
+								? 'text-gold bg-gold/10'
+								: 'text-text-ghost hover:text-gold hover:bg-gold/10'}"
+							title="Insert dynamic tag"
+							onclick={() => {
+								showMergeTags = !showMergeTags;
+							}}
+						>
+							<Braces class="h-4 w-4" />
+						</button>
+						{#if showMergeTags}
+							<div
+								class="absolute top-10 right-2 z-10 w-44 rounded-lg border border-border bg-card shadow-lg py-1"
+							>
+								<p class="px-3 py-1 text-[10px] text-text-tertiary uppercase tracking-wider">
+									Merge Tags
+								</p>
+								{#each mergeTags as { tag, label } (tag)}
+									<button
+										type="button"
+										class="w-full text-left px-3 py-1.5 text-xs hover:bg-surface-hover transition-colors flex items-center justify-between"
+										onclick={() => insertMergeTag(tag)}
+									>
+										<span class="text-text-primary">{label}</span>
+										<span class="text-text-ghost font-mono text-[10px]">{tag}</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
 
 					{#if availableTags.length > 0}
 						<div>
