@@ -70,7 +70,7 @@ When building new pages or components, **study industry-leading med spa / salon 
 - **Frontend:** SvelteKit + Tailwind CSS v4 + shadcn-svelte (Svelte 5)
 - **API:** Express.js (ES modules, Node 20+)
 - **Database:** Supabase (PostgreSQL with RLS + Auth)
-- **Deployment:** Cloudflare Pages (frontend), Render (API)
+- **Deployment:** Cloudflare Pages (frontend), Fly.io (API)
 - **Integrations:** Twilio (voice), Resend (email), Stripe (future), Cal.com (future)
 
 ## Project Structure
@@ -180,9 +180,13 @@ PUBLIC_API_URL=https://api.lemedspa.app npx vite build
 npx wrangler pages deploy .svelte-kit/cloudflare --project-name lm-app --branch main --commit-dirty=true
 ```
 
-**API (Render):** Auto-deploys on push to `main`. Redeploys take ~2-3 minutes.
+**API (Fly.io):**
+```bash
+cd api && /c/Users/LMOperations/.fly/bin/flyctl deploy
+```
+Deploys take ~1-2 minutes. 2 machines in LAX, always-on.
 
-**CRITICAL:** The `.env` file has `PUBLIC_API_URL=http://localhost:3001` for local dev. When building for production, you MUST override it with the Render URL or the deployed site will try to reach localhost and fail silently with "failed to fetch" errors.
+**CRITICAL:** The `.env` file has `PUBLIC_API_URL=http://localhost:3001` for local dev. When building for production, you MUST override it with the Fly.io URL or the deployed site will try to reach localhost and fail silently with "failed to fetch" errors.
 
 **IVR / Twilio Studio Flows (test → prod):**
 
@@ -211,7 +215,7 @@ Workflow (like a branch → PR → merge):
 2. **If deploying to CF Pages:** Verify the deployed bundle contains the correct API URL (not localhost)
 3. **CORS check:** After API changes, verify with: `curl -s -D - -H "Origin: https://lemedspa.app" https://api.lemedspa.app/api/health | grep access-control-allow-origin`
 4. **API health check:** `curl -s https://api.lemedspa.app/api/health` — should return `{"status":"ok"}`
-5. **After Render redeploy:** Wait ~2-3 min, then re-verify CORS and health
+5. **After Fly.io deploy:** Wait ~1-2 min, then re-verify CORS and health
 
 **Production URLs:**
 - Frontend: https://lemedspa.app
@@ -222,51 +226,9 @@ Workflow (like a branch → PR → merge):
 
 ## Staging Environment
 
-Fully isolated staging environment for safe pre-deploy verification. CI runs against staging only — never prod.
+**Currently disabled.** While Lea is the only user, all development and testing happens directly against production (main branch, prod API, prod Supabase). This avoids the overhead of maintaining a separate staging environment.
 
-**Staging URLs:**
-- Frontend: https://staging.lemedspa.app (CF Pages, `staging` branch)
-- API: https://staging-api.lemedspa.app (Render, spins down on idle)
-- Supabase: staging project #2 (seed/test data, separate from production)
-
-**Architecture:**
-```
-PRODUCTION (main)                STAGING (staging)
-lemedspa.app                     staging.lemedspa.app
-  → api.lemedspa.app               → staging-api.lemedspa.app
-  → Supabase #1 (real data)        → Supabase #2 (test data)
-  → Twilio prod creds              → Twilio test creds
-```
-
-**Git Workflow:**
-1. Create feature branch from `staging`
-2. PR into `staging` → CI runs, staging auto-deploys
-3. Verify on staging.lemedspa.app
-4. Merge `staging` → `main` → production auto-deploys
-
-**Key Differences from Production:**
-- `NODE_ENV=staging` (not production)
-- `DISABLE_KEEP_ALIVE=true` — staging API spins down after idle (saves Render hours)
-- Uses Twilio test credentials — no real SMS/calls sent
-- Supabase project #2 — seed data, safe to reset
-
-**Deploying to Staging:**
-```bash
-# Frontend: push to staging branch → CF Pages auto-deploys
-git push origin staging
-
-# API: auto-deploys on push to staging branch (Render)
-# No keep-alive — service spins down after ~15 min idle
-
-# Manual staging frontend build (if needed):
-PUBLIC_API_URL=https://staging-api.lemedspa.app npx vite build
-```
-
-**Verifying Staging:**
-```bash
-curl -s https://staging-api.lemedspa.app/api/health
-curl -s -H "Origin: https://staging.lemedspa.app" https://staging-api.lemedspa.app/api/health
-```
+**When to re-enable staging:** Once the app officially launches and employees have logins and are actively using the system, set up a staging → prod workflow with a separate Fly.io app, Supabase project, and CF Pages branch.
 
 ## Database
 
