@@ -24,7 +24,7 @@ export async function sendOtpEmail(to, otp) {
 			},
 			body: JSON.stringify({
 				from: FROM_ADDRESS,
-				to: [to],
+				to: Array.isArray(to) ? to : [to],
 				subject: 'Your Le Med Spa verification code',
 				html: `
           <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
@@ -82,7 +82,7 @@ export async function sendEmail({ to, from, fromName, cc, bcc, subject, text, ht
 			},
 			body: JSON.stringify({
 				from: fromFull,
-				to: [to],
+				to: Array.isArray(to) ? to : [to],
 				...(cc?.length && { cc }),
 				...(bcc?.length && { bcc }),
 				subject,

@@ -990,8 +990,10 @@ async function sendVoicemailEmail({
 					</div>`
 		: `<p style="margin-top: 12px; color: #666; font-size: 12px; font-style: italic;">Transcription not available</p>`;
 
-	const toEmail = 'info@lemedspa.com';
-	console.log(`[voicemail-email] Sending to ${toEmail} — ${displayName} → ${mailboxLabel}`);
+	const toEmail = ['care@lemedspa.com', 'lea@lemedspa.com', 'ops@lemedspa.com'];
+	console.log(
+		`[voicemail-email] Sending to ${toEmail.join(', ')} — ${displayName} → ${mailboxLabel}`
+	);
 	const result = await sendEmail({
 		to: toEmail,
 		fromName: 'Le Med Spa Voicemail',
@@ -1089,7 +1091,7 @@ async function sendCallNotification({ from, callerName, disposition, duration })
 
 	// Email
 	try {
-		const toEmail = 'info@lemedspa.com';
+		const toEmail = ['care@lemedspa.com', 'lea@lemedspa.com', 'ops@lemedspa.com'];
 		await sendEmail({
 			to: toEmail,
 			fromName: 'Le Med Spa Calls',
