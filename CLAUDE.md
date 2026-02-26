@@ -260,7 +260,7 @@ Files: `calls.md`, `messages.md`, `contacts.md`, `dashboard.md`, `softphone.md`,
 **Resolve issues yourself before asking the user.** The goal is near-full automation — the user provides guidance and tweaks, not manual steps.
 
 ### Escalation Order (follow this every time)
-1. **Use MCP tools first** — Supabase MCP for DB/keys, Firecrawl for web content, Chrome DevTools for debugging, Context7 for docs. These can answer most questions without user input.
+1. **Use MCP tools first** — Supabase MCP for DB/keys, WebSearch/WebFetch for docs, Claude in Chrome for browser debugging. These can answer most questions without user input.
 2. **Search the codebase** — Grep, Glob, Read. The answer is often already in .env files, config, SESSION_NOTES, or SPECS.md.
 3. **Search the web** — WebSearch, WebFetch for docs, Stack Overflow, GitHub issues.
 4. **Try it and see** — Run the command, make the API call, deploy and check. Errors are informative.
@@ -291,7 +291,7 @@ This repo is configured to work in cloud VM sessions (launched from claude.ai/co
 - **Agents:** `code-reviewer`, `qa`, `research`, `database-reviewer`, `security-reviewer`, `architect`, `build-error-resolver`, `deploy-verifier`, `email-classifier`, `planner` — committed to `.claude/agents/`
 - **Skills:** `/capture-specs`, `/deploy`, `/verify`, `/commit`, `/migrate`, `/checkpoint`, `/orchestrate`, `/api-design`, `/postgres-patterns`, `/database-migrations`, `/security-review`, `/strategic-compact`, `/continuous-learning-v2` — committed to `.claude/skills/`
 - **Hooks:** env blocker, prettier auto-format, cloud-setup, observe, strategic-compact — in `.claude/settings.json`
-- **MCP servers:** context7, sequential-thinking — in `.mcp.json`
+- **MCP servers:** supabase — in `.mcp.json` (render added locally, not committed)
 - **Subagent workflow:** Write code → spawn code-reviewer → spawn qa → fix → ship (works identically)
 
 ### What's Local-Only (won't work in cloud)

@@ -1,3 +1,43 @@
+## Session — 2026-02-26 (Session 73)
+**Focus:** Fix operator dial routing + caller name in notifications
+
+**Accomplished:**
+- Fixed calls routing to personal number — removed old SIP creds-based dial (`lemedflex` with TWILIO_SIPTEST_USERNAME/PASSWORD)
+- Restructured `connect-operator` dial: now rings desk phone (+18184632211) + SIP (lea@lemed.sip.twilio.com) only — softphone/primary SIP removed per employee request to revert to HighLevel process
+- Added `lookupContactByPhone()` to all 3 recording fallback paths (`/recording`, `/save-voicemail`, `/voicemail-recorded`) so voicemail/call notifications show contact names instead of just phone numbers
+- Cleaned up env vars: removed `TWILIO_SIPTEST_USERNAME`, `TWILIO_SIPTEST_PASSWORD`, `TWILIO_PRIMARY_SIP` from Fly.io; added `TWILIO_OPERATOR_PHONE`, `TWILIO_OPERATOR_SIP`
+- Replaced all `RENDER_EXTERNAL_URL` refs in twilio.js with `API_BASE_URL`
+- Deployed 3 times to Fly.io, all healthy
+
+**Diagram:**
+```
+Caller → Studio IVR → press 0 → connect-operator API
+                                       │
+                          ┌─────────────┼─────────────┐
+                          ▼             ▼             ▼
+                    Desk Phone    SIP Endpoint    Fallback
+                   +18184632211   lea@lemed.sip   (not set)
+                          │
+                     25s timeout → voicemail/text offer
+```
+
+**Current State:**
+- API: Fly.io (api.lemedspa.app) — healthy, 2 commits pushed (2dfbcde, dfadcb6)
+- Operator dial: desk phone + SIP only (no softphone, no primary SIP)
+- Voicemail notifications: now include contact names from DB lookup
+- All 195 tests passing
+
+**Issues:**
+- User mentioned an "email issue" — not yet described/diagnosed
+- Dependabot alert: 1 high vulnerability on default branch
+
+**Next Steps:**
+- Diagnose email issue (once user describes it)
+- Address Dependabot vulnerability
+- Test operator dial from main line to verify desk phone + SIP ring correctly
+
+---
+
 ## Session — 2026-02-25 (Session 72)
 **Focus:** Voicemail save fix + frontend redeploy for Fly.io
 
