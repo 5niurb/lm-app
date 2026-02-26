@@ -8,6 +8,9 @@
 		"start": "node server.js",
 		"dev": "node --watch server.js"
 	},
+	"overrides": {
+		"minimatch": ">=9.0.6"
+	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",
 		"@supabase/supabase-js": "^2.49.0",
