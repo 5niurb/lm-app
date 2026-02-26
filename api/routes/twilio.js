@@ -171,11 +171,9 @@ router.post('/outbound-status', async (req, res) => {
  * Rings multiple targets simultaneously — first to answer wins.
  *
  * Dial order (all ring at once):
- *   1. Primary SIP — main number on LeMed Flex (TWILIO_PRIMARY_SIP)
- *   2. Browser softphone client 'lea'
- *   3. Operator desk phone (TWILIO_OPERATOR_PHONE)
- *   4. Secondary SIP endpoint (TWILIO_OPERATOR_SIP)
- *   5. Fallback number (TWILIO_OPERATOR_FALLBACK) — optional extra ring
+ *   1. Operator desk phone (TWILIO_OPERATOR_PHONE)
+ *   2. SIP endpoint (TWILIO_OPERATOR_SIP)
+ *   3. Fallback number (TWILIO_OPERATOR_FALLBACK) — optional extra ring
  *
  * Studio calls this as a TwiML Redirect widget.
  * IMPORTANT: All callback URLs must be ABSOLUTE because Twilio executes this
@@ -193,28 +191,19 @@ router.post('/connect-operator', (req, res) => {
 		method: 'POST'
 	});
 
-	// 1. Ring primary SIP — main number on LeMed Flex domain
-	const primarySip = process.env.TWILIO_PRIMARY_SIP;
-	if (primarySip) {
-		dial.sip(primarySip);
-	}
-
-	// 2. Ring the browser softphone
-	dial.client('lea');
-
-	// 3. Ring the operator desk phone
+	// 1. Ring the operator desk phone
 	const operatorPhone = process.env.TWILIO_OPERATOR_PHONE;
 	if (operatorPhone) {
 		dial.number(operatorPhone);
 	}
 
-	// 4. Ring secondary SIP endpoint
+	// 2. Ring the SIP endpoint
 	const sipUri = process.env.TWILIO_OPERATOR_SIP;
 	if (sipUri) {
 		dial.sip(sipUri);
 	}
 
-	// 5. Ring the fallback number (if set and different from operator phone)
+	// 3. Ring the fallback number (if set and different from operator phone)
 	const fallback = process.env.TWILIO_OPERATOR_FALLBACK;
 	if (fallback && fallback !== operatorPhone) {
 		dial.number(fallback);
