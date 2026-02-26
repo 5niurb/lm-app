@@ -172,8 +172,9 @@ router.post('/outbound-status', async (req, res) => {
  *
  * Dial order (all ring at once):
  *   1. Operator desk phone (TWILIO_OPERATOR_PHONE)
- *   2. SIP endpoint (TWILIO_OPERATOR_SIP)
- *   3. Fallback number (TWILIO_OPERATOR_FALLBACK) — optional extra ring
+ *   2. SIP endpoint (TWILIO_OPERATOR_SIP) — lea@lemed.sip.twilio.com
+ *   3. SIP endpoint 2 (TWILIO_OPERATOR_SIP2) — +18184633772@lemedflex.sip.twilio.com
+ *   4. Fallback number (TWILIO_OPERATOR_FALLBACK) — optional extra ring
  *
  * Studio calls this as a TwiML Redirect widget.
  * IMPORTANT: All callback URLs must be ABSOLUTE because Twilio executes this
@@ -197,10 +198,14 @@ router.post('/connect-operator', (req, res) => {
 		dial.number(operatorPhone);
 	}
 
-	// 2. Ring the SIP endpoint
+	// 2. Ring SIP endpoints
 	const sipUri = process.env.TWILIO_OPERATOR_SIP;
 	if (sipUri) {
 		dial.sip(sipUri);
+	}
+	const sipUri2 = process.env.TWILIO_OPERATOR_SIP2;
+	if (sipUri2) {
+		dial.sip(sipUri2);
 	}
 
 	// 3. Ring the fallback number (if set and different from operator phone)
