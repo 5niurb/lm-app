@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../../services/supabase.js';
 import { validateTwilioSignature } from '../../middleware/twilioSignature.js';
 import { sendEmail } from '../../services/resend.js';
 import { twilioClient } from '../../services/twilio.js';
+import { lookupContactByPhone } from '../../services/phone-lookup.js';
 
 const router = Router();
 
@@ -424,6 +425,7 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 			// Last resort: create a call_log so voicemail has a parent record
 			if (!callLog && From) {
 				console.warn('[recording] Creating fallback call_log for', From);
+				const { contactId, contactName } = await lookupContactByPhone(From);
 				const { data: created } = await supabaseAdmin
 					.from('call_logs')
 					.insert({
@@ -433,7 +435,8 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 						to_number: req.body.To || req.body.Called || process.env.TWILIO_PHONE_NUMBER || '',
 						status: 'completed',
 						disposition: 'voicemail',
-						caller_name: null,
+						caller_name: contactName,
+						contact_id: contactId,
 						metadata: { source: 'recording_fallback' }
 					})
 					.select('id')
@@ -574,6 +577,7 @@ router.post('/save-voicemail', async (req, res) => {
 
 		// Last resort: create a call_log
 		if (!callLog && From) {
+			const { contactId, contactName } = await lookupContactByPhone(From);
 			const { data: created } = await supabaseAdmin
 				.from('call_logs')
 				.insert({
@@ -583,6 +587,8 @@ router.post('/save-voicemail', async (req, res) => {
 					to_number: To || process.env.TWILIO_PHONE_NUMBER || '',
 					status: 'completed',
 					disposition: 'voicemail',
+					caller_name: contactName,
+					contact_id: contactId,
 					metadata: { source: 'studio_save_voicemail' }
 				})
 				.select('id')
@@ -652,18 +658,46 @@ router.post('/transcription', validateTwilioSignature, async (req, res) => {
 
 	console.log(`[transcription] Updated ${RecordingSid} — status: ${status}`);
 
-	// Send SMS/MMS notification with transcription + recording
+	// Send single consolidated SMS/MMS notification (recording + transcript)
 	if (voicemail && twilioClient) {
 		try {
 			const apiBase = process.env.API_BASE_URL || 'https://api.lemedspa.app';
 			const playUrl = `${apiBase}/api/webhooks/voice/play-recording/${RecordingSid}`;
 			const fromPhone = voicemail.from_number || 'Unknown';
-			const mailboxLabel = formatMailbox(voicemail.mailbox);
-			const displayName = formatPhone(fromPhone);
 
+			// Look up caller name from call log → contact
+			let callerName = null;
+			if (voicemail.call_log_id) {
+				const { data: cl } = await supabaseAdmin
+					.from('call_logs')
+					.select('caller_name, contact_id')
+					.eq('id', voicemail.call_log_id)
+					.maybeSingle();
+				callerName = cl?.caller_name;
+				// If no caller_name on call log, try the linked contact
+				if (!callerName && cl?.contact_id) {
+					const { data: contact } = await supabaseAdmin
+						.from('contacts')
+						.select('full_name')
+						.eq('id', cl.contact_id)
+						.maybeSingle();
+					callerName = contact?.full_name;
+				}
+			}
+			// Last resort: search contacts by phone number
+			if (!callerName && fromPhone !== 'Unknown') {
+				const { data: contact } = await supabaseAdmin
+					.from('contacts')
+					.select('full_name')
+					.eq('phone', fromPhone)
+					.maybeSingle();
+				callerName = contact?.full_name;
+			}
+
+			const displayName = callerName || formatPhone(fromPhone);
 			const body = TranscriptionText
-				? `New voicemail for ${mailboxLabel} from ${displayName}:\n\n"${TranscriptionText}"`
-				: `New voicemail for ${mailboxLabel} from ${displayName} (no transcription available)`;
+				? `New voicemail from ${displayName}:\n\n"${TranscriptionText}"`
+				: `New voicemail from ${displayName}`;
 
 			const msg = await twilioClient.messages.create({
 				to: '+13106218356',
@@ -771,6 +805,7 @@ router.all('/voicemail-recorded', async (req, res) => {
 		}
 
 		if (!callLog && From) {
+			const { contactId: cId, contactName: cName } = await lookupContactByPhone(From);
 			const { data: created } = await supabaseAdmin
 				.from('call_logs')
 				.insert({
@@ -780,11 +815,14 @@ router.all('/voicemail-recorded', async (req, res) => {
 					to_number: To || process.env.TWILIO_PHONE_NUMBER || '',
 					status: 'completed',
 					disposition: 'voicemail',
+					caller_name: cName,
+					contact_id: cId,
 					metadata: { source: 'twiml_record_voicemail' }
 				})
 				.select('id')
 				.single();
 			callLog = created;
+			if (!callerName) callerName = cName;
 		}
 	}
 
@@ -952,7 +990,7 @@ async function sendVoicemailEmail({
 					</div>`
 		: `<p style="margin-top: 12px; color: #666; font-size: 12px; font-style: italic;">Transcription not available</p>`;
 
-	const toEmail = 'care@lemedspa.com';
+	const toEmail = 'info@lemedspa.com';
 	console.log(`[voicemail-email] Sending to ${toEmail} — ${displayName} → ${mailboxLabel}`);
 	const result = await sendEmail({
 		to: toEmail,
@@ -1028,8 +1066,8 @@ async function sendCallNotification({ from, callerName, disposition, duration })
 	};
 	const label = labels[disposition] || disposition;
 
-	// SMS
-	if (twilioClient) {
+	// SMS — skip for voicemails (consolidated into transcription notification)
+	if (twilioClient && disposition !== 'voicemail') {
 		try {
 			const smsBody =
 				`Inbound call — ${label}` +
@@ -1051,7 +1089,7 @@ async function sendCallNotification({ from, callerName, disposition, duration })
 
 	// Email
 	try {
-		const toEmail = 'care@lemedspa.com';
+		const toEmail = 'info@lemedspa.com';
 		await sendEmail({
 			to: toEmail,
 			fromName: 'Le Med Spa Calls',

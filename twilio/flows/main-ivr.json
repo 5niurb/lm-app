@@ -211,7 +211,7 @@
 			"transitions": [
 				{
 					"event": "keypress",
-					"next": "send_sms_closed"
+					"next": "split_closed_digit"
 				},
 				{
 					"event": "speech"
@@ -969,6 +969,35 @@
 				}
 			],
 			"type": "say-play"
+		},
+		{
+			"name": "split_closed_digit",
+			"type": "split-based-on",
+			"properties": {
+				"input": "{{widgets.gather_closed.Digits}}",
+				"offset": {
+					"x": -100,
+					"y": 560
+				}
+			},
+			"transitions": [
+				{
+					"event": "noMatch",
+					"next": "record_closed_vmail"
+				},
+				{
+					"event": "match",
+					"next": "send_sms_closed",
+					"conditions": [
+						{
+							"friendly_name": "Pressed 1",
+							"type": "equal_to",
+							"value": "1",
+							"arguments": ["{{widgets.gather_closed.Digits}}"]
+						}
+					]
+				}
+			]
 		}
 	]
 }

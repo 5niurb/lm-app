@@ -78,10 +78,7 @@ router.post('/voice', async (req, res) => {
 	const from = req.body.From || req.body.Caller || process.env.TWILIO_PHONE_NUMBER;
 	const isSip = rawTo?.startsWith('sip:') || !!req.body.SipDomainSid;
 	const to = extractPhoneFromSipUri(rawTo);
-	const baseUrl =
-		process.env.RENDER_EXTERNAL_URL ||
-		process.env.FRONTEND_URL_PUBLIC ||
-		'https://api.lemedspa.app';
+	const baseUrl = process.env.API_BASE_URL || 'https://api.lemedspa.app';
 
 	if (to) {
 		// Log outbound call to DB with contact lookup
@@ -171,8 +168,14 @@ router.post('/outbound-status', async (req, res) => {
 /**
  * POST /api/twilio/connect-operator
  * TwiML endpoint used by Studio flow when caller presses 0 (operator).
- * Rings: SIP endpoint + browser softphone + fallback phone simultaneously.
- * First one to answer wins.
+ * Rings multiple targets simultaneously — first to answer wins.
+ *
+ * Dial order (all ring at once):
+ *   1. Primary SIP — main number on LeMed Flex (TWILIO_PRIMARY_SIP)
+ *   2. Browser softphone client 'lea'
+ *   3. Operator desk phone (TWILIO_OPERATOR_PHONE)
+ *   4. Secondary SIP endpoint (TWILIO_OPERATOR_SIP)
+ *   5. Fallback number (TWILIO_OPERATOR_FALLBACK) — optional extra ring
  *
  * Studio calls this as a TwiML Redirect widget.
  * IMPORTANT: All callback URLs must be ABSOLUTE because Twilio executes this
@@ -181,12 +184,7 @@ router.post('/outbound-status', async (req, res) => {
 router.post('/connect-operator', (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
 	const callerNumber = req.body.From || req.body.Caller || 'Unknown';
-	const sipUser = process.env.TWILIO_SIPTEST_USERNAME;
-	const sipPass = process.env.TWILIO_SIPTEST_PASSWORD;
-	const baseUrl =
-		process.env.RENDER_EXTERNAL_URL ||
-		process.env.FRONTEND_URL_PUBLIC ||
-		'https://api.lemedspa.app';
+	const baseUrl = process.env.API_BASE_URL || 'https://api.lemedspa.app';
 
 	const dial = twiml.dial({
 		callerId: callerNumber,
@@ -195,23 +193,30 @@ router.post('/connect-operator', (req, res) => {
 		method: 'POST'
 	});
 
-	// 1. Ring SIP endpoint (LeMed Flex SIP domain)
-	if (sipUser && sipPass) {
-		dial.sip(
-			{
-				username: sipUser,
-				password: sipPass
-			},
-			`sip:${sipUser}@lemedflex.sip.twilio.com`
-		);
+	// 1. Ring primary SIP — main number on LeMed Flex domain
+	const primarySip = process.env.TWILIO_PRIMARY_SIP;
+	if (primarySip) {
+		dial.sip(primarySip);
 	}
 
-	// 2. Ring the browser softphone client
+	// 2. Ring the browser softphone
 	dial.client('lea');
 
-	// 3. Ring the fallback phone number
+	// 3. Ring the operator desk phone
+	const operatorPhone = process.env.TWILIO_OPERATOR_PHONE;
+	if (operatorPhone) {
+		dial.number(operatorPhone);
+	}
+
+	// 4. Ring secondary SIP endpoint
+	const sipUri = process.env.TWILIO_OPERATOR_SIP;
+	if (sipUri) {
+		dial.sip(sipUri);
+	}
+
+	// 5. Ring the fallback number (if set and different from operator phone)
 	const fallback = process.env.TWILIO_OPERATOR_FALLBACK;
-	if (fallback) {
+	if (fallback && fallback !== operatorPhone) {
 		dial.number(fallback);
 	}
 
@@ -228,10 +233,7 @@ router.post('/connect-operator', (req, res) => {
 router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
 	const dialStatus = req.body.DialCallStatus;
-	const baseUrl =
-		process.env.RENDER_EXTERNAL_URL ||
-		process.env.FRONTEND_URL_PUBLIC ||
-		'https://api.lemedspa.app';
+	const baseUrl = process.env.API_BASE_URL || 'https://api.lemedspa.app';
 
 	if (dialStatus === 'no-answer' || dialStatus === 'busy' || dialStatus === 'failed') {
 		const gather = twiml.gather({
