@@ -43,10 +43,10 @@ jobs:
       - name: API integration tests
         run: npm run test:api
         env:
-          API_URL: https://staging-api.lemedspa.app
+          API_URL: https://api.lemedspa.app
 
-      - name: Webhook tests (staging)
+      - name: Webhook tests
         run: npm run test:webhooks
         env:
-          API_URL: https://staging-api.lemedspa.app
-        continue-on-error: true # Staging API may not be deployed yet
+          API_URL: https://api.lemedspa.app
+        continue-on-error: true # Webhook tests hit live Twilio endpoints
