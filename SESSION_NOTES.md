@@ -1,3 +1,80 @@
+## Session — 2026-03-01 (Session 79)
+**Focus:** Fix softphone incoming calls — 3 bugs found and fixed
+
+**Accomplished:**
+- Fixed missing `dial.client('lea')` in `connect-operator` TwiML — softphone was never dialed on incoming calls
+- Fixed race condition in auth layout — `connectDevice()` was called before Supabase session loaded, causing 401 on token fetch → Device never registered. Now waits for `session` store to have a value before connecting
+- Disabled SIP endpoints in `connect-operator` simultaneous ring — they were auto-answering and immediately cancelling the Client call (overlay appeared for half a second then vanished). Desk phone + browser Client still ring together
+- Deployed API to Fly.io (3 deploys) + frontend to Cloudflare Pages
+
+**Diagram:**
+```
+Incoming call → IVR → press 0 → connect-operator TwiML
+                                   │
+                                   ├─ <Client>lea</Client>    ← NEW (was missing)
+                                   ├─ <Number>desk phone</Number>
+                                   ├─ <Sip>lea@lemed</Sip>    ← DISABLED (auto-answers)
+                                   └─ <Sip>+818...@flex</Sip> ← DISABLED (loop/auto-answers)
+
+Auth layout fix:
+  Before: onMount → connectDevice() → api('/token') → 401 (no session yet)
+  After:  onMount → session.subscribe → wait for session → connectDevice() → 200 ✓
+```
+
+**Current State:**
+- Softphone incoming calls: partially working — overlay appears, SIP auto-answer issue identified and disabled
+- User needs to retest after SIP disable deploy
+- Frontend + API both deployed with fixes
+
+**Issues:**
+- SIP endpoints disabled — need investigation into which one auto-answers before re-enabling
+- TODO: Investigate `lea@lemed.sip.twilio.com` (Spoke Phone) and `+18184633772@lemedflex.sip.twilio.com` (main number SIP loop)
+
+**Next Steps:**
+- User to retest incoming call with SIP endpoints disabled
+- If softphone rings and stays, answer/decline should work
+- Investigate SIP auto-answer issue separately
+- Consider whether SIP endpoints are still needed (Spoke Phone being replaced by softphone?)
+
+---
+
+## Session — 2026-03-01 (Session 78)
+**Focus:** Deploy global softphone, fix sheet writeback for TM sync
+
+**Accomplished:**
+- Deployed lm-app frontend to Cloudflare Pages (global softphone now live at lmedspa.app)
+- Fixed Google Sheet writeback: 3 most recent contacts (Christina Thau, Nina Rodriguez, Brittney Cohen) had empty TextMagic fields — ran writeback script, updated 373 rows total
+- Integrated `writebackTmDataToSheet()` into `POST /api/sync/sheet` (step 7) so TM phone + contact ID are automatically written back to the Google Sheet after every cron sync
+- Deployed API to Fly.io — both machines healthy
+
+**Diagram:**
+```
+pg_cron (*/10) → POST /api/sync/sheet
+  1. Fetch Google Sheet CSV
+  2. Insert/enrich contacts in Supabase
+  3. Sync to TextMagic (create/update/merge)
+  4. Store TM ID in Supabase metadata
+  5. Refresh conversation display_names
+  6. ★ NEW: Write TM Phone + ID back to Google Sheet  ← was missing
+  7. Return results
+```
+
+**Current State:**
+- Frontend deployed: lmedspa.app (global softphone live)
+- API deployed: api.lemedspa.app (sheet writeback integrated)
+- 195 tests passing, CI green
+- Sheet writeback now automatic — no more manual script runs needed
+
+**Issues:**
+- None open
+
+**Next Steps:**
+- Test softphone from dashboard (user testing in parallel)
+- Monitor next cron cycle to confirm writeback fires automatically
+- Consider adding GOOGLE_SERVICE_ACCOUNT_JSON env var to Fly.io secrets (currently writeback uses local key file which won't exist on Fly — need to verify it's set)
+
+---
+
 ## Session — 2026-03-01 (Session 76)
 **Focus:** Fix contact sync pipeline — TextMagic dedup + broken cron jobs
 

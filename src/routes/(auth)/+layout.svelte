@@ -21,8 +21,14 @@
 			if (!$session) goto(resolve('/login'));
 		});
 
-		// Initialize global softphone — stays connected across all pages
-		connectDevice();
+		// Initialize global softphone once session is ready
+		// (session loads async in parent layout — connectDevice needs the auth token)
+		const softphoneUnsub = session.subscribe((s) => {
+			if (s) {
+				connectDevice();
+				softphoneUnsub(); // only connect once
+			}
+		});
 
 		return () => {
 			unsub();

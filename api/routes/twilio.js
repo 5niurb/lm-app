@@ -192,30 +192,12 @@ router.post('/connect-operator', (req, res) => {
 		method: 'POST'
 	});
 
-	// 1. Ring the browser softphone (Twilio Voice SDK client)
+	// Ring the browser softphone (Twilio Voice SDK client)
+	// Other targets (desk phone, SIP, fallback) are disabled — their voicemail
+	// auto-answers and cancels the Client leg before the operator can pick up.
+	// TODO: re-enable phone targets with AMD (Answering Machine Detection) so
+	// voicemail pickups don't cancel the softphone.
 	dial.client('lea');
-
-	// 2. Ring the operator desk phone
-	const operatorPhone = process.env.TWILIO_OPERATOR_PHONE;
-	if (operatorPhone) {
-		dial.number(operatorPhone);
-	}
-
-	// 3. Ring SIP endpoints
-	const sipUri = process.env.TWILIO_OPERATOR_SIP;
-	if (sipUri) {
-		dial.sip(sipUri);
-	}
-	const sipUri2 = process.env.TWILIO_OPERATOR_SIP2;
-	if (sipUri2) {
-		dial.sip(sipUri2);
-	}
-
-	// 4. Ring the fallback number (if set and different from operator phone)
-	const fallback = process.env.TWILIO_OPERATOR_FALLBACK;
-	if (fallback && fallback !== operatorPhone) {
-		dial.number(fallback);
-	}
 
 	res.type('text/xml');
 	res.send(twiml.toString());
