@@ -1,3 +1,80 @@
+## Session — 2026-03-01 (Session 81)
+**Focus:** Fix overlay drop (sequential ring), TextMagic sync investigation
+
+**Accomplished:**
+- Diagnosed overlay drop root cause via Twilio REST API call logs:
+  - `client:lea` → status: **no-answer**, duration: 0s (started 20:27:01, ended 20:27:02 — 1 second!)
+  - Desk phone → status: completed, duration: 8s (voicemail answered in 2s, stole the call)
+  - **Twilio cancels ALL other legs when ANY target goes off-hook**, even if that target has a screening URL
+  - Call screening prevents *bridging* but NOT *cancellation of other legs*
+- **Replaced simultaneous ring with sequential ring:**
+  - Phase 1: `connect-operator` → ring softphone only (15s timeout)
+  - Phase 2: `connect-operator-fallback` → if softphone didn't answer, ring desk phone with screening (20s)
+  - Phase 3: `connect-operator-status` → voicemail/text (unchanged)
+- Updated 47 tests (was 41) — all passing
+- Deployed to Fly.io — both machines healthy
+
+**Diagram:**
+```
+Caller → IVR → press 0
+  └→ connect-operator: Ring softphone (15s)
+       ├→ answered? → call connects → done
+       └→ no-answer? → connect-operator-fallback
+            └→ Ring desk phone w/ screening (20s)
+                 ├→ answered + press 1? → bridges → done
+                 └→ no-answer? → connect-operator-status
+                      └→ voicemail / press-1-to-text
+```
+
+**Current State:**
+- Sequential ring deployed, awaiting user test call
+- 47 Twilio call flow tests passing
+- Trace logging still in production (for debugging)
+
+**Issues:**
+- Incoming calls not in `call_logs` — duplicate key constraint + Supabase 502s
+- TextMagic sync issue (see below)
+
+**TextMagic Sync Bug — Investigate Next Session:**
+- Nina Rodriguez (TM contact ID 361016247) has no phone number in TextMagic, only email
+- No AR_ID or patient info populated
+- Google Sheet ("Lemed contacts") shows her TM phone as "+18183509333" but that's actually blank in TM
+- Sync is running (logs show "494 valid AR contacts, 2 enriched") but data mapping is wrong
+- Need to investigate: `api/services/contact-sync.js` or equivalent sync logic
+- Key questions: Why does the sheet show a phone that TM doesn't have? Is the sync writing incorrect data back to the sheet? Is the phone number coming from a different source?
+
+**Next Steps:**
+- Confirm sequential ring works (user test call in progress)
+- Fix TextMagic sync data accuracy issue
+- Fix incoming call logging (duplicate key)
+- Remove trace logging after call flow is stable
+- Commit + push changes
+
+---
+
+## Session — 2026-03-01 (Session 80)
+**Focus:** Call screening, automated tests, busy signal debugging
+
+**Accomplished:**
+- Re-enabled desk phone in `connect-operator` with whisper URL call screening ("press 1 to accept") to prevent voicemail from stealing the Client leg
+- Added `screen-call` and `screen-call-result` TwiML endpoints
+- Removed `validateTwilioSignature` from `connect-operator-status` and `connect-operator-text` (was causing 403 → busy signal)
+- Replaced stale `RENDER_EXTERNAL_URL` refs with `API_BASE_URL` in `connect-operator-text`
+- **Wrote 41 automated tests** covering the full Twilio call flow chain
+- Added trace logging to all Twilio endpoints + debug/recent-calls endpoint
+- Root cause found: desk phone voicemail answers in ~2s, cancels Client leg
+
+**Root Cause — Simultaneous Ring Race Condition:**
+- Twilio cancels all other legs when ANY target goes off-hook
+- Call screening `url` prevents bridging but NOT cancellation
+- Fix: replaced with sequential ring (Session 81)
+
+**Issues:**
+- Incoming call logging broken (duplicate key + Supabase 502)
+- CORS errors from unknown origin
+
+---
+
 ## Session — 2026-03-01 (Session 79)
 **Focus:** Fix softphone incoming calls — 3 bugs found and fixed
 

@@ -118,10 +118,10 @@ describe('Twilio Call Flow — Full Chain', () => {
 		router = mod.default;
 	}, 30_000);
 
-	// ── connect-operator ──────────────────────────────────────────────────
+	// ── connect-operator (phase 1: softphone only) ──────────────────────
 
 	describe('POST /connect-operator', () => {
-		it('includes <Client>lea</Client> for the browser softphone', async () => {
+		it('rings ONLY the softphone client (no desk phone)', () => {
 			const handler = findHandler(router, 'post', '/connect-operator');
 			const { req, res, getSentXml } = mockReqRes({
 				From: '+13105551234',
@@ -132,11 +132,57 @@ describe('Twilio Call Flow — Full Chain', () => {
 			const xml = getSentXml();
 
 			expect(xml).toContain('<Client>lea</Client>');
+			// Must NOT contain desk phone — sequential ring prevents voicemail race
+			expect(xml).not.toContain('+18184632211');
+			expect(xml).not.toContain('screen-call');
 		});
 
-		it('includes the operator desk phone with a screening whisper URL', async () => {
+		it('uses the caller number as callerId', () => {
 			const handler = findHandler(router, 'post', '/connect-operator');
+			const { req, res, getSentXml } = mockReqRes({ From: '+13105551234' });
+
+			handler(req, res);
+			expect(getSentXml()).toContain('callerId="+13105551234"');
+		});
+
+		it('action URL points to connect-operator-fallback (not status)', () => {
+			const handler = findHandler(router, 'post', '/connect-operator');
+			const { req, res, getSentXml } = mockReqRes({ From: '+13105551234' });
+
+			handler(req, res);
+			expect(getSentXml()).toContain(
+				'https://api.lemedspa.app/api/twilio/connect-operator-fallback'
+			);
+		});
+
+		it('sets 15s timeout for softphone ring', () => {
+			const handler = findHandler(router, 'post', '/connect-operator');
+			const { req, res, getSentXml } = mockReqRes({ From: '+13105551234' });
+
+			handler(req, res);
+			expect(res.type).toHaveBeenCalledWith('text/xml');
+			expect(getSentXml()).toContain('timeout="15"');
+		});
+	});
+
+	// ── connect-operator-fallback (phase 2: desk phone) ──────────────────
+
+	describe('POST /connect-operator-fallback', () => {
+		it('returns empty TwiML when softphone answered (completed)', () => {
+			const handler = findHandler(router, 'post', '/connect-operator-fallback');
+			const { req, res, getSentXml } = mockReqRes({ DialCallStatus: 'completed' });
+
+			handler(req, res);
+			const xml = getSentXml();
+
+			expect(xml).not.toContain('<Dial');
+			expect(xml).not.toContain('<Record');
+		});
+
+		it('dials desk phone with screening when softphone not answered', () => {
+			const handler = findHandler(router, 'post', '/connect-operator-fallback');
 			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'no-answer',
 				From: '+13105551234'
 			});
 
@@ -145,24 +191,14 @@ describe('Twilio Call Flow — Full Chain', () => {
 
 			expect(xml).toContain('+18184632211');
 			expect(xml).toContain('screen-call');
+			expect(xml).toContain('connect-operator-status');
 		});
 
-		it('uses the caller number as callerId (not the Twilio number)', async () => {
-			const handler = findHandler(router, 'post', '/connect-operator');
-			const { req, res, getSentXml } = mockReqRes({
-				From: '+13105551234'
-			});
-
-			handler(req, res);
-			const xml = getSentXml();
-
-			expect(xml).toContain('callerId="+13105551234"');
-		});
-
-		it('includes fallback number when set and different from operator', async () => {
+		it('includes fallback number when set and different from operator', () => {
 			process.env.TWILIO_OPERATOR_FALLBACK = '+18185559999';
-			const handler = findHandler(router, 'post', '/connect-operator');
+			const handler = findHandler(router, 'post', '/connect-operator-fallback');
 			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'no-answer',
 				From: '+13105551234'
 			});
 
@@ -170,44 +206,50 @@ describe('Twilio Call Flow — Full Chain', () => {
 			const xml = getSentXml();
 
 			expect(xml).toContain('+18185559999');
+			expect(xml).toContain('+18184632211');
 			delete process.env.TWILIO_OPERATOR_FALLBACK;
 		});
 
-		it('excludes fallback when same as operator phone', async () => {
-			process.env.TWILIO_OPERATOR_FALLBACK = '+18184632211'; // same as TWILIO_OPERATOR_PHONE
-			const handler = findHandler(router, 'post', '/connect-operator');
+		it('excludes fallback when same as operator phone', () => {
+			process.env.TWILIO_OPERATOR_FALLBACK = '+18184632211';
+			const handler = findHandler(router, 'post', '/connect-operator-fallback');
 			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'no-answer',
+				From: '+13105551234'
+			});
+
+			handler(req, res);
+			const numberCount = (getSentXml().match(/<Number/g) || []).length;
+			expect(numberCount).toBe(1);
+			delete process.env.TWILIO_OPERATOR_FALLBACK;
+		});
+
+		it('goes straight to voicemail when no desk phone configured', () => {
+			delete process.env.TWILIO_OPERATOR_PHONE;
+			const handler = findHandler(router, 'post', '/connect-operator-fallback');
+			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'no-answer',
 				From: '+13105551234'
 			});
 
 			handler(req, res);
 			const xml = getSentXml();
 
-			// Should only have one Number tag, not two
-			const numberCount = (xml.match(/<Number/g) || []).length;
-			expect(numberCount).toBe(1);
-			delete process.env.TWILIO_OPERATOR_FALLBACK;
+			expect(xml).toContain('<Gather');
+			expect(xml).toContain('<Record');
+			expect(xml).not.toContain('<Dial');
+			process.env.TWILIO_OPERATOR_PHONE = '+18184632211';
 		});
 
-		it('uses absolute URLs for action and screen-call', async () => {
-			const handler = findHandler(router, 'post', '/connect-operator');
-			const { req, res, getSentXml } = mockReqRes({ From: '+13105551234' });
+		it('handles busy status (falls through to desk phone)', () => {
+			const handler = findHandler(router, 'post', '/connect-operator-fallback');
+			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'busy',
+				From: '+13105551234'
+			});
 
 			handler(req, res);
-			const xml = getSentXml();
-
-			expect(xml).toContain('https://api.lemedspa.app/api/twilio/connect-operator-status');
-			expect(xml).toContain('https://api.lemedspa.app/api/twilio/screen-call');
-		});
-
-		it('sets timeout and response type correctly', async () => {
-			const handler = findHandler(router, 'post', '/connect-operator');
-			const { req, res, getSentXml } = mockReqRes({ From: '+13105551234' });
-
-			handler(req, res);
-
-			expect(res.type).toHaveBeenCalledWith('text/xml');
-			expect(getSentXml()).toContain('timeout="25"');
+			expect(getSentXml()).toContain('+18184632211');
 		});
 	});
 
@@ -324,15 +366,33 @@ describe('Twilio Call Flow — Full Chain', () => {
 			expect(getSentXml()).toContain('<Record');
 		});
 
-		it('returns empty TwiML when call was answered (completed)', () => {
+		it('returns empty TwiML when call was answered with real conversation (completed, long duration)', () => {
 			const handler = findHandler(router, 'post', '/connect-operator-status');
-			const { req, res, getSentXml } = mockReqRes({ DialCallStatus: 'completed' });
+			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'completed',
+				DialCallDuration: '45'
+			});
 
 			handler(req, res);
 			const xml = getSentXml();
 
 			expect(xml).not.toContain('<Gather');
 			expect(xml).not.toContain('<Record');
+		});
+
+		it('offers voicemail when screening failed (completed but short duration)', () => {
+			const handler = findHandler(router, 'post', '/connect-operator-status');
+			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'completed',
+				DialCallDuration: '8'
+			});
+
+			handler(req, res);
+			const xml = getSentXml();
+
+			expect(xml).toContain('<Gather');
+			expect(xml).toContain('<Record');
+			expect(xml).toContain('mailbox=operator');
 		});
 
 		it('uses absolute URLs for all callbacks', () => {
@@ -531,18 +591,71 @@ describe('Twilio Call Flow — Full Chain', () => {
 	// ── Full chain simulation ─────────────────────────────────────────────
 
 	describe('Full inbound call chain simulation', () => {
-		it('connect-operator → (nobody answers) → connect-operator-status → voicemail', () => {
-			// Step 1: Twilio calls connect-operator
+		it('softphone answers → call completes → fallback returns empty TwiML', () => {
+			// Step 1: connect-operator rings softphone only
 			const connectHandler = findHandler(router, 'post', '/connect-operator');
 			const step1 = mockReqRes({ From: '+13105551234' });
 			connectHandler(step1.req, step1.res);
 
-			// Verify: TwiML has Client + Number with screening
 			const connectXml = step1.getSentXml();
 			expect(connectXml).toContain('<Client>lea</Client>');
-			expect(connectXml).toContain('screen-call');
+			expect(connectXml).not.toContain('+18184632211'); // no desk phone
 
-			// Step 2: Nobody answers → Twilio hits the action URL (connect-operator-status)
+			// Step 2: Softphone answers, call completes → fallback fires
+			const fallbackHandler = findHandler(router, 'post', '/connect-operator-fallback');
+			const step2 = mockReqRes({ DialCallStatus: 'completed' });
+			fallbackHandler(step2.req, step2.res);
+
+			// Should end gracefully — no further dialing
+			expect(step2.getSentXml()).not.toContain('<Dial');
+			expect(step2.getSentXml()).not.toContain('<Record');
+		});
+
+		it('softphone no-answer → fallback dials desk phone → screening → bridges', () => {
+			// Step 1: connect-operator rings softphone
+			const connectHandler = findHandler(router, 'post', '/connect-operator');
+			const step1 = mockReqRes({ From: '+13105551234' });
+			connectHandler(step1.req, step1.res);
+
+			// Step 2: Softphone not answered → fallback fires with desk phone
+			const fallbackHandler = findHandler(router, 'post', '/connect-operator-fallback');
+			const step2 = mockReqRes({
+				DialCallStatus: 'no-answer',
+				From: '+13105551234'
+			});
+			fallbackHandler(step2.req, step2.res);
+			expect(step2.getSentXml()).toContain('+18184632211');
+			expect(step2.getSentXml()).toContain('screen-call');
+
+			// Step 3: Desk phone answers → screening plays
+			const screenHandler = findHandler(router, 'post', '/screen-call');
+			const step3 = mockReqRes({});
+			screenHandler(step3.req, step3.res);
+			expect(step3.getSentXml()).toContain('Press 1 to accept');
+
+			// Step 4: Human presses 1 → call bridges
+			const resultHandler = findHandler(router, 'post', '/screen-call-result');
+			const step4 = mockReqRes({ Digits: '1' });
+			resultHandler(step4.req, step4.res);
+			expect(step4.getSentXml()).not.toContain('<Hangup');
+
+			// Step 5: Call completes → connect-operator-status (real conversation = long duration)
+			const statusHandler = findHandler(router, 'post', '/connect-operator-status');
+			const step5 = mockReqRes({ DialCallStatus: 'completed', DialCallDuration: '60' });
+			statusHandler(step5.req, step5.res);
+			expect(step5.getSentXml()).not.toContain('<Record');
+		});
+
+		it('nobody answers (both phases) → voicemail', () => {
+			// Step 1: Softphone no-answer
+			const fallbackHandler = findHandler(router, 'post', '/connect-operator-fallback');
+			const step1 = mockReqRes({
+				DialCallStatus: 'no-answer',
+				From: '+13105551234'
+			});
+			fallbackHandler(step1.req, step1.res);
+
+			// Step 2: Desk phone also no-answer → connect-operator-status
 			const statusHandler = findHandler(router, 'post', '/connect-operator-status');
 			const step2 = mockReqRes({
 				DialCallStatus: 'no-answer',
@@ -550,58 +663,46 @@ describe('Twilio Call Flow — Full Chain', () => {
 			});
 			statusHandler(step2.req, step2.res);
 
-			// Verify: offers press-1-to-text then voicemail
 			const statusXml = step2.getSentXml();
 			expect(statusXml).toContain('<Gather');
 			expect(statusXml).toContain('connect-operator-text');
 			expect(statusXml).toContain('<Record');
 		});
 
-		it('connect-operator → desk phone answers screening → bridges call', () => {
-			// Step 1: connect-operator sends ring with screening
-			const connectHandler = findHandler(router, 'post', '/connect-operator');
-			const step1 = mockReqRes({ From: '+13105551234' });
-			connectHandler(step1.req, step1.res);
-			expect(step1.getSentXml()).toContain('screen-call');
-
-			// Step 2: Desk phone answers → Twilio fetches screen-call whisper URL
+		it('voicemail answers desk phone screening → hangup kills that leg', () => {
 			const screenHandler = findHandler(router, 'post', '/screen-call');
-			const step2 = mockReqRes({});
-			screenHandler(step2.req, step2.res);
-			expect(step2.getSentXml()).toContain('Press 1 to accept');
-
-			// Step 3: Human presses 1 → screen-call-result returns empty TwiML (bridges)
-			const resultHandler = findHandler(router, 'post', '/screen-call-result');
-			const step3 = mockReqRes({ Digits: '1' });
-			resultHandler(step3.req, step3.res);
-			const bridgeXml = step3.getSentXml();
-			expect(bridgeXml).not.toContain('<Hangup');
-
-			// Step 4: After call completes → connect-operator-status with 'completed'
-			const statusHandler = findHandler(router, 'post', '/connect-operator-status');
-			const step4 = mockReqRes({ DialCallStatus: 'completed' });
-			statusHandler(step4.req, step4.res);
-			// Should NOT offer voicemail — call was answered
-			expect(step4.getSentXml()).not.toContain('<Record');
+			const step = mockReqRes({});
+			screenHandler(step.req, step.res);
+			// Voicemail can't press digits → Gather times out → <Hangup/>
+			expect(step.getSentXml()).toContain('<Hangup');
 		});
 
-		it('connect-operator → voicemail answers screening → hangup kills that leg', () => {
-			// Step 1: connect-operator sends ring
-			const connectHandler = findHandler(router, 'post', '/connect-operator');
-			const step1 = mockReqRes({ From: '+13105551234' });
-			connectHandler(step1.req, step1.res);
+		it('desk phone voicemail answers + screening fails → caller gets voicemail greeting', () => {
+			// Simulates: softphone no-answer → desk phone voicemail answers →
+			// screening fails (short duration) → caller hears voicemail greeting
+			const fallbackHandler = findHandler(router, 'post', '/connect-operator-fallback');
+			const step1 = mockReqRes({
+				DialCallStatus: 'no-answer',
+				From: '+13105551234'
+			});
+			fallbackHandler(step1.req, step1.res);
 
-			// Step 2: Voicemail answers desk phone → screen-call plays "press 1"
-			const screenHandler = findHandler(router, 'post', '/screen-call');
-			const step2 = mockReqRes({});
-			screenHandler(step2.req, step2.res);
-			// Voicemail won't press any digits → Gather times out → falls through to <Hangup/>
-			expect(step2.getSentXml()).toContain('<Hangup');
-			// This kills the voicemail leg, other legs (Client) keep ringing
+			// Desk phone voicemail answered (completed) but screening failed (8s duration)
+			const statusHandler = findHandler(router, 'post', '/connect-operator-status');
+			const step2 = mockReqRes({
+				DialCallStatus: 'completed',
+				DialCallDuration: '8',
+				From: '+13105551234'
+			});
+			statusHandler(step2.req, step2.res);
+
+			const statusXml = step2.getSentXml();
+			expect(statusXml).toContain('<Gather');
+			expect(statusXml).toContain('<Record');
+			expect(statusXml).toContain('mailbox=operator');
 		});
 
 		it('connect-operator-status (no-answer) → caller presses 1 → SMS sent', async () => {
-			// Step 1: No one answers → voicemail greeting plays
 			const statusHandler = findHandler(router, 'post', '/connect-operator-status');
 			const step1 = mockReqRes({
 				DialCallStatus: 'no-answer',
@@ -610,7 +711,6 @@ describe('Twilio Call Flow — Full Chain', () => {
 			statusHandler(step1.req, step1.res);
 			expect(step1.getSentXml()).toContain('connect-operator-text');
 
-			// Step 2: Caller presses 1 during voicemail greeting → SMS is sent
 			const textHandler = findHandler(router, 'post', '/connect-operator-text');
 			const step2 = mockReqRes({
 				Digits: '1',
@@ -618,9 +718,8 @@ describe('Twilio Call Flow — Full Chain', () => {
 				Called: '+12134442242'
 			});
 			await textHandler(step2.req, step2.res);
-			const textXml = step2.getSentXml();
-			expect(textXml).toContain('message-sent'); // confirmation audio
-			expect(textXml).toContain('<Hangup');
+			expect(step2.getSentXml()).toContain('message-sent');
+			expect(step2.getSentXml()).toContain('<Hangup');
 		});
 	});
 
@@ -664,6 +763,19 @@ describe('Twilio Call Flow — Full Chain', () => {
 			);
 			expect(hasAuthMiddleware).toBe(false);
 		});
+
+		it('connect-operator-fallback has no auth middleware', () => {
+			const layer = router.stack.find(
+				(l) => l.route && l.route.path === '/connect-operator-fallback'
+			);
+			expect(layer).toBeTruthy();
+
+			const handlerNames = layer.route.stack.map((s) => s.handle.name || 'anonymous');
+			const hasAuthMiddleware = handlerNames.some(
+				(name) => name.toLowerCase().includes('verify') || name.toLowerCase().includes('auth')
+			);
+			expect(hasAuthMiddleware).toBe(false);
+		});
 	});
 
 	// ── URL correctness (no stale RENDER_EXTERNAL_URL references) ────────
@@ -677,9 +789,19 @@ describe('Twilio Call Flow — Full Chain', () => {
 			handler(req, res);
 			const xml = getSentXml();
 
-			// All URLs should start with API_BASE_URL
 			expect(xml).toContain('https://api.lemedspa.app');
 			expect(xml).not.toContain('undefined');
+		});
+
+		it('connect-operator-fallback uses API_BASE_URL', () => {
+			const handler = findHandler(router, 'post', '/connect-operator-fallback');
+			const { req, res, getSentXml } = mockReqRes({
+				DialCallStatus: 'no-answer',
+				From: '+13105551234'
+			});
+
+			handler(req, res);
+			expect(getSentXml()).toContain('https://api.lemedspa.app');
 		});
 
 		it('connect-operator-status uses API_BASE_URL', () => {
