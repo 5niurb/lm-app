@@ -36,12 +36,22 @@ const mockSelectChain = {
 	}))
 };
 
+const mockUpsert = vi.fn(() => ({
+	select: vi.fn(() => ({
+		single: vi.fn(() =>
+			Promise.resolve({ data: { id: 'new-record-id', full_name: null }, error: null })
+		)
+	})),
+	then: (resolve) => resolve({ data: null, error: null })
+}));
+
 vi.mock('../services/supabase.js', () => ({
 	supabaseAdmin: {
 		from: vi.fn(() => ({
 			select: vi.fn(() => mockSelectChain),
 			insert: mockInsert,
-			update: mockUpdate
+			update: mockUpdate,
+			upsert: mockUpsert
 		}))
 	}
 }));
