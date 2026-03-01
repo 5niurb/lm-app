@@ -13,38 +13,32 @@
 		X
 	} from '@lucide/svelte';
 	import { formatPhone } from '$lib/utils/formatters.js';
-	import { api } from '$lib/api/client.js';
+	import {
+		device,
+		activeCall,
+		deviceStatus,
+		statusMessage,
+		errorMessage,
+		callState,
+		callerInfo,
+		isMuted,
+		callDuration,
+		connectDevice,
+		disconnectDevice,
+		answerCall,
+		rejectCall,
+		makeOutboundCall,
+		hangUp,
+		toggleMute,
+		sendDtmf
+	} from '$lib/stores/softphone.js';
 
-	/** @type {any} Twilio Device class — dynamically imported to avoid SSR issues */
-	let TwilioDevice = null;
-	/** @type {any} Twilio Call class — needed for Codec enum */
-	let TwilioCall = null;
-	/** @type {any} Twilio Device instance */
-	let device = $state(null);
-	/** @type {any} Active Twilio Call */
-	let activeCall = $state(null);
-	/** @type {'offline'|'registering'|'registered'|'error'} */
-	let deviceStatus = $state('offline');
-	/** @type {string} */
-	let statusMessage = $state('Connecting...');
-	/** @type {string} Error message */
-	let errorMessage = $state('');
-	/** @type {string} */
-	let identity = $state('lea');
 	/** @type {string} Number to dial */
 	let dialNumber = $state('');
-	/** @type {boolean} */
-	let isMuted = $state(false);
-	/** @type {'idle'|'incoming'|'connecting'|'connected'} */
-	let callState = $state('idle');
-	/** @type {string} */
-	let callerInfo = $state('');
-	/** @type {number} Call duration in seconds */
-	let callDuration = $state(0);
-	/** @type {any} Duration timer interval */
-	let durationTimer = null;
-	/** @type {boolean} */
-	let isConnecting = $state(false);
+
+	/** @type {string|null} Phone number from URL ?call= param — triggers auto-dial once device registers */
+	let pendingCall = $state(null);
+
 	/** @type {Array<{time: string, type: string, info: string}>} */
 	let callHistory = $state([]);
 
@@ -68,65 +62,6 @@
 		'0': '+'
 	};
 
-	/** @type {AudioContext|null} */
-	let audioCtx = null;
-	/** @type {OscillatorNode|null} */
-	let _ringOscillator = null;
-	/** @type {any} Ring interval */
-	let ringInterval = null;
-
-	/** Play a browser-native ringtone using Web Audio API */
-	function startRingtone() {
-		try {
-			audioCtx = new (window.AudioContext || /** @type {any} */ (window).webkitAudioContext)();
-			playRingBurst();
-			// Ring pattern: 1s ring, 2s silence
-			ringInterval = setInterval(playRingBurst, 3000);
-		} catch (e) {
-			console.warn('Could not play ringtone:', e);
-		}
-	}
-
-	function playRingBurst() {
-		if (!audioCtx) return;
-		const osc = audioCtx.createOscillator();
-		const gain = audioCtx.createGain();
-		osc.type = 'sine';
-		osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
-		gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-		gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-		osc.connect(gain);
-		gain.connect(audioCtx.destination);
-		osc.start();
-		osc.stop(audioCtx.currentTime + 0.8);
-
-		// Second tone at slightly higher pitch for classic ring sound
-		const osc2 = audioCtx.createOscillator();
-		const gain2 = audioCtx.createGain();
-		osc2.type = 'sine';
-		osc2.frequency.setValueAtTime(480, audioCtx.currentTime);
-		gain2.gain.setValueAtTime(0.12, audioCtx.currentTime);
-		gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-		osc2.connect(gain2);
-		gain2.connect(audioCtx.destination);
-		osc2.start();
-		osc2.stop(audioCtx.currentTime + 0.8);
-	}
-
-	function stopRingtone() {
-		if (ringInterval) {
-			clearInterval(ringInterval);
-			ringInterval = null;
-		}
-		if (audioCtx) {
-			audioCtx.close().catch(() => {});
-			audioCtx = null;
-		}
-	}
-
-	/** @type {string|null} Phone number from URL ?call= param — triggers auto-dial once device registers */
-	let pendingCall = $state(null);
-
 	onMount(() => {
 		// Check for ?call= URL parameter (from contacts/calls quick action)
 		const params = new URLSearchParams(window.location.search);
@@ -139,313 +74,15 @@
 			url.searchParams.delete('call');
 			window.history.replaceState({}, '', url.pathname);
 		}
-
-		// Auto-connect to Twilio on page load — no manual "Connect" button needed.
-		// Registering with Twilio's signaling server costs nothing; bandwidth is only
-		// used when an actual call happens.
-		connectDevice();
-
-		return () => {
-			// Cleanup on unmount
-			if (durationTimer) clearInterval(durationTimer);
-			stopRingtone();
-			if (device) {
-				device.destroy();
-				device = null;
-			}
-		};
 	});
 
-	/** Request browser notification permission (for incoming call alerts) */
-	function requestNotificationPermission() {
-		if ('Notification' in window && Notification.permission === 'default') {
-			Notification.requestPermission();
+	// Auto-dial when device becomes registered after arriving via ?call= param
+	$effect(() => {
+		if (pendingCall && dialNumber && $deviceStatus === 'registered') {
+			pendingCall = null;
+			setTimeout(() => makeOutboundCall(dialNumber), 300);
 		}
-	}
-
-	/** Show browser notification for incoming call */
-	function showIncomingCallNotification(caller) {
-		if ('Notification' in window && Notification.permission === 'granted') {
-			const n = new Notification('Incoming Call — Le Med Spa', {
-				body: `Call from ${formatPhone(caller)}`,
-				icon: '/favicon.png',
-				tag: 'incoming-call',
-				requireInteraction: true
-			});
-			n.onclick = () => {
-				window.focus();
-				n.close();
-			};
-			// Auto-close after 20 seconds
-			setTimeout(() => n.close(), 20000);
-		}
-	}
-
-	/**
-	 * Connect to Twilio. Auto-called on mount; can also be triggered manually
-	 * (e.g. after disconnect or error). Browser mic permission is requested
-	 * during this flow.
-	 */
-	async function connectDevice() {
-		if (isConnecting || deviceStatus === 'registered') return;
-
-		isConnecting = true;
-		errorMessage = '';
-
-		try {
-			// Dynamically import Twilio Voice SDK (browser-only, can't SSR)
-			if (!TwilioDevice) {
-				statusMessage = 'Loading Twilio SDK...';
-				const mod = await import('@twilio/voice-sdk');
-				TwilioDevice = mod.Device;
-				TwilioCall = mod.Call;
-			}
-
-			statusMessage = 'Getting token...';
-
-			const { token } = await api('/api/twilio/token', {
-				method: 'POST',
-				body: JSON.stringify({ identity })
-			});
-			// Request browser notification permission
-			requestNotificationPermission();
-
-			// Request microphone permission early (so the user grants it once, not during a call)
-			try {
-				statusMessage = 'Requesting microphone access...';
-				const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-				// Release the stream — we just needed the permission
-				stream.getTracks().forEach((t) => t.stop());
-			} catch (micErr) {
-				if (micErr.name === 'NotAllowedError' || micErr.name === 'PermissionDeniedError') {
-					throw new Error(
-						'Microphone permission denied. Please allow microphone access in your browser settings.',
-						{ cause: micErr }
-					);
-				}
-				console.warn('Mic permission check:', micErr.message);
-			}
-
-			statusMessage = 'Connecting to Twilio...';
-			deviceStatus = 'registering';
-
-			// Create Device with the 2.x SDK
-			device = new TwilioDevice(token, {
-				logLevel: 1,
-				codecPreferences: [TwilioCall.Codec.Opus, TwilioCall.Codec.PCMU],
-				allowIncomingWhileBusy: false,
-				closeProtection: true
-			});
-
-			// Register event handlers
-			device.on('registered', () => {
-				deviceStatus = 'registered';
-				statusMessage = 'Ready — listening for calls';
-				isConnecting = false;
-				addToHistory('system', 'Connected to Twilio');
-
-				// Auto-dial if we arrived via ?call= parameter
-				if (pendingCall && dialNumber) {
-					pendingCall = null;
-					// Short delay so the UI can render the "Ready" state first
-					setTimeout(() => makeCall(), 300);
-				}
-			});
-
-			device.on('error', (error) => {
-				console.error('Twilio Device error:', error);
-				errorMessage = error.message || 'Device error';
-				deviceStatus = 'error';
-				statusMessage = 'Error — see details above';
-				isConnecting = false;
-			});
-
-			device.on('unregistered', () => {
-				deviceStatus = 'offline';
-				statusMessage = 'Disconnected';
-			});
-
-			device.on('incoming', (call) => {
-				callState = 'incoming';
-				activeCall = call;
-				callerInfo = call.parameters.From || 'Unknown';
-				statusMessage = `Incoming call from ${formatPhone(callerInfo)}`;
-				addToHistory('incoming', `From: ${formatPhone(callerInfo)}`);
-
-				// Play audible ringtone + browser notification
-				startRingtone();
-				showIncomingCallNotification(callerInfo);
-
-				call.on('accept', () => {
-					stopRingtone();
-					callState = 'connected';
-					statusMessage = `Connected — ${formatPhone(callerInfo)}`;
-					startDurationTimer();
-					addToHistory('system', 'Call connected (audio active)');
-				});
-
-				call.on('disconnect', () => {
-					stopRingtone();
-					handleDisconnect();
-				});
-
-				call.on('cancel', () => {
-					stopRingtone();
-					addToHistory('system', 'Call canceled by caller');
-					handleDisconnect();
-				});
-
-				call.on('error', (err) => {
-					stopRingtone();
-					console.error('Incoming call error:', err);
-					errorMessage = `Call error: ${err.message || 'unknown'}`;
-					addToHistory('system', `Call error: ${err.message || 'unknown'}`);
-					handleDisconnect();
-				});
-
-				call.on('reject', () => {
-					stopRingtone();
-					addToHistory('system', 'Call rejected');
-					handleDisconnect();
-				});
-			});
-
-			// Register the device with Twilio to start receiving calls
-			device.register();
-		} catch (err) {
-			console.error('Failed to connect:', err);
-			errorMessage = err.message;
-			deviceStatus = 'error';
-			statusMessage = 'Failed to connect';
-			isConnecting = false;
-		}
-	}
-
-	function handleDisconnect() {
-		if (durationTimer) {
-			clearInterval(durationTimer);
-			durationTimer = null;
-		}
-		if (callDuration > 0) {
-			addToHistory('ended', `Duration: ${formatCallDuration(callDuration)}`);
-		}
-		callState = 'idle';
-		activeCall = null;
-		callerInfo = '';
-		callDuration = 0;
-		isMuted = false;
-		statusMessage = device ? 'Ready — listening for calls' : 'Disconnected';
-	}
-
-	async function answerCall() {
-		if (!activeCall) return;
-
-		callState = 'connecting';
-		statusMessage = 'Answering...';
-		addToHistory('system', 'Answering call...');
-
-		try {
-			// Request microphone permission first
-			await navigator.mediaDevices.getUserMedia({ audio: true });
-
-			activeCall.accept({
-				rtcConstraints: {
-					audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-				}
-			});
-			// callState → 'connected' will be set by the 'accept' event handler above
-		} catch (err) {
-			console.error('Failed to answer call:', err);
-			if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-				errorMessage =
-					'Microphone permission denied. Please allow microphone access and try again.';
-			} else {
-				errorMessage = `Failed to answer: ${err.message}`;
-			}
-			addToHistory('system', `Failed to answer: ${err.message}`);
-			// Don't disconnect — let the call keep ringing so they can retry
-			callState = 'incoming';
-			statusMessage = `Incoming call from ${formatPhone(callerInfo)}`;
-		}
-	}
-
-	function rejectCall() {
-		if (activeCall) {
-			stopRingtone();
-			activeCall.reject();
-			addToHistory('system', 'Call rejected');
-			handleDisconnect();
-		}
-	}
-
-	async function makeCall() {
-		if (!device || !dialNumber) return;
-
-		// Clean up the number and normalize to E.164
-		let number = dialNumber.replace(/[^\d+*#]/g, '');
-		if (number.length === 10 && !number.startsWith('+')) {
-			number = '+1' + number;
-		} else if (number.length === 11 && number.startsWith('1') && !number.startsWith('+')) {
-			number = '+' + number;
-		}
-
-		try {
-			const call = await device.connect({
-				params: { To: number }
-			});
-			activeCall = call;
-			callState = 'connecting';
-			callerInfo = number;
-			statusMessage = `Calling ${formatPhone(number)}...`;
-			addToHistory('outgoing', `To: ${formatPhone(number)}`);
-
-			call.on('accept', () => {
-				callState = 'connected';
-				statusMessage = `Connected — ${formatPhone(number)}`;
-				startDurationTimer();
-			});
-
-			call.on('disconnect', handleDisconnect);
-			call.on('cancel', handleDisconnect);
-			call.on('error', (err) => {
-				errorMessage = err.message;
-				handleDisconnect();
-			});
-		} catch (err) {
-			errorMessage = err.message;
-		}
-	}
-
-	function hangUp() {
-		if (activeCall) {
-			activeCall.disconnect();
-		}
-		if (device) {
-			device.disconnectAll();
-		}
-	}
-
-	function toggleMute() {
-		if (activeCall) {
-			isMuted = !isMuted;
-			activeCall.mute(isMuted);
-		}
-	}
-
-	function sendDigit(digit) {
-		if (activeCall && callState === 'connected') {
-			activeCall.sendDigits(digit);
-		} else {
-			dialNumber += digit;
-		}
-	}
-
-	function startDurationTimer() {
-		callDuration = 0;
-		durationTimer = setInterval(() => {
-			callDuration++;
-		}, 1000);
-	}
+	});
 
 	function formatCallDuration(seconds) {
 		const m = Math.floor(seconds / 60);
@@ -475,15 +112,12 @@
 		}
 	}
 
-	function disconnectDevice() {
-		if (device) {
-			device.unregister();
-			device.destroy();
-			device = null;
+	function sendDigit(digit) {
+		if ($activeCall && $callState === 'connected') {
+			sendDtmf(digit);
+		} else {
+			dialNumber += digit;
 		}
-		deviceStatus = 'offline';
-		statusMessage = 'Disconnected — click Connect to reconnect';
-		addToHistory('system', 'Disconnected');
 	}
 </script>
 
@@ -503,34 +137,34 @@
 				<span class="relative flex h-2.5 w-2.5">
 					<span
 						class="absolute inline-flex h-full w-full rounded-full {statusColor(
-							deviceStatus
-						)} opacity-75 {deviceStatus === 'registering' ? 'animate-ping' : ''}"
+							$deviceStatus
+						)} opacity-75 {$deviceStatus === 'registering' ? 'animate-ping' : ''}"
 					></span>
-					<span class="relative inline-flex h-2.5 w-2.5 rounded-full {statusColor(deviceStatus)}"
+					<span class="relative inline-flex h-2.5 w-2.5 rounded-full {statusColor($deviceStatus)}"
 					></span>
 				</span>
-				<span class="text-text-secondary">{statusMessage}</span>
+				<span class="text-text-secondary">{$statusMessage}</span>
 			</span>
-			{#if deviceStatus === 'offline' || deviceStatus === 'error'}
-				<Button size="sm" onclick={connectDevice} disabled={isConnecting}>
-					{isConnecting ? 'Connecting...' : 'Connect'}
+			{#if $deviceStatus === 'offline' || $deviceStatus === 'error'}
+				<Button size="sm" onclick={connectDevice} disabled={$deviceStatus === 'registering'}>
+					{$deviceStatus === 'registering' ? 'Connecting...' : 'Connect'}
 				</Button>
-			{:else if deviceStatus === 'registered'}
+			{:else if $deviceStatus === 'registered'}
 				<Button variant="outline" size="sm" onclick={disconnectDevice}>Disconnect</Button>
 			{/if}
 		</div>
 	</div>
 
-	{#if errorMessage}
+	{#if $errorMessage}
 		<div
 			class="rounded-lg border border-vivid-rose/20 bg-vivid-rose/5 px-4 py-3 flex items-center justify-between"
 		>
-			<p class="text-sm text-vivid-rose">{errorMessage}</p>
+			<p class="text-sm text-vivid-rose">{$errorMessage}</p>
 			<Button
 				variant="outline"
 				size="sm"
 				onclick={() => {
-					errorMessage = '';
+					errorMessage.set('');
 					connectDevice();
 				}}>Retry</Button
 			>
@@ -547,8 +181,8 @@
 
 			<div class="p-4 space-y-3">
 				<!-- Active Call States -->
-				{#if callState !== 'idle'}
-					{#if callState === 'incoming'}
+				{#if $callState !== 'idle'}
+					{#if $callState === 'incoming'}
 						<!-- INCOMING CALL -->
 						<div
 							class="rounded-xl border-2 border-vivid-blue/50 bg-gradient-to-b from-vivid-blue/15 to-vivid-blue/5 p-5 text-center space-y-3"
@@ -562,7 +196,7 @@
 								class="text-2xl font-light text-text-primary"
 								style="font-family: var(--font-display);"
 							>
-								{formatPhone(callerInfo)}
+								{formatPhone($callerInfo)}
 							</p>
 							<div class="flex items-center justify-center gap-10 pt-1">
 								<div class="flex flex-col items-center gap-1.5">
@@ -590,7 +224,7 @@
 								</div>
 							</div>
 						</div>
-					{:else if callState === 'connecting' && activeCall}
+					{:else if $callState === 'connecting' && $activeCall}
 						<!-- Answering incoming -->
 						<div
 							class="rounded-xl border border-vivid-amber/40 bg-vivid-amber/10 p-4 text-center space-y-2"
@@ -603,18 +237,18 @@
 								class="text-xl font-light text-text-primary"
 								style="font-family: var(--font-display);"
 							>
-								{formatPhone(callerInfo)}
+								{formatPhone($callerInfo)}
 							</p>
 						</div>
 					{:else}
 						<!-- Outbound connecting / active call -->
 						<div class="rounded-lg bg-gold-glow border border-border p-4 text-center space-y-2">
-							{#if callState === 'connecting'}
+							{#if $callState === 'connecting'}
 								<div class="flex items-center justify-center gap-1.5 text-vivid-amber">
 									<PhoneOutgoing class="h-4 w-4 animate-pulse" />
 									<span class="text-xs font-semibold uppercase tracking-widest">Connecting</span>
 								</div>
-							{:else if callState === 'connected'}
+							{:else if $callState === 'connected'}
 								<div class="flex items-center justify-center gap-1.5 text-vivid-emerald">
 									<Phone class="h-4 w-4" />
 									<span class="text-xs font-semibold uppercase tracking-widest">Connected</span>
@@ -624,25 +258,25 @@
 								class="text-xl font-light text-text-primary"
 								style="font-family: var(--font-display);"
 							>
-								{formatPhone(callerInfo)}
+								{formatPhone($callerInfo)}
 							</p>
-							{#if callState === 'connected'}
+							{#if $callState === 'connected'}
 								<div class="flex items-center justify-center gap-1 text-text-tertiary">
 									<Clock class="h-3 w-3" />
 									<span class="text-sm font-mono tabular-nums"
-										>{formatCallDuration(callDuration)}</span
+										>{formatCallDuration($callDuration)}</span
 									>
 								</div>
 							{/if}
 							<div class="flex items-center justify-center gap-3 pt-1">
 								<Button
-									variant={isMuted ? 'destructive' : 'outline'}
+									variant={$isMuted ? 'destructive' : 'outline'}
 									size="icon"
 									class="rounded-full h-10 w-10"
 									onclick={toggleMute}
-									title={isMuted ? 'Unmute' : 'Mute'}
+									title={$isMuted ? 'Unmute' : 'Mute'}
 								>
-									{#if isMuted}
+									{#if $isMuted}
 										<MicOff class="h-4 w-4" />
 									{:else}
 										<Mic class="h-4 w-4" />
@@ -670,7 +304,7 @@
 							class="flex-1 w-full text-center text-2xl font-mono tracking-[0.2em] bg-transparent border-0 focus:outline-none text-text-primary placeholder:text-text-ghost/40 py-2"
 							bind:value={dialNumber}
 							onkeydown={(e) => {
-								if (e.key === 'Enter') makeCall();
+								if (e.key === 'Enter') makeOutboundCall(dialNumber);
 							}}
 						/>
 						{#if dialNumber}
@@ -705,16 +339,16 @@
 					</div>
 
 					<!-- Call / End button -->
-					{#if callState === 'idle'}
+					{#if $callState === 'idle'}
 						<button
 							class="w-full h-10 rounded-full bg-gold hover:bg-gold/85 text-primary-foreground text-sm font-medium tracking-wide flex items-center justify-center gap-2 transition-all shadow-md shadow-gold/20 disabled:opacity-40 disabled:cursor-not-allowed"
-							onclick={makeCall}
-							disabled={!dialNumber || deviceStatus !== 'registered'}
+							onclick={() => makeOutboundCall(dialNumber)}
+							disabled={!dialNumber || $deviceStatus !== 'registered'}
 						>
 							<Phone class="h-4 w-4" />
 							Call
 						</button>
-					{:else if callState !== 'incoming'}
+					{:else if $callState !== 'incoming'}
 						<button
 							class="w-full h-10 rounded-full bg-vivid-rose hover:bg-vivid-rose/85 text-white text-sm font-medium flex items-center justify-center gap-2 transition-all shadow-md shadow-vivid-rose/20"
 							onclick={hangUp}
