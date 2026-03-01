@@ -368,4 +368,41 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 	res.send(twiml.toString());
 });
 
+/**
+ * POST /api/twilio/register-device
+ * Register a mobile device push token for incoming call notifications.
+ * Body: { token: string, platform: 'ios' | 'android' }
+ */
+router.post('/register-device', verifyToken, async (req, res) => {
+	try {
+		const { token, platform } = req.body;
+		const userId = req.user.id;
+
+		if (!token || !platform) {
+			return res.status(400).json({ error: 'token and platform are required' });
+		}
+		if (!['ios', 'android'].includes(platform)) {
+			return res.status(400).json({ error: 'platform must be ios or android' });
+		}
+
+		// Upsert — one token per user+platform
+		const { error } = await supabaseAdmin
+			.from('device_push_tokens')
+			.upsert(
+				{ user_id: userId, token, platform, updated_at: new Date().toISOString() },
+				{ onConflict: 'user_id,platform' }
+			);
+
+		if (error) {
+			console.error('[twilio] register-device failed:', error.message);
+			return res.status(500).json({ error: 'Failed to register device' });
+		}
+
+		res.json({ registered: true });
+	} catch (err) {
+		console.error('[twilio] register-device error:', err.message);
+		res.status(500).json({ error: 'Internal server error' });
+	}
+});
+
 export default router;
