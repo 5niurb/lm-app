@@ -389,18 +389,16 @@ router.post('/register-device', verifyToken, async (req, res) => {
 		}
 
 		// Upsert — one token per user+platform+type
-		const { error } = await supabaseAdmin
-			.from('device_push_tokens')
-			.upsert(
-				{
-					user_id: userId,
-					token,
-					platform,
-					type: 'twilio_voice',
-					updated_at: new Date().toISOString()
-				},
-				{ onConflict: 'user_id,platform,type' }
-			);
+		const { error } = await supabaseAdmin.from('device_push_tokens').upsert(
+			{
+				user_id: userId,
+				token,
+				platform,
+				type: 'twilio_voice',
+				updated_at: new Date().toISOString()
+			},
+			{ onConflict: 'user_id,platform,type' }
+		);
 
 		if (error) {
 			console.error('[twilio] register-device failed:', error.message);
