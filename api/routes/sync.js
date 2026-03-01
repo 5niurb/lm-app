@@ -470,54 +470,184 @@ async function getTmPatientsListId() {
 }
 
 /**
- * Search TextMagic for a contact by phone, create or update as needed.
- * Returns { action: 'created'|'updated'|'exists'|'skipped', tmId? }
+ * Search TextMagic contacts by email (exact match).
+ * Returns the matching TM contact object or null.
+ */
+async function tmSearchByEmail(email) {
+	if (!email) return null;
+	try {
+		const data = await tmFetch('/contacts', { search: email, limit: 10 });
+		const resources = data.resources || [];
+		return resources.find((c) => c.email && c.email.toLowerCase() === email.toLowerCase()) || null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Delete a TextMagic contact by ID.
+ */
+async function tmDeleteContact(contactId) {
+	const resp = await fetch(`${BASE_URL}/contacts/${contactId}`, {
+		method: 'DELETE',
+		headers: {
+			'X-TM-Username': TM_USERNAME,
+			'X-TM-Key': TM_API_KEY
+		}
+	});
+	if (!resp.ok && resp.status !== 404) {
+		const text = await resp.text();
+		throw new Error(`TextMagic DELETE /contacts/${contactId} ${resp.status}: ${text}`);
+	}
+}
+
+/**
+ * Sync a contact to TextMagic — create, update, or merge duplicates.
+ *
+ * Proactively looks up by both phone AND email. If the same person has
+ * separate TM entries (one matched by phone, another by email), merges
+ * them into one contact and deletes the duplicate.
+ *
+ * Returns { action: 'created'|'updated'|'merged'|'exists'|'skipped'|'error', tmId?, deletedTmId? }
  */
 async function syncContactToTextMagic(contact, listId) {
 	if (!contact.phone_normalized || !TM_API_KEY || !TM_USERNAME) {
 		return { action: 'skipped' };
 	}
 
-	// Ensure phone has country code for TM (assume US +1 if 10 digits)
 	let tmPhone = contact.phone_normalized;
 	if (tmPhone.length === 10) tmPhone = '1' + tmPhone;
 
 	try {
-		// Try exact phone lookup
-		const existing = await tmFetch(`/contacts/phone/${tmPhone}`);
-
-		// Contact exists in TM — update if we have richer data
-		const updates = {};
-		if (contact.first_name && contact.first_name !== existing.firstName)
-			updates.firstName = contact.first_name;
-		if (contact.last_name && contact.last_name !== existing.lastName)
-			updates.lastName = contact.last_name;
-		if (contact.email && !existing.email) updates.email = contact.email;
-
-		if (Object.keys(updates).length > 0) {
-			await tmWrite('PUT', `/contacts/${existing.id}`, updates);
-			return { action: 'updated', tmId: existing.id };
-		}
-		return { action: 'exists', tmId: existing.id };
-	} catch (err) {
-		// 404 = not found in TM → create new contact
-		if (err.message.includes('404')) {
-			if (!listId) return { action: 'skipped' };
-			try {
-				const result = await tmWrite('POST', '/contacts/normalized', {
-					phone: tmPhone,
-					firstName: contact.first_name || '',
-					lastName: contact.last_name || '',
-					email: contact.email || '',
-					lists: listId.toString()
-				});
-				return { action: 'created', tmId: result.id };
-			} catch (createErr) {
-				console.error(`[sync-sheet] TM create error for ${tmPhone}:`, createErr.message);
-				return { action: 'error' };
+		// Step 1: Look up by phone
+		let phoneContact = null;
+		try {
+			phoneContact = await tmFetch(`/contacts/phone/${tmPhone}`);
+		} catch (err) {
+			if (!err.message.includes('404')) {
+				console.error(`[sync-sheet] TM phone lookup error for ${tmPhone}:`, err.message);
 			}
 		}
-		console.error(`[sync-sheet] TM lookup error for ${tmPhone}:`, err.message);
+
+		// Step 2: Look up by email
+		let emailContact = null;
+		if (contact.email) {
+			emailContact = await tmSearchByEmail(contact.email);
+		}
+
+		// Step 3: Resolve duplicates — same person, two TM entries
+		if (phoneContact && emailContact && phoneContact.id !== emailContact.id) {
+			console.log(
+				`[sync-sheet] Merging TM duplicates: phone TM#${phoneContact.id} + email TM#${emailContact.id} → keeping TM#${phoneContact.id}`
+			);
+
+			// Delete the email-only duplicate first (frees up the email address)
+			await tmDeleteContact(emailContact.id);
+
+			// Update the phone contact with merged data + AR data
+			const updates = {
+				firstName: contact.first_name || phoneContact.firstName || emailContact.firstName || '',
+				lastName: contact.last_name || phoneContact.lastName || emailContact.lastName || '',
+				email: contact.email || emailContact.email || ''
+			};
+			if (listId) updates.lists = listId.toString();
+
+			try {
+				await tmWrite('PUT', `/contacts/${phoneContact.id}`, updates);
+			} catch (putErr) {
+				if (putErr.message.includes('Email')) {
+					delete updates.email;
+					await tmWrite('PUT', `/contacts/${phoneContact.id}`, updates);
+				} else {
+					throw putErr;
+				}
+			}
+			return { action: 'merged', tmId: phoneContact.id, deletedTmId: emailContact.id };
+		}
+
+		// Step 4a: Phone match only — update with AR data
+		if (phoneContact) {
+			const updates = {};
+			if (contact.first_name && contact.first_name !== phoneContact.firstName)
+				updates.firstName = contact.first_name;
+			if (contact.last_name && contact.last_name !== phoneContact.lastName)
+				updates.lastName = contact.last_name;
+			if (contact.email && !phoneContact.email) updates.email = contact.email;
+
+			if (Object.keys(updates).length > 0) {
+				try {
+					await tmWrite('PUT', `/contacts/${phoneContact.id}`, updates);
+				} catch (putErr) {
+					if (putErr.message.includes('Email')) {
+						delete updates.email;
+						if (Object.keys(updates).length > 0) {
+							await tmWrite('PUT', `/contacts/${phoneContact.id}`, updates);
+						}
+					} else {
+						throw putErr;
+					}
+				}
+				return { action: 'updated', tmId: phoneContact.id };
+			}
+			return { action: 'exists', tmId: phoneContact.id };
+		}
+
+		// Step 4b: Email match only — update with phone + AR data
+		if (emailContact) {
+			console.log(
+				`[sync-sheet] Found TM contact by email (TM#${emailContact.id}), adding phone ${tmPhone}`
+			);
+			const updates = {
+				phone: tmPhone,
+				firstName: contact.first_name || emailContact.firstName || '',
+				lastName: contact.last_name || emailContact.lastName || ''
+			};
+			if (listId) updates.lists = listId.toString();
+
+			try {
+				await tmWrite('PUT', `/contacts/${emailContact.id}`, updates);
+				return { action: 'updated', tmId: emailContact.id };
+			} catch (putErr) {
+				if (putErr.message.includes('Phone number already exists')) {
+					delete updates.phone;
+					await tmWrite('PUT', `/contacts/${emailContact.id}`, updates);
+					return { action: 'updated', tmId: emailContact.id };
+				}
+				throw putErr;
+			}
+		}
+
+		// Step 5: Neither found — create new
+		if (!listId) return { action: 'skipped' };
+		try {
+			const result = await tmWrite('POST', '/contacts/normalized', {
+				phone: tmPhone,
+				firstName: contact.first_name || '',
+				lastName: contact.last_name || '',
+				email: contact.email || '',
+				lists: listId.toString()
+			});
+			return { action: 'created', tmId: result.id };
+		} catch (createErr) {
+			if (createErr.message.includes('Email')) {
+				try {
+					const result = await tmWrite('POST', '/contacts/normalized', {
+						phone: tmPhone,
+						firstName: contact.first_name || '',
+						lastName: contact.last_name || '',
+						lists: listId.toString()
+					});
+					return { action: 'created', tmId: result.id };
+				} catch (retryErr) {
+					console.error(`[sync-sheet] TM create retry error for ${tmPhone}:`, retryErr.message);
+					return { action: 'error' };
+				}
+			}
+			console.error(`[sync-sheet] TM create error for ${tmPhone}:`, createErr.message);
+			return { action: 'error' };
+		}
+	} catch (err) {
+		console.error(`[sync-sheet] TM sync error for ${tmPhone}:`, err.message);
 		return { action: 'error' };
 	}
 }
@@ -616,6 +746,7 @@ router.post('/sheet', async (req, res) => {
 		let tmCreated = 0;
 		let tmUpdated = 0;
 		let tmExists = 0;
+		let tmMerged = 0;
 		let tmErrors = 0;
 		let errors = 0;
 
@@ -731,6 +862,7 @@ router.post('/sheet', async (req, res) => {
 				const result = await syncContactToTextMagic(contact, tmListId);
 				if (result.action === 'created') tmCreated++;
 				else if (result.action === 'updated') tmUpdated++;
+				else if (result.action === 'merged') tmMerged++;
 				else if (result.action === 'exists') tmExists++;
 				else if (result.action === 'error') tmErrors++;
 
@@ -790,7 +922,7 @@ router.post('/sheet', async (req, res) => {
 		const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
 		console.log(
-			`[sync-sheet] Done: ${validRows.length} sheet rows — ${inserted} new, ${enriched} enriched, ${unchanged} unchanged, ${errors} errors | TM: ${tmCreated} created, ${tmUpdated} updated, ${tmExists} existing, ${tmErrors} errors | ${namesRefreshed} names refreshed (${duration}s)${dryRun ? ' [DRY RUN]' : ''}`
+			`[sync-sheet] Done: ${validRows.length} sheet rows — ${inserted} new, ${enriched} enriched, ${unchanged} unchanged, ${errors} errors | TM: ${tmCreated} created, ${tmUpdated} updated, ${tmMerged} merged, ${tmExists} existing, ${tmErrors} errors | ${namesRefreshed} names refreshed (${duration}s)${dryRun ? ' [DRY RUN]' : ''}`
 		);
 
 		res.json({
@@ -801,7 +933,13 @@ router.post('/sheet', async (req, res) => {
 			enriched,
 			unchanged,
 			errors,
-			textmagic: { created: tmCreated, updated: tmUpdated, existing: tmExists, errors: tmErrors },
+			textmagic: {
+				created: tmCreated,
+				updated: tmUpdated,
+				merged: tmMerged,
+				existing: tmExists,
+				errors: tmErrors
+			},
 			namesRefreshed,
 			duration: `${duration}s`
 		});

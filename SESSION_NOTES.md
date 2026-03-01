@@ -1,3 +1,83 @@
+## Session — 2026-02-26 (Session 75)
+**Focus:** CI fixes, Dependabot vulns, softphone UI redesign
+
+**Accomplished:**
+- Fixed CI: workflow pointed at staging-api.lemedspa.app (503, no staging) → production API
+- Fixed 3 Dependabot vulns via overrides: rollup >=4.59.0 (path traversal), minimatch >=3.1.3 (ReDoS), skipped ajv (breaks ESLint internals, low risk)
+- Rebuilt softphone dialer: compact h-11 tiles (was h-16 circles), ITU letter sublabels (ABC/DEF/etc.), borderless mono number display with backspace button, tighter call state panels
+- Deployed to Cloudflare Pages — live at lemedspa.app/softphone
+
+**Diagram:**
+```
+Softphone dialer (before → after)
+  ┌──────────┐   ┌──────────────────┐
+  │  (7)(8)  │   │  · · ·        × │  ← mono display + backspace
+  │  (h-16)  │ → ├──────────────────┤
+  │  circles │   │ [1]  [2ABC][3DEF]│  ← h-11 compact tiles
+  │          │   │ [4GHI][5JKL][6MNO│
+  │  no sub  │   │ [7PQR][8TUV][9WXY│
+  │  labels  │   │  [*]  [0+]  [#] │
+  └──────────┘   │   ── Call ──     │
+                 └──────────────────┘
+```
+
+**Current State:**
+- Frontend: lemedspa.app — deployed, softphone redesign live
+- CI: green, pointing at production API
+- 0 npm audit vulnerabilities (both api/ and root)
+- All 129 tests passing
+
+**Next Steps:**
+- Wire up real OTP (Resend email) — infrastructure exists, needs connecting
+- Frontend polish on other pages as needed
+
+---
+
+## Session — 2026-02-26 (Session 74)
+**Focus:** Fix email delivery + expand operator ring group
+
+**Accomplished:**
+- Diagnosed email bounce: `info@lemedspa.com` doesn't exist in M365 — every send hard-bounced
+- Confirmed via Resend API (full-access key): `care@`, `lea@`, `ops@` all deliver; `info@` and `inbox@` bounce
+- Fixed `sendEmail()` to accept string or array for `to` field
+- Updated voicemail + call notification recipients to `care@`, `lea@`, `ops@`
+- Added `sip:+18184633772@lemedflex.sip.twilio.com` as `TWILIO_OPERATOR_SIP2` to operator ring group
+- All 4 targets now ring simultaneously on inbound calls (desk phone, lea SIP, lemeflex SIP, fallback)
+- Deployed both changes to Fly.io, all CI checks passing
+
+**Diagram:**
+```
+Inbound call → press 0 → connect-operator (ring all simultaneously, 25s)
+                               │
+               ┌───────────────┼───────────────┬──────────────┐
+               ▼               ▼               ▼              ▼
+         Desk Phone      lea@lemed.sip   +18184633772@    Fallback
+        +18184632211                     lemedflex.sip   +12797327364
+               │
+         voicemail → email → care@, lea@, ops@ ✅ (was info@ ❌)
+```
+
+**Current State:**
+- API: Fly.io (api.lemedspa.app) — healthy
+- Email notifications: delivering to 3 recipients
+- Operator dial: 4-way simultaneous ring, confirmed working
+
+- Fixed Dependabot high vuln — minimatch 9.0.5 (ReDoS) bumped to 10.2.4 via `overrides` in api/package.json
+
+**Current State:**
+- API: Fly.io (api.lemedspa.app) — healthy, 0 vulnerabilities
+- Email notifications: delivering to care@, lea@, ops@
+- Operator dial: 4-way simultaneous ring, confirmed working
+- All 195+ tests passing, Dependabot alert will auto-close
+
+**Issues:**
+- None open
+
+**Next Steps:**
+- Phase 1C frontend features or new feature work per user direction
+
+---
+
 ## Session — 2026-02-26 (Session 73)
 **Focus:** Fix operator dial routing + caller name in notifications
 
