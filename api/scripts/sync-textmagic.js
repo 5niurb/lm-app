@@ -143,6 +143,8 @@ async function main() {
 		// Build metadata from TextMagic-specific fields
 		const metadata = {};
 		if (tm.id) metadata.textmagic_contact_id = tm.id.toString();
+		// Store the actual TM phone so writeback doesn't confuse it with AR phone
+		metadata.textmagic_phone = tm.phone || null;
 		if (tm.companyName) metadata.company = tm.companyName;
 		if (tm.country?.id) metadata.country = tm.country.name || tm.country.id;
 		// Custom fields

@@ -107,6 +107,8 @@ router.post('/textmagic', async (req, res) => {
 			// Build metadata
 			const metadata = {};
 			if (tm.id) metadata.textmagic_contact_id = tm.id.toString();
+			// Store the actual TM phone so writeback doesn't confuse it with AR phone
+			metadata.textmagic_phone = tm.phone || null;
 			if (tm.companyName) metadata.company = tm.companyName;
 			if (tm.country?.id) metadata.country = tm.country.name || tm.country.id;
 			if (tm.customFieldValues && Array.isArray(tm.customFieldValues)) {
@@ -719,15 +721,21 @@ async function writebackTmDataToSheet() {
 		if (!contact) continue;
 
 		const meta = contact.metadata || {};
-		const tmPhone = contact.phone_normalized || '';
 		const tmContactId = meta.textmagic_contact_id || '';
-		if (!tmPhone && !tmContactId) continue;
+		if (!tmContactId) continue;
+
+		// Use the actual phone stored in TextMagic, NOT the generic Supabase phone
+		// (which could come from AR or another source).
+		// If textmagic_phone key exists (even as null) → use it (clears false values).
+		// If key doesn't exist → preserve existing sheet value (backward compat).
+		const hasTmPhoneKey = 'textmagic_phone' in meta;
+		const tmPhone = meta.textmagic_phone || '';
 
 		const currentTmPhone = row[colIndex['textmagic phone']]?.trim() || '';
 		const currentTmId = row[colIndex['textmagic contact id']]?.trim() || '';
 
-		// Only update if TM data is missing or changed
-		const newTmPhone = tmPhone ? String(tmPhone) : currentTmPhone;
+		// Determine what to write
+		const newTmPhone = hasTmPhoneKey ? tmPhone : currentTmPhone;
 		const newTmId = tmContactId ? String(tmContactId) : currentTmId;
 		if (newTmPhone === currentTmPhone && newTmId === currentTmId) continue;
 

@@ -1,54 +1,49 @@
-## Session — 2026-03-01 (Session 81)
-**Focus:** Fix overlay drop (sequential ring), TextMagic sync investigation
+## Session — 2026-03-01 (Session 82)
+**Focus:** Screening duration fix, TextMagic sync investigation
 
 **Accomplished:**
-- Diagnosed overlay drop root cause via Twilio REST API call logs:
-  - `client:lea` → status: **no-answer**, duration: 0s (started 20:27:01, ended 20:27:02 — 1 second!)
-  - Desk phone → status: completed, duration: 8s (voicemail answered in 2s, stole the call)
-  - **Twilio cancels ALL other legs when ANY target goes off-hook**, even if that target has a screening URL
-  - Call screening prevents *bridging* but NOT *cancellation of other legs*
-- **Replaced simultaneous ring with sequential ring:**
-  - Phase 1: `connect-operator` → ring softphone only (15s timeout)
-  - Phase 2: `connect-operator-fallback` → if softphone didn't answer, ring desk phone with screening (20s)
-  - Phase 3: `connect-operator-status` → voicemail/text (unchanged)
-- Updated 47 tests (was 41) — all passing
-- Deployed to Fly.io — both machines healthy
+- Fixed desk phone voicemail eating calls — `connect-operator-status` now checks `DialCallDuration`
+  - `completed` + duration < 12s = screening failed (voicemail answered but couldn't press 1) → play voicemail
+  - `completed` + duration >= 12s = real conversation → end gracefully
+- User confirmed: softphone answer works, deny → desk phone → voicemail greeting works
+- 49 tests passing (was 47), all CI green, committed + pushed
+- Deployed to Fly.io
 
 **Diagram:**
 ```
-Caller → IVR → press 0
-  └→ connect-operator: Ring softphone (15s)
-       ├→ answered? → call connects → done
-       └→ no-answer? → connect-operator-fallback
-            └→ Ring desk phone w/ screening (20s)
-                 ├→ answered + press 1? → bridges → done
-                 └→ no-answer? → connect-operator-status
-                      └→ voicemail / press-1-to-text
+connect-operator-status receives DialCallStatus:
+  completed + duration >= 12s → real call → end gracefully
+  completed + duration < 12s  → screening failed → voicemail greeting
+  no-answer/busy/failed       → nobody answered → voicemail greeting
 ```
 
 **Current State:**
-- Sequential ring deployed, awaiting user test call
-- 47 Twilio call flow tests passing
-- Trace logging still in production (for debugging)
+- Full call flow working end-to-end (tested by user)
+- Investigating TextMagic sync issue
 
 **Issues:**
-- Incoming calls not in `call_logs` — duplicate key constraint + Supabase 502s
-- TextMagic sync issue (see below)
-
-**TextMagic Sync Bug — Investigate Next Session:**
-- Nina Rodriguez (TM contact ID 361016247) has no phone number in TextMagic, only email
-- No AR_ID or patient info populated
-- Google Sheet ("Lemed contacts") shows her TM phone as "+18183509333" but that's actually blank in TM
-- Sync is running (logs show "494 valid AR contacts, 2 enriched") but data mapping is wrong
-- Need to investigate: `api/services/contact-sync.js` or equivalent sync logic
-- Key questions: Why does the sheet show a phone that TM doesn't have? Is the sync writing incorrect data back to the sheet? Is the phone number coming from a different source?
+- TextMagic sync: Nina Rodriguez (TM ID 361016247) — see Session 81 notes
+- Incoming call logging broken (duplicate key + Supabase 502)
+- Trace logging still in production
 
 **Next Steps:**
-- Confirm sequential ring works (user test call in progress)
-- Fix TextMagic sync data accuracy issue
-- Fix incoming call logging (duplicate key)
+- Fix TextMagic sync data accuracy
+- Fix incoming call logging
 - Remove trace logging after call flow is stable
-- Commit + push changes
+
+---
+
+## Session — 2026-03-01 (Session 81)
+**Focus:** Sequential ring fix for overlay drop + screening duration bug
+
+**Accomplished:**
+- Replaced simultaneous ring with sequential ring (softphone 15s → desk phone 20s w/ screening)
+- Root cause: Twilio cancels all legs when any target goes off-hook, even with screening URL
+- 49 tests, deployed to Fly.io, committed + pushed
+
+**Issues:**
+- TextMagic sync bug (Nina Rodriguez — TM ID 361016247, no phone but sheet shows one)
+- Incoming call logging broken
 
 ---
 
