@@ -2,7 +2,7 @@ import { Router } from 'express';
 import twilio from 'twilio';
 import { supabaseAdmin } from '../services/supabase.js';
 import { verifyToken } from '../middleware/auth.js';
-import { validateTwilioSignature } from '../middleware/twilioSignature.js';
+
 import {
 	lookupContactByPhone,
 	findConversation,
@@ -192,12 +192,67 @@ router.post('/connect-operator', (req, res) => {
 		method: 'POST'
 	});
 
-	// Ring the browser softphone (Twilio Voice SDK client)
-	// Other targets (desk phone, SIP, fallback) are disabled — their voicemail
-	// auto-answers and cancels the Client leg before the operator can pick up.
-	// TODO: re-enable phone targets with AMD (Answering Machine Detection) so
-	// voicemail pickups don't cancel the softphone.
+	// 1. Ring the browser softphone (Twilio Voice SDK client)
 	dial.client('lea');
+
+	// 2. Ring the operator desk phone with call screening
+	// The "url" attribute is a whisper URL — fetched when the phone answers.
+	// It plays "press 1 to accept" so voicemail can't steal the call.
+	const operatorPhone = process.env.TWILIO_OPERATOR_PHONE;
+	if (operatorPhone) {
+		dial.number({ url: `${baseUrl}/api/twilio/screen-call`, method: 'POST' }, operatorPhone);
+	}
+
+	// 3. Ring the fallback number (if set and different from operator phone)
+	const fallback = process.env.TWILIO_OPERATOR_FALLBACK;
+	if (fallback && fallback !== operatorPhone) {
+		dial.number({ url: `${baseUrl}/api/twilio/screen-call`, method: 'POST' }, fallback);
+	}
+
+	res.type('text/xml');
+	res.send(twiml.toString());
+});
+
+/**
+ * POST /api/twilio/screen-call
+ * Whisper URL for phone number legs in connect-operator simultaneous ring.
+ * Plays "press 1 to accept" — prevents voicemail from answering and
+ * cancelling the Client (softphone) leg.
+ *
+ * If the human presses 1 → return empty TwiML (Twilio bridges the call).
+ * If timeout (voicemail) → return <Hangup/> (kills this leg, others keep ringing).
+ */
+router.post('/screen-call', (req, res) => {
+	const twiml = new twilio.twiml.VoiceResponse();
+
+	const gather = twiml.gather({
+		numDigits: 1,
+		timeout: 5,
+		action: `${process.env.API_BASE_URL || 'https://api.lemedspa.app'}/api/twilio/screen-call-result`,
+		method: 'POST'
+	});
+	gather.say({ voice: 'Polly.Joanna', language: 'en-US' }, 'Incoming call. Press 1 to accept.');
+
+	// No digit pressed (voicemail answered) — hang up this leg
+	twiml.hangup();
+
+	res.type('text/xml');
+	res.send(twiml.toString());
+});
+
+/**
+ * POST /api/twilio/screen-call-result
+ * Called when the human presses a digit during call screening.
+ * If 1 → empty TwiML (bridges the call). Otherwise → hangup.
+ */
+router.post('/screen-call-result', (req, res) => {
+	const twiml = new twilio.twiml.VoiceResponse();
+	const digit = req.body.Digits;
+
+	if (digit !== '1') {
+		twiml.hangup();
+	}
+	// digit === '1' → empty response bridges the call
 
 	res.type('text/xml');
 	res.send(twiml.toString());
@@ -209,7 +264,7 @@ router.post('/connect-operator', (req, res) => {
  * If nobody answered, offers "press 1 to text" then falls back to voicemail.
  * All URLs MUST be absolute (see connect-operator comment).
  */
-router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
+router.post('/connect-operator-status', (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
 	const dialStatus = req.body.DialCallStatus;
 	const baseUrl = process.env.API_BASE_URL || 'https://api.lemedspa.app';
@@ -247,7 +302,7 @@ router.post('/connect-operator-status', validateTwilioSignature, (req, res) => {
  * Called when caller presses 1 during the voicemail greeting.
  * Sends an SMS to initiate a 2-way text conversation, then hangs up.
  */
-router.post('/connect-operator-text', validateTwilioSignature, async (req, res) => {
+router.post('/connect-operator-text', async (req, res) => {
 	const twiml = new twilio.twiml.VoiceResponse();
 	const callerNumber = req.body.From || req.body.Caller;
 	const twilioNumber = req.body.Called || req.body.To || process.env.TWILIO_PHONE_NUMBER;
@@ -255,10 +310,7 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 
 	if (digit !== '1') {
 		// Any digit other than 1 — fall through to voicemail
-		const baseUrl =
-			process.env.RENDER_EXTERNAL_URL ||
-			process.env.FRONTEND_URL_PUBLIC ||
-			'https://api.lemedspa.app';
+		const baseUrl = process.env.API_BASE_URL || 'https://api.lemedspa.app';
 		twiml.record({
 			maxLength: 120,
 			transcribe: true,
@@ -277,10 +329,7 @@ router.post('/connect-operator-text', validateTwilioSignature, async (req, res) 
 	if (digit === '1' && callerNumber) {
 		try {
 			const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-			const baseUrl =
-				process.env.RENDER_EXTERNAL_URL ||
-				process.env.FRONTEND_URL_PUBLIC ||
-				'https://api.lemedspa.app';
+			const baseUrl = process.env.API_BASE_URL || 'https://api.lemedspa.app';
 
 			const msgBody = '(LeMedSpa) Thank you for reaching out. How can we help you?';
 
