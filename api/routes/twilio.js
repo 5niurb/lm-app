@@ -192,13 +192,16 @@ router.post('/connect-operator', (req, res) => {
 		method: 'POST'
 	});
 
-	// 1. Ring the operator desk phone
+	// 1. Ring the browser softphone (Twilio Voice SDK client)
+	dial.client('lea');
+
+	// 2. Ring the operator desk phone
 	const operatorPhone = process.env.TWILIO_OPERATOR_PHONE;
 	if (operatorPhone) {
 		dial.number(operatorPhone);
 	}
 
-	// 2. Ring SIP endpoints
+	// 3. Ring SIP endpoints
 	const sipUri = process.env.TWILIO_OPERATOR_SIP;
 	if (sipUri) {
 		dial.sip(sipUri);
@@ -208,7 +211,7 @@ router.post('/connect-operator', (req, res) => {
 		dial.sip(sipUri2);
 	}
 
-	// 3. Ring the fallback number (if set and different from operator phone)
+	// 4. Ring the fallback number (if set and different from operator phone)
 	const fallback = process.env.TWILIO_OPERATOR_FALLBACK;
 	if (fallback && fallback !== operatorPhone) {
 		dial.number(fallback);
@@ -385,12 +388,18 @@ router.post('/register-device', verifyToken, async (req, res) => {
 			return res.status(400).json({ error: 'platform must be ios or android' });
 		}
 
-		// Upsert — one token per user+platform
+		// Upsert — one token per user+platform+type
 		const { error } = await supabaseAdmin
 			.from('device_push_tokens')
 			.upsert(
-				{ user_id: userId, token, platform, updated_at: new Date().toISOString() },
-				{ onConflict: 'user_id,platform' }
+				{
+					user_id: userId,
+					token,
+					platform,
+					type: 'twilio_voice',
+					updated_at: new Date().toISOString()
+				},
+				{ onConflict: 'user_id,platform,type' }
 			);
 
 		if (error) {

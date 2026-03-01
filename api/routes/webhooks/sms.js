@@ -10,6 +10,7 @@ import {
 	normalizePhone
 } from '../../services/phone-lookup.js';
 import { resolveTags } from '../../services/tag-resolver.js';
+import { sendPushToAll } from '../../services/push-notify.js';
 
 /**
  * Check if the business is currently open.
@@ -175,6 +176,7 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 	}
 
 	let convId;
+	let senderName = fromNumber; // fallback to phone number
 
 	try {
 		// Find or create conversation — one thread per customer phone number
@@ -182,6 +184,7 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 
 		if (existing) {
 			convId = existing.id;
+			senderName = existing.display_name || fromNumber;
 			// Update conversation with new message preview + fill twilio_number if missing
 			const updatePayload = {
 				last_message: body.substring(0, 200),
@@ -196,6 +199,7 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 		} else {
 			// Look up contact by phone (shared utility handles format variants)
 			const { contactId, contactName } = await lookupContactByPhone(fromNumber);
+			senderName = contactName || fromNumber;
 
 			const { data: newConv } = await supabaseAdmin
 				.from('conversations')
@@ -237,6 +241,15 @@ router.post('/incoming', validateTwilioSignature, async (req, res) => {
 	// Check for auto-reply rules (fire-and-forget — doesn't block webhook response)
 	if (convId && body) {
 		processAutoReply({ messageBody: body, fromNumber, toNumber, convId });
+	}
+
+	// Push notification to mobile devices (fire-and-forget)
+	if (convId) {
+		sendPushToAll({
+			title: senderName,
+			body: body || (mediaUrls.length > 0 ? '[Image]' : 'New message'),
+			data: { type: 'new_message', conversation_id: convId }
+		});
 	}
 
 	// Respond with empty TwiML
