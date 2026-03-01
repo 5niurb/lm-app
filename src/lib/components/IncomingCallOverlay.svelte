@@ -11,7 +11,7 @@
 		answerCall,
 		rejectCall,
 		hangUp,
-		toggleMute,
+		toggleMute
 	} from '$lib/stores/softphone.js';
 	import { formatPhone } from '$lib/utils/formatters.js';
 
@@ -39,7 +39,9 @@
 			<div class="border-t-2 border-vivid-blue">
 				<!-- Header -->
 				<div class="flex items-center gap-3 px-4 pt-4 pb-3">
-					<div class="flex h-10 w-10 items-center justify-center rounded-full bg-vivid-blue/15 shrink-0">
+					<div
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-vivid-blue/15 shrink-0"
+					>
 						<PhoneIncoming class="h-5 w-5 animate-bounce text-vivid-blue" />
 					</div>
 					<div class="min-w-0 flex-1">
@@ -71,12 +73,14 @@
 				</div>
 			</div>
 
-		<!-- Connecting state -->
+			<!-- Connecting state -->
 		{:else if $callState === 'connecting'}
 			<div class="px-4 py-4">
 				<!-- Header -->
 				<div class="flex items-center gap-3 mb-3">
-					<div class="flex h-10 w-10 items-center justify-center rounded-full bg-vivid-amber/15 shrink-0">
+					<div
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-vivid-amber/15 shrink-0"
+					>
 						<Phone class="h-5 w-5 animate-pulse text-vivid-amber" />
 					</div>
 					<div class="min-w-0 flex-1">
@@ -107,12 +111,14 @@
 				</div>
 			</div>
 
-		<!-- Connected state -->
+			<!-- Connected state -->
 		{:else if $callState === 'connected'}
 			<div class="px-4 py-4">
 				<!-- Header -->
 				<div class="flex items-center gap-3 mb-3">
-					<div class="flex h-10 w-10 items-center justify-center rounded-full bg-vivid-emerald/15 shrink-0">
+					<div
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-vivid-emerald/15 shrink-0"
+					>
 						<Phone class="h-5 w-5 text-vivid-emerald" />
 					</div>
 					<div class="min-w-0 flex-1">
