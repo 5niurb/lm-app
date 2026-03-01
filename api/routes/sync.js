@@ -9,6 +9,7 @@
  */
 import { Router } from 'express';
 import { supabaseAdmin } from '../services/supabase.js';
+import { readSheet, batchWriteSheet } from '../services/google-sheets.js';
 
 const router = Router();
 
@@ -653,6 +654,104 @@ async function syncContactToTextMagic(contact, listId) {
 }
 
 /**
+ * Write TextMagic phone + contact ID back to the Google Sheet.
+ * Reads the sheet, matches rows to Supabase contacts by AR ID or phone,
+ * and batch-updates the TextMagic columns (AE-AG) for any rows with new data.
+ *
+ * @returns {Promise<number>} Number of sheet rows updated
+ */
+async function writebackTmDataToSheet() {
+	const SHEET_NAME = 'patients3';
+
+	const { headers, rows } = await readSheet(SHEET_NAME);
+	const cleanHeaders = headers.map((h) =>
+		h
+			.trim()
+			.toLowerCase()
+			.replace(/\s+\d+\s*$/, '')
+	);
+
+	// Find column indices
+	const colIndex = {};
+	for (const name of ['ar id', 'phone', 'textmagic phone', 'textmagic contact id']) {
+		const idx = cleanHeaders.indexOf(name);
+		if (idx !== -1) colIndex[name] = idx;
+	}
+
+	if (colIndex['textmagic phone'] === undefined) {
+		console.warn('[sync-sheet] Writeback skipped: "TextMagic Phone" column not found');
+		return 0;
+	}
+
+	// Fetch contacts with TM data from DB
+	const { data: contacts } = await supabaseAdmin
+		.from('contacts')
+		.select('source_id, phone_normalized, metadata')
+		.not('metadata->textmagic_contact_id', 'is', null);
+
+	if (!contacts?.length) return 0;
+
+	const byArId = new Map();
+	const byPhone = new Map();
+	for (const c of contacts) {
+		if (c.source_id) byArId.set(c.source_id, c);
+		if (c.phone_normalized) byPhone.set(c.phone_normalized, c);
+	}
+
+	const toColLetter = (idx) => {
+		if (idx < 26) return String.fromCharCode(65 + idx);
+		return String.fromCharCode(64 + Math.floor(idx / 26)) + String.fromCharCode(65 + (idx % 26));
+	};
+
+	const batchUpdates = [];
+	let updated = 0;
+
+	for (let i = 0; i < rows.length; i++) {
+		const row = rows[i];
+		const rowNum = i + 2;
+
+		const arId = row[colIndex['ar id']]?.trim();
+		const phone = row[colIndex['phone']]?.trim()?.replace(/\D/g, '');
+
+		let contact = null;
+		if (arId && arId !== '-1') contact = byArId.get(arId);
+		if (!contact && phone) contact = byPhone.get(phone);
+		if (!contact) continue;
+
+		const meta = contact.metadata || {};
+		const tmPhone = contact.phone_normalized || '';
+		const tmContactId = meta.textmagic_contact_id || '';
+		if (!tmPhone && !tmContactId) continue;
+
+		const currentTmPhone = row[colIndex['textmagic phone']]?.trim() || '';
+		const currentTmId = row[colIndex['textmagic contact id']]?.trim() || '';
+
+		// Only update if TM data is missing or changed
+		const newTmPhone = tmPhone ? String(tmPhone) : currentTmPhone;
+		const newTmId = tmContactId ? String(tmContactId) : currentTmId;
+		if (newTmPhone === currentTmPhone && newTmId === currentTmId) continue;
+
+		const startLetter = toColLetter(colIndex['textmagic phone']);
+		const endLetter = toColLetter(colIndex['textmagic contact id']);
+		batchUpdates.push({
+			range: `'${SHEET_NAME}'!${startLetter}${rowNum}:${endLetter}${rowNum}`,
+			values: [[newTmPhone, newTmId]]
+		});
+		updated++;
+	}
+
+	if (batchUpdates.length > 0) {
+		const BATCH_SIZE = 100;
+		for (let i = 0; i < batchUpdates.length; i += BATCH_SIZE) {
+			await batchWriteSheet(batchUpdates.slice(i, i + BATCH_SIZE));
+		}
+		console.log(`[sync-sheet] Writeback: updated ${updated} rows in Google Sheet`);
+	}
+
+	return updated;
+}
+
+/**
  * POST /api/sync/sheet
  * Fetch AR patients from Google Sheet, insert/enrich in contacts DB,
  * then sync each new/updated contact to TextMagic.
@@ -919,10 +1018,20 @@ router.post('/sheet', async (req, res) => {
 			}
 		}
 
+		// 7. Write TM data back to Google Sheet (fire-and-forget — don't block response)
+		let sheetWriteback = 0;
+		if (!dryRun && (tmCreated > 0 || tmUpdated > 0 || tmMerged > 0)) {
+			try {
+				sheetWriteback = await writebackTmDataToSheet();
+			} catch (wbErr) {
+				console.error('[sync-sheet] Writeback error (non-fatal):', wbErr.message);
+			}
+		}
+
 		const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
 		console.log(
-			`[sync-sheet] Done: ${validRows.length} sheet rows — ${inserted} new, ${enriched} enriched, ${unchanged} unchanged, ${errors} errors | TM: ${tmCreated} created, ${tmUpdated} updated, ${tmMerged} merged, ${tmExists} existing, ${tmErrors} errors | ${namesRefreshed} names refreshed (${duration}s)${dryRun ? ' [DRY RUN]' : ''}`
+			`[sync-sheet] Done: ${validRows.length} sheet rows — ${inserted} new, ${enriched} enriched, ${unchanged} unchanged, ${errors} errors | TM: ${tmCreated} created, ${tmUpdated} updated, ${tmMerged} merged, ${tmExists} existing, ${tmErrors} errors | ${namesRefreshed} names refreshed, ${sheetWriteback} sheet rows written back (${duration}s)${dryRun ? ' [DRY RUN]' : ''}`
 		);
 
 		res.json({
@@ -941,6 +1050,7 @@ router.post('/sheet', async (req, res) => {
 				errors: tmErrors
 			},
 			namesRefreshed,
+			sheetWriteback,
 			duration: `${duration}s`
 		});
 	} catch (err) {
