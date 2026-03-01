@@ -102,15 +102,32 @@ describe('connect-operator-status handler', () => {
 		expect(getSentXml()).toContain('<Record');
 	});
 
-	it('returns empty TwiML when call was answered (completed)', async () => {
+	it('returns empty TwiML when call was answered with real conversation', async () => {
 		const handler = findHandler(router, 'post', '/connect-operator-status');
-		const { req, res, getSentXml } = mockReqRes({ DialCallStatus: 'completed' });
+		const { req, res, getSentXml } = mockReqRes({
+			DialCallStatus: 'completed',
+			DialCallDuration: '45'
+		});
 
 		await handler(req, res);
 		const xml = getSentXml();
 
 		expect(xml).not.toContain('<Gather');
 		expect(xml).not.toContain('<Record');
+	});
+
+	it('offers voicemail when screening failed (completed but short duration)', async () => {
+		const handler = findHandler(router, 'post', '/connect-operator-status');
+		const { req, res, getSentXml } = mockReqRes({
+			DialCallStatus: 'completed',
+			DialCallDuration: '8'
+		});
+
+		await handler(req, res);
+		const xml = getSentXml();
+
+		expect(xml).toContain('<Gather');
+		expect(xml).toContain('<Record');
 	});
 
 	it('uses absolute URLs for all callbacks', async () => {
