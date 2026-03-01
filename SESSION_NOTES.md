@@ -1,3 +1,51 @@
+## Session — 2026-03-01 (Session 83)
+**Focus:** TextMagic reverse enrichment (Supabase → TextMagic)
+
+**Accomplished:**
+- Built reverse enrichment step in TM sync endpoint (`api/routes/sync.js`)
+  - After pulling TM contacts into Supabase, finds TM contacts missing phone that Supabase has from AR
+  - Pushes phone + name via `PUT /contacts/{tmId}`
+  - Updates `metadata.textmagic_phone` after successful push
+- Handles "phone already exists" conflicts (another TM contact has the phone)
+  - Marks as `conflict:<phone>` in metadata to prevent retry every 15 min
+  - Preserves conflict markers during subsequent TM sync merges
+- Deployed and verified: 4 contacts reverse-enriched, 5 marked as conflicts (dupes in TM)
+- 1 remaining candidate (Christina Thau) has Supabase dedup issue — two rows, phone on wrong row
+
+**Diagram:**
+```
+TM Sync (every 15 min):
+  TextMagic ──(pull)──→ Supabase ──(reverse push)──→ TextMagic
+       │                    │                              ↑
+       │                    │   phone from AR?             │
+       │                    │   TM has no phone?    ───────┘
+       │                    │   PUT /contacts/{tmId}
+       │                    │
+       └── metadata.textmagic_phone tracks state:
+           null     = TM has no phone, might push later
+           <digits> = TM has this phone (from TM or pushed by us)
+           conflict:<digits> = phone exists under different TM contact
+```
+
+**Current State:**
+- Reverse enrichment running every 15 min automatically
+- 560+ contacts have TM phone synced, 5 have conflict markers
+- Nina Rodriguez: fully enriched (phone pushed to TM by sheet sync)
+- Git clean, 2 commits pushed
+
+**Issues:**
+- 5 TM contacts have phone conflicts (same phone under different TM contact — needs TM-side dedup)
+- Christina Thau has Supabase dedup (2 rows with same TM ID, phone on wrong row)
+- Incoming call logging broken (duplicate key + Supabase 502) — not addressed
+- Trace logging still in production
+
+**Next Steps:**
+- Fix Supabase contact dedup (merge duplicate rows)
+- Fix incoming call logging
+- Remove trace logging after call flow is stable
+
+---
+
 ## Session — 2026-03-01 (Session 82)
 **Focus:** Screening duration fix, TextMagic sync writeback fix
 
