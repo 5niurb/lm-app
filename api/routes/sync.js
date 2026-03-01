@@ -153,6 +153,11 @@ router.post('/textmagic', async (req, res) => {
 
 			if (existing) {
 				const mergedMeta = { ...(existing.metadata || {}), ...metadata };
+				// Preserve conflict markers from reverse enrichment
+				const existingTmPhone = (existing.metadata || {}).textmagic_phone;
+				if (typeof existingTmPhone === 'string' && existingTmPhone.startsWith('conflict:')) {
+					mergedMeta.textmagic_phone = existingTmPhone;
+				}
 				const existingTags = existing.tags || [];
 				const hasRicherTag = existingTags.some((t) =>
 					['patient', 'partner', 'employee'].includes(t)
