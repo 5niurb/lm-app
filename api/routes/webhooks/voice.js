@@ -152,23 +152,26 @@ router.post('/incoming', async (req, res) => {
 	// Use contact name if found, otherwise fall back to Twilio CNAM
 	const displayName = contactName || callerName;
 
-	const { error } = await supabaseAdmin.from('call_logs').insert({
-		twilio_sid: CallSid,
-		direction: 'inbound',
-		from_number: From || 'unknown',
-		to_number: To || '',
-		twilio_number: To || null,
-		status: CallStatus || 'initiated',
-		caller_name: displayName,
-		contact_id: contactId,
-		metadata: {
-			caller_name_cnam: callerName,
-			caller_city: req.body.CallerCity || null,
-			caller_state: req.body.CallerState || null,
-			caller_country: req.body.CallerCountry || null,
-			caller_zip: req.body.CallerZip || null
-		}
-	});
+	const { error } = await supabaseAdmin.from('call_logs').upsert(
+		{
+			twilio_sid: CallSid,
+			direction: 'inbound',
+			from_number: From || 'unknown',
+			to_number: To || '',
+			twilio_number: To || null,
+			status: CallStatus || 'initiated',
+			caller_name: displayName,
+			contact_id: contactId,
+			metadata: {
+				caller_name_cnam: callerName,
+				caller_city: req.body.CallerCity || null,
+				caller_state: req.body.CallerState || null,
+				caller_country: req.body.CallerCountry || null,
+				caller_zip: req.body.CallerZip || null
+			}
+		},
+		{ onConflict: 'twilio_sid' }
+	);
 
 	if (error) {
 		console.error('Failed to create call log:', error.message);
@@ -304,15 +307,18 @@ router.post('/status', validateTwilioSignature, async (req, res) => {
 				}
 			}
 
-			const { error: insertError } = await supabaseAdmin.from('call_logs').insert({
-				twilio_sid: CallSid,
-				direction: 'inbound',
-				from_number: From || 'unknown',
-				to_number: To || '',
-				caller_name: contactName,
-				contact_id: contactId,
-				...update
-			});
+			const { error: insertError } = await supabaseAdmin.from('call_logs').upsert(
+				{
+					twilio_sid: CallSid,
+					direction: 'inbound',
+					from_number: From || 'unknown',
+					to_number: To || '',
+					caller_name: contactName,
+					contact_id: contactId,
+					...update
+				},
+				{ onConflict: 'twilio_sid' }
+			);
 
 			if (insertError) {
 				console.error('Failed to create call log from status:', insertError.message);
@@ -406,7 +412,6 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 			// Fallback: match by phone number + recent timing (within 5 min)
 			// TwiML redirects from Studio can cause CallSid mismatches
 			if (!callLog && From) {
-				console.warn('[recording] CallSid lookup failed for', CallSid, '— trying phone match');
 				const { data: phoneMatch } = await supabaseAdmin
 					.from('call_logs')
 					.select('id')
@@ -417,35 +422,33 @@ router.post('/recording', validateTwilioSignature, async (req, res) => {
 					.limit(1)
 					.maybeSingle();
 				callLog = phoneMatch;
-				if (callLog) {
-					console.log('[recording] Matched by phone fallback:', callLog.id);
-				}
 			}
 
 			// Last resort: create a call_log so voicemail has a parent record
 			if (!callLog && From) {
-				console.warn('[recording] Creating fallback call_log for', From);
 				const { contactId, contactName } = await lookupContactByPhone(From);
 				const { data: created } = await supabaseAdmin
 					.from('call_logs')
-					.insert({
-						twilio_sid: CallSid,
-						direction: 'inbound',
-						from_number: From,
-						to_number: req.body.To || req.body.Called || process.env.TWILIO_PHONE_NUMBER || '',
-						status: 'completed',
-						disposition: 'voicemail',
-						caller_name: contactName,
-						contact_id: contactId,
-						metadata: { source: 'recording_fallback' }
-					})
+					.upsert(
+						{
+							twilio_sid: CallSid,
+							direction: 'inbound',
+							from_number: From,
+							to_number: req.body.To || req.body.Called || process.env.TWILIO_PHONE_NUMBER || '',
+							status: 'completed',
+							disposition: 'voicemail',
+							caller_name: contactName,
+							contact_id: contactId,
+							metadata: { source: 'recording_fallback' }
+						},
+						{ onConflict: 'twilio_sid' }
+					)
 					.select('id')
 					.single();
 				callLog = created;
 			}
 		} else if (From) {
 			// No CallSid at all — try phone match
-			console.warn('[recording] No CallSid in recording callback — trying phone match for', From);
 			const { data: phoneMatch } = await supabaseAdmin
 				.from('call_logs')
 				.select('id')
@@ -748,14 +751,6 @@ router.all('/record-voicemail', (req, res) => {
  * Twilio sends URL-encoded body with recording data.
  */
 router.all('/voicemail-recorded', async (req, res) => {
-	console.log(
-		'[voicemail-recorded] HIT — method:',
-		req.method,
-		'query:',
-		req.query,
-		'body keys:',
-		Object.keys(req.body)
-	);
 	const { CallSid, RecordingSid, RecordingUrl, RecordingDuration, From, To } = req.body;
 	const mailbox = req.query.mailbox || req.body.mailbox || 'operator';
 
