@@ -7,6 +7,8 @@
 	import AppSidebar from '$lib/components/AppSidebar.svelte';
 	import AppHeader from '$lib/components/AppHeader.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import { connectDevice, disconnectDevice } from '$lib/stores/softphone.js';
+	import IncomingCallOverlay from '$lib/components/IncomingCallOverlay.svelte';
 
 	/** @type {import('$lib/components/CommandPalette.svelte').default|null} */
 	let commandPalette = $state(null);
@@ -18,7 +20,14 @@
 			if (isLoading) return;
 			if (!$session) goto(resolve('/login'));
 		});
-		return unsub;
+
+		// Initialize global softphone — stays connected across all pages
+		connectDevice();
+
+		return () => {
+			unsub();
+			disconnectDevice();
+		};
 	});
 </script>
 
@@ -37,4 +46,5 @@
 		</SidebarInset>
 	</SidebarProvider>
 	<CommandPalette bind:this={commandPalette} />
+	<IncomingCallOverlay />
 {/if}
