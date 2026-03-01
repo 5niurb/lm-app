@@ -270,11 +270,82 @@ router.post('/textmagic', async (req, res) => {
 			}
 		}
 
+		// ── Reverse enrichment: push AR data → TextMagic ──────────────
+		// Find contacts that have a TM ID but TM has no phone (matched by email).
+		// If Supabase has phone_normalized (from AR), push it to TM.
+		let reverseEnriched = 0;
+		let reverseErrors = 0;
+
+		if (TM_API_KEY && TM_USERNAME) {
+			const { data: candidates } = await supabaseAdmin
+				.from('contacts')
+				.select('id, phone_normalized, first_name, last_name, email, metadata')
+				.not('phone_normalized', 'is', null)
+				.not('metadata->textmagic_contact_id', 'is', null);
+
+			if (candidates) {
+				for (const c of candidates) {
+					const meta = c.metadata || {};
+					// Only push if TM phone is null/empty (TM contact is missing the phone)
+					if (meta.textmagic_phone) continue;
+					// textmagic_phone key must exist (set by TM sync above) to confirm TM has no phone
+					if (!('textmagic_phone' in meta)) continue;
+
+					const tmId = meta.textmagic_contact_id;
+					let tmPhone = c.phone_normalized;
+					if (tmPhone.length === 10) tmPhone = '1' + tmPhone;
+
+					try {
+						const updates = { phone: tmPhone };
+						if (c.first_name) updates.firstName = c.first_name;
+						if (c.last_name) updates.lastName = c.last_name;
+
+						await tmWrite('PUT', `/contacts/${tmId}`, updates);
+
+						// Update metadata to reflect the push
+						const updatedMeta = { ...meta, textmagic_phone: tmPhone };
+						await supabaseAdmin
+							.from('contacts')
+							.update({ metadata: updatedMeta, updated_at: new Date().toISOString() })
+							.eq('id', c.id);
+
+						reverseEnriched++;
+						console.log(
+							`[sync] Reverse enrichment: pushed phone ${tmPhone} to TM#${tmId} (${c.first_name} ${c.last_name})`
+						);
+					} catch (err) {
+						if (err.message.includes('Phone number already exists')) {
+							// Another TM contact already has this phone — mark as conflict
+							// so we don't retry every sync cycle
+							const updatedMeta = {
+								...meta,
+								textmagic_phone: `conflict:${tmPhone}`
+							};
+							await supabaseAdmin
+								.from('contacts')
+								.update({
+									metadata: updatedMeta,
+									updated_at: new Date().toISOString()
+								})
+								.eq('id', c.id);
+							reverseErrors++;
+							console.log(
+								`[sync] Reverse enrichment conflict: phone ${tmPhone} already in TM under different contact (TM#${tmId} ${c.first_name} ${c.last_name})`
+							);
+						} else {
+							reverseErrors++;
+							console.error(`[sync] Reverse enrichment error for TM#${tmId}:`, err.message);
+						}
+					}
+				}
+			}
+		}
+
 		const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
 		// Log the sync result
 		console.log(
-			`[sync] TextMagic: ${allContacts.length} contacts — ${inserted} new, ${updated} updated, ${skipped} skipped, ${errors} errors, ${arTagged} AR-tagged, ${namesRefreshed} names refreshed (${duration}s)`
+			`[sync] TextMagic: ${allContacts.length} contacts — ${inserted} new, ${updated} updated, ${skipped} skipped, ${errors} errors, ${arTagged} AR-tagged, ${namesRefreshed} names refreshed, ${reverseEnriched} reverse-enriched (${duration}s)`
 		);
 
 		res.json({
@@ -286,6 +357,8 @@ router.post('/textmagic', async (req, res) => {
 			errors,
 			arTagged,
 			namesRefreshed,
+			reverseEnriched,
+			reverseErrors,
 			duration: `${duration}s`
 		});
 	} catch (err) {
