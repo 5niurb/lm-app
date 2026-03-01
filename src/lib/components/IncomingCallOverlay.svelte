@@ -1,6 +1,5 @@
 <script>
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Phone, PhoneOff, PhoneIncoming, Mic, MicOff } from '@lucide/svelte';
 	import {

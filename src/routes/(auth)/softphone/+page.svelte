@@ -14,7 +14,6 @@
 	} from '@lucide/svelte';
 	import { formatPhone } from '$lib/utils/formatters.js';
 	import {
-		device,
 		activeCall,
 		deviceStatus,
 		statusMessage,
@@ -88,15 +87,6 @@
 		const m = Math.floor(seconds / 60);
 		const s = seconds % 60;
 		return `${m}:${s.toString().padStart(2, '0')}`;
-	}
-
-	function addToHistory(type, info) {
-		const time = new Date().toLocaleTimeString('en-US', {
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit'
-		});
-		callHistory = [{ time, type, info }, ...callHistory.slice(0, 29)];
 	}
 
 	function statusColor(status) {
