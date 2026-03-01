@@ -1,3 +1,54 @@
+## Session — 2026-03-01 (Session 76)
+**Focus:** Fix contact sync pipeline — TextMagic dedup + broken cron jobs
+
+**Accomplished:**
+- Ran sheet sync manually — 21 contacts enriched in Supabase, 12 created + 5 updated in TextMagic (3 recent AR patients that had been waiting days)
+- Fixed TextMagic dedup in `api/routes/sync.js` — `syncContactToTextMagic()` now proactively looks up by both phone AND email before create/update. When same person has two TM entries (one by phone, one by email), merges them: keeps the phone contact (preserves conversation history), deletes the duplicate, applies AR data to survivor
+- Added retry-without-email fallback on POST create (was missing in route handler, standalone script had it)
+- Fixed all 3 pg_cron jobs that were still pointing at old Render URL (`lm-app-api.onrender.com` → `api.lemedspa.app`). Sheet sync, TM sync, and automation queue had all been silently failing since the Fly.io migration
+- Removed `render-keep-alive` cron (Fly machines are always-on, no spin-down)
+- Changed sheet sync cron from every 15 min to every 10 min
+- Deployed to Fly.io, committed and pushed
+
+**Diagram:**
+```
+pg_cron (Supabase)
+  │
+  ├─ */10 sync-ar-sheet ──► POST api.lemedspa.app/api/sync/sheet
+  │     Google Sheet CSV → Supabase contacts → TextMagic (with dedup)
+  │
+  ├─ */15 sync-textmagic ─► POST api.lemedspa.app/api/sync/textmagic
+  │     TextMagic → Supabase contacts
+  │
+  └─ */5  automation ─────► POST api.lemedspa.app/api/cron/process
+        Process scheduled automation entries
+
+  TM dedup flow:
+  lookup phone ──┐
+  lookup email ──┤
+                 ├─ both match same TM contact → update
+                 ├─ both match DIFFERENT contacts → merge (keep phone, delete email dup)
+                 ├─ phone only → update
+                 ├─ email only → update with phone
+                 └─ neither → create new
+```
+
+**Current State:**
+- All 3 cron jobs running against correct Fly.io URL
+- Sheet sync: every 10 min, with dedup/merge logic
+- TM sync: every 15 min
+- Automation queue: every 5 min
+- 195 tests passing, CI green
+
+**Issues:**
+- None open
+
+**Next Steps:**
+- Monitor sync logs for a few cycles to confirm cron is firing correctly
+- Consider adding a sync status dashboard widget showing last sync time + counts
+
+---
+
 ## Session — 2026-02-26 (Session 75)
 **Focus:** CI fixes, Dependabot vulns, softphone UI redesign
 
