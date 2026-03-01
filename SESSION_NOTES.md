@@ -1,5 +1,5 @@
 ## Session — 2026-03-01 (Session 82)
-**Focus:** Screening duration fix, TextMagic sync investigation
+**Focus:** Screening duration fix, TextMagic sync writeback fix
 
 **Accomplished:**
 - Fixed desk phone voicemail eating calls — `connect-operator-status` now checks `DialCallDuration`
@@ -7,27 +7,56 @@
   - `completed` + duration >= 12s = real conversation → end gracefully
 - User confirmed: softphone answer works, deny → desk phone → voicemail greeting works
 - 49 tests passing (was 47), all CI green, committed + pushed
-- Deployed to Fly.io
+- Fixed Google Sheet writeback bug — was writing AR phone to "TextMagic Phone" column
+  - Now stores `metadata.textmagic_phone` during TM sync (actual TM phone, or null)
+  - Writeback uses `metadata.textmagic_phone` instead of `contact.phone_normalized`
+  - TM sync already ran and populated `textmagic_phone` for all 1609 contacts (552 with real phones, 1057 null)
+- Deployed all fixes to Fly.io, committed + pushed
 
 **Diagram:**
 ```
-connect-operator-status receives DialCallStatus:
-  completed + duration >= 12s → real call → end gracefully
-  completed + duration < 12s  → screening failed → voicemail greeting
-  no-answer/busy/failed       → nobody answered → voicemail greeting
+CURRENT SYNC FLOW (one-directional gaps):
+  TextMagic ──(pull)──→ Supabase ←──(pull)── Google Sheet (AR)
+       ↑                                         ↑
+       │ push (only for NEWLY enriched contacts)  │ writeback (fixed)
+       └──────────── sheet sync ──────────────────┘
+
+MISSING: Reverse enrichment (Supabase → TextMagic)
+  When TM contact has no phone but Supabase has one (from AR),
+  we never push it back to TM.
 ```
 
 **Current State:**
 - Full call flow working end-to-end (tested by user)
-- Investigating TextMagic sync issue
+- Sheet writeback fix deployed (false TM phone values will be cleared on next sheet sync)
 
-**Issues:**
-- TextMagic sync: Nina Rodriguez (TM ID 361016247) — see Session 81 notes
+**Issues — TextMagic Reverse Enrichment (NOT YET FIXED):**
+The writeback-to-sheet bug is fixed, but the CORE problem remains: TextMagic contacts are not enriched with AR data from Supabase. This affects all contacts matched by email across sources.
+
+**Example: Nina Rodriguez (TM ID 361016247, AR ID 480)**
+- TM has: email (gianinnam.rodriguez@gmail.com), NO phone, NO AR info
+- Supabase has: phone (18183509333), AR ID 480, patient tags — all from AR
+- TM sync matched them by email → added `textmagic_contact_id` to Supabase metadata
+- But NEVER pushed the AR phone/data back to TM
+
+**Root cause:** The sheet sync's `syncContactToTextMagic()` only runs for contacts in the `tmSyncQueue` — which only includes NEWLY inserted or NEWLY enriched contacts. Once a contact's AR ID is in Supabase, subsequent sheet syncs skip it (`unchanged++`). So if TM sync matches by email AFTER the initial sheet import, the reverse push never happens.
+
+**Fix needed (next session):**
+1. **Add reverse enrichment step to TM sync** — after pulling all TM contacts into Supabase, check which TM contacts are missing phone that Supabase has (from AR). Push phone + name via `PUT /contacts/{id}`.
+2. **Optionally write AR_ID to TM custom field** — so AR_ID is visible in TextMagic UI.
+3. **One-time backfill** — run the reverse enrichment for all existing contacts with TM ID + AR data but no phone in TM.
+
+**Key files:**
+- `api/routes/sync.js` — TM sync endpoint (line 58-293), sheet sync (line 762-1060), writeback (line 663-752)
+- `api/routes/sync.js:syncContactToTextMagic()` — existing TM write helper (line 514-654)
+- TextMagic API: `PUT /contacts/{id}` for updates, `POST /contacts/normalized` for creates
+
+**Other Issues:**
 - Incoming call logging broken (duplicate key + Supabase 502)
 - Trace logging still in production
 
 **Next Steps:**
-- Fix TextMagic sync data accuracy
+- Build reverse enrichment (Supabase → TextMagic) for phone + AR data
 - Fix incoming call logging
 - Remove trace logging after call flow is stable
 
